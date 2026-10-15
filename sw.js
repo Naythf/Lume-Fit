@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v8-auth';
+const CACHE = 'lume-fit-static-v9-delete';
 const ASSETS = [
   './',
   './index.html',

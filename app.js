@@ -299,14 +299,14 @@ function renderWorkouts(){
       <div class="page-head"><div><h2>Treinos</h2></div><button class="icon-btn" onclick="openRoutineSheet()">＋</button></div>
       <div class="list-stack">
         ${state.db.routines.map(r => `
-          <div class="card screen-card" onclick="openRoutine('${r.id}')">
+          <div class="card screen-card">
             <div class="mini-item" style="padding:0;background:none;border:0">
-              <div class="ico">${miniRoutineIcon()}</div>
-              <div>
+              <div class="ico" aria-hidden="true">${miniRoutineIcon()}</div>
+              <button type="button" onclick="openRoutine('${r.id}')" style="flex:1;min-width:0;text-align:left;background:transparent;border:0;color:inherit;padding:0">
                 <strong>${esc(r.name)}</strong>
                 <small>${r.exercises.length} exercícios · ${dayLabel(r)}</small>
-              </div>
-              <div class="push">›</div>
+              </button>
+              <button type="button" class="ghost-btn" aria-label="Excluir rotina ${esc(r.name)}" title="Excluir rotina" style="padding:10px 12px" onclick="deleteRoutine('${r.id}')">Excluir</button>
             </div>
           </div>`).join('')}
       </div>`;
@@ -324,7 +324,10 @@ function renderWorkouts(){
         <p>${routine.exercises.length} exercícios · ${dayLabel(routine)}</p>
       </div>
     </div>
-    <div style="display:flex;justify-content:flex-end;margin-bottom:14px"><button class="ghost-btn" onclick="openExerciseSheet('${routine.id}')">＋ Exercício</button></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px">
+      <button class="ghost-btn" onclick="deleteRoutine('${routine.id}')">Excluir rotina</button>
+      <button class="ghost-btn" onclick="openExerciseSheet('${routine.id}')">＋ Exercício</button>
+    </div>
     <div class="list-stack">
       ${routine.exercises.map(exercise => `
         <div class="exercise-card" onclick="startWorkout('${routine.id}','${exercise.id}')">
@@ -396,7 +399,7 @@ function renderRegister(){
 function renderHistory(){
   const root = $('#screen-history');
   const exercises = allExercises();
-  if (!exercises.length){ root.innerHTML = `<div class="page-head"><h2>Histórico</h2></div><div class="empty">Seu histórico aparecerá aqui após registrar um treino.</div>`; return; }
+  if (!exercises.length && !state.db.sessions.length){ root.innerHTML = `<div class="page-head"><h2>Histórico</h2></div><div class="empty">Seu histórico aparecerá aqui após registrar um treino.</div>`; return; }
   const selected = state.historyExerciseFilter === 'all' ? exercises.find(e => exerciseProgress(e.id).length) || exercises[0] : exercises.find(e => e.id===state.historyExerciseFilter) || exercises[0];
   const progress = selected ? exerciseProgress(selected.id) : [];
   root.innerHTML = `
@@ -405,7 +408,7 @@ function renderHistory(){
       <div class="chart-top">
         <div>
           <div style="font-size:13px;color:#b8b8b8;margin-bottom:8px">Todos os exercícios</div>
-          <select class="select" onchange="changeHistoryExercise(this.value)">
+          <select class="select" onchange="changeHistoryExercise(this.value)" ${exercises.length ? '' : 'disabled'}>
             <option value="all" ${state.historyExerciseFilter==='all'?'selected':''}>Auto</option>
             ${exercises.map(e => `<option value="${e.id}" ${state.historyExerciseFilter===e.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}
           </select>
@@ -592,8 +595,25 @@ function finishWorkout(){
   switchTab('history');
 }
 
+async function deleteRoutine(id){
+  const routine = state.db.routines.find(r => r.id === id);
+  if (!routine) return;
+  const ok = await lumeConfirm(
+    'Excluir rotina?',
+    `A rotina "${routine.name}" e seus exercícios serão removidos. Os treinos já registrados no histórico serão preservados.`
+  );
+  if (!ok) return;
+  // Apenas a rotina é excluída. O histórico é mantido para não perder evolução.
+  state.db.routines = state.db.routines.filter(r => r.id !== id);
+  if (state.selectedRoutineId === id) state.selectedRoutineId = null;
+  if (state.activeWorkout?.routineId === id) state.activeWorkout = null;
+  saveDB();
+  render();
+  toast('Rotina excluída.');
+}
+
 async function deleteSession(id){
-  if (!await lumeConfirm('Excluir registro?', 'Este treino será retirado permanentemente do histórico.')) return;
+  if (!await lumeConfirm('Excluir registro?', 'Este treino será removido do histórico e dos gráficos de evolução e frequência. Não é possível desfazer.')) return;
   state.db.sessions = state.db.sessions.filter(s => s.id !== id);
   saveDB();
   render();
@@ -959,6 +979,7 @@ window.saveRoutine = saveRoutine;
 window.openExerciseSheet = openExerciseSheet;
 window.saveExercise = saveExercise;
 window.deleteSession = deleteSession;
+window.deleteRoutine = deleteRoutine;
 window.exportData = exportData;
 window.openImportFile = openImportFile;
 window.importData = importData;
