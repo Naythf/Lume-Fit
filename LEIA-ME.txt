@@ -1,0 +1,41 @@
+LUME FIT 4.0 — LOGIN + DADOS NA NUVEM
+
+IMPORTANTE: esta é uma versão pronta para CONFIGURAR, não um banco de dados já conectado.
+O GitHub Pages publica os arquivos; o Supabase realiza login e salva os dados.
+
+1. Faça BACKUP na versão anterior: Ajustes > Backup e restaurar.
+2. Crie conta em https://supabase.com e projeto no plano gratuito.
+3. Abra SQL Editor no Supabase, cole TODO o arquivo supabase-schema.sql e execute.
+   O SQL cria tabela com políticas RLS por usuário.
+4. Em Project Settings > API (ou Connect > App Frameworks), copie:
+   - Project URL (https://xxx.supabase.co)
+   - Publishable key (ou chave anon pública)
+   Cole em config.js nos campos indicados.
+   NUNCA coloque SECRET, SERVICE_ROLE ou senha no frontend.
+5. Em Authentication > URL Configuration:
+   - Site URL: endereço final do seu GitHub Pages (exemplo https://usuario.github.io/lume-fit/)
+   - Redirect URLs: acrescente esse endereço exato. Para testes locais, acrescente também
+     http://localhost:5500/** e http://127.0.0.1:5500/**, conforme o teste.
+6. Em Authentication > Providers > Email, mantenha habilitado o login por e-mail.
+   Com confirmação por e-mail ativa, usuários devem clicar no link de confirmação.
+   Se for usar recuperação de senha, personalize as mensagens SMTP/limites conforme necessário.
+7. Teste criando 2 contas: verifique que cada usuário tem rotinas e registros isolados.
+8. Crie um repositório GitHub público e envie apenas os arquivos do app.
+   NÃO envie senhas, chaves secretas ou backups de usuários.
+   Settings > Pages > Deploy from branch > main / root > Save.
+9. Após publicar, abra o link HTTPS e instale como PWA no celular.
+
+DADOS ANTIGOS: a versão nova NÃO importa automaticamente dados do navegador antigo,
+para evitar que registros do primeiro usuário caiam na conta de outra pessoa.
+Exporte JSON na versão antiga e IMPORTE em Ajustes NA CONTA CORRETA na versão nova.
+
+CUIDADOS:
+- Senhas são gerenciadas pelo Supabase Auth, nunca pelo app/localStorage.
+- Cada usuário é protegido por RLS no banco. Teste as políticas antes de convidar amigos.
+- A aplicação mantém cache local POR USUÁRIO para uso com falhas de rede, mas exige login
+  online e ainda utiliza sincronização simples de documento completo (última alteração vence).
+  Evite editar simultaneamente em aparelhos diferentes.
+- Em modo "Testar sem conta", dados ficam somente no navegador.
+- Nunca deixe de exportar backups antes de trocar versão, navegador ou endereço do site.
+- O plano gratuito do Supabase tem limites, que podem mudar; confira no painel Supabase.
+- Não hospede dados de amigos antes de conferir login, confirmação por e-mail e privacidade.

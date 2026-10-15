@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#000000">
+  <meta name="description" content="Lume Fit — diário de treino, cargas, repetições e frequência.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <title>Lume Fit</title>
+  <style>
+    :root{
+      --bg:#000;
+      --panel:#090909;
+      --panel-2:#111;
+      --soft:#161616;
+      --soft-2:#1d1d1d;
+      --line:#262626;
+      --line-2:#303030;
+      --text:#fff;
+      --muted:#a8a8a8;
+      --muted-2:#737373;
+      --pill:#121212;
+      --accent:#f2f2f2;
+      --shadow:0 16px 40px rgba(0,0,0,.35);
+      --radius:22px;
+      --radius-sm:16px;
+      --radius-xs:12px;
+      --safe-bottom:max(12px, env(safe-area-inset-bottom));
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background:#000;
+      color:var(--text);
+    }
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    img{max-width:100%;display:block}
+    .app{max-width:460px;margin:0 auto;min-height:100%;padding:18px 18px 120px;position:relative}
+    .statusbar{display:flex;justify-content:space-between;align-items:center;color:#d8d8d8;font-size:12px;margin-bottom:8px;opacity:.9}
+    .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;gap:14px}
+    .brandline{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+    .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+    .brandname{font-size:18px;font-weight:700;letter-spacing:-.02em}
+    .brandname span{font-weight:400;color:#f7f7f7}
+    .brandmark{width:29px;height:34px;display:inline-block;object-fit:contain}
+    .offline-pill{border:1px solid var(--line);background:#101010;color:#f7f7f7;padding:12px 18px;border-radius:999px;font-size:14px;box-shadow:var(--shadow)}
+    .screen{display:none}
+    .screen.active{display:block}
+    .page-head{display:flex;justify-content:space-between;align-items:center;margin:6px 0 14px;gap:10px}
+    .page-head h2,.page-head h1{margin:0;font-size:31px;line-height:1.02;letter-spacing:-.035em}
+    .page-head p{margin:6px 0 0;color:var(--muted)}
+    .icon-btn{width:40px;height:40px;border-radius:14px;border:1px solid var(--line);background:#0e0e0e;color:#fff;display:grid;place-items:center}
+    .hero-card,.card,.stat-card,.menu-card,.exercise-card,.calendar-card,.chart-card,.profile-card{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+    }
+    .hero-card{padding:18px;overflow:hidden;position:relative;margin-bottom:14px;background:linear-gradient(90deg, rgba(0,0,0,.83) 18%, rgba(0,0,0,.5) 100%), url("weights-bg.webp") center 64%/cover;
+    }
+    .hero-card:after{content:"";position:absolute;inset:auto -20px -30px auto;width:170px;height:170px;border-radius:50%;background:radial-gradient(circle, rgba(255,255,255,.11), transparent 62%);filter:blur(10px)}
+    .hero-card .small{font-size:14px;color:var(--muted);margin:0 0 6px}
+    .hero-card h3{font-size:30px;line-height:1.02;letter-spacing:-.04em;margin:0 0 10px;max-width:240px}
+    .hero-card .date{color:var(--muted);margin-bottom:16px}
+    .today-workout{position:relative;background:linear-gradient(180deg, rgba(0,0,0,.24), rgba(255,255,255,.03));border:1px solid rgba(255,255,255,.08);border-radius:18px;padding:16px;overflow:hidden}
+    .today-workout h4{margin:0 0 5px;font-size:14px;color:#cfcfcf;font-weight:500}
+    .today-workout b{display:block;font-size:18px;max-width:190px;line-height:1.12}
+    .today-workout small{color:var(--muted);display:block;margin-top:4px}
+    .today-workout .arrow{position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:26px;color:#f4f4f4}
+    .dumbbell-art{position:absolute;right:-14px;bottom:-10px;width:152px;height:92px;opacity:.25;transform:rotate(-14deg)}
+    .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+    .stat-card{padding:15px 14px;border-radius:20px;background:linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02))}
+    .stat-icon{width:22px;height:22px;color:#fff;opacity:.92;margin-bottom:14px}
+    .stat-value{font-size:18px;font-weight:700;letter-spacing:-.03em}
+    .stat-label{font-size:13px;color:var(--muted);margin-top:2px}
+    .section-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:10px 0 14px}
+    .section-title h3{margin:0;font-size:16px;letter-spacing:-.02em}
+    .section-title button,.section-title .link{background:none;border:0;color:#fff;opacity:.9;padding:0}
+    .mini-list{display:grid;gap:10px}
+    .mini-item,.exercise-card,.menu-row{display:flex;align-items:center;gap:12px}
+    .mini-item{padding:15px;border-radius:20px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+    .mini-item .ico,.exercise-thumb,.menu-ico,.avatar{width:34px;height:34px;border-radius:11px;background:#171717;border:1px solid var(--line);display:grid;place-items:center;flex:0 0 auto}
+    .mini-item strong,.exercise-card strong,.menu-row strong{display:block;font-size:18px;font-weight:600;line-height:1.12;letter-spacing:-.02em}
+    .mini-item small,.exercise-card small,.menu-row small{display:block;color:var(--muted);margin-top:2px}
+    .push{margin-left:auto;color:#eaeaea}
+    .screen-card{padding:16px}
+    .list-stack{display:grid;gap:12px}
+    .exercise-card{padding:14px 14px;border-radius:18px;background:linear-gradient(180deg, rgba(255,255,255,.035), rgba(255,255,255,.02));border:1px solid rgba(255,255,255,.055)}
+    .exercise-thumb svg{width:22px;height:22px;opacity:.95}
+    .bottom-cta{position:sticky;bottom:88px;margin-top:16px}
+    .primary-btn,.secondary-btn,.seg-btn,.ghost-btn{
+      border:0;border-radius:18px;padding:18px 18px;font-weight:600;letter-spacing:-.02em
+    }
+    .primary-btn{background:#f0f0f0;color:#050505;width:100%;box-shadow:0 10px 24px rgba(255,255,255,.08)}
+    .secondary-btn{background:#141414;color:#f6f6f6;width:100%;border:1px solid rgba(255,255,255,.06)}
+    .ghost-btn{background:#0d0d0d;color:#f1f1f1;border:1px solid rgba(255,255,255,.08)}
+    .bar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:16px}
+    .back{font-size:22px;border:0;background:none;color:#fff;padding:0 6px 0 0}
+    .dot-menu{letter-spacing:.2em;font-weight:700}
+    .register-hero{padding:16px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.015));border:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+    .register-hero h3{margin:0;font-size:20px;letter-spacing:-.03em}
+    .register-hero .machine-art{width:112px;height:72px;opacity:.9}
+    .segmented{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#0f0f0f;border:1px solid rgba(255,255,255,.06);padding:6px;border-radius:18px;margin-bottom:14px}
+    .seg-btn{background:transparent;color:#bcbcbc;padding:12px 14px}
+    .seg-btn.active{background:#272727;color:#fff}
+    .register-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+    .mini-stat{padding:14px;border-radius:18px;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+    .mini-stat .k{font-size:14px;color:#bdbdbd;margin-bottom:10px}
+    .mini-stat .v{font-size:18px;font-weight:700}
+    .sets-table{padding:14px;border-radius:22px;background:linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,.012));border:1px solid rgba(255,255,255,.05)}
+    .table-head,.set-row{display:grid;grid-template-columns:50px 1fr 1fr 36px;gap:10px;align-items:center}
+    .table-head{padding:0 6px 10px;color:#d8d8d8;font-size:14px}
+    .set-row{padding:8px 0}
+    .set-row input{width:100%;background:#121212;color:#fff;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:13px 12px;text-align:center}
+    .check-btn{width:30px;height:30px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:transparent;color:#fff}
+    .check-btn.done{background:#f1f1f1;color:#000;border-color:#f1f1f1}
+    .bottom-actions{display:grid;gap:12px;margin-top:14px}
+    .pager{display:flex;justify-content:space-between;color:#e3e3e3;font-size:14px;padding:4px 4px 0}
+    .chart-card,.calendar-card,.profile-card,.card{padding:16px}
+    .chart-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .select{background:#0f0f0f;border:1px solid rgba(255,255,255,.06);color:#fff;padding:10px 12px;border-radius:14px}
+    .chart-wrap{height:220px;border-radius:18px;padding:10px 8px 0;background:rgba(255,255,255,.02);border:1px solid rgba(255,255,255,.05)}
+    .legend{margin-top:8px;color:var(--muted);font-size:13px}
+    .calendar-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+    .month-nav{background:none;border:0;color:#fff;font-size:20px;padding:0 6px}
+    .weekdays,.days-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:10px}
+    .weekdays div{font-size:12px;color:#9e9e9e;text-align:center}
+    .day-cell{aspect-ratio:1/1;border-radius:16px;display:grid;place-items:center;background:#0f0f0f;border:1px solid transparent;color:#fff}
+    .day-cell.muted{color:#484848}
+    .day-cell.hit{background:#f1f1f1;color:#000;font-weight:700}
+    .day-cell.today{border-color:#5a5a5a}
+    .profile-card{display:flex;align-items:center;gap:14px;margin-bottom:14px}
+    .avatar{width:58px;height:58px;border-radius:50%;background:#d8d8d8;color:#111}
+    .profile-meta h3{margin:0;font-size:22px;letter-spacing:-.03em}
+    .profile-meta p{margin:4px 0 0;color:var(--muted)}
+    .menu-card{padding:6px}
+    .menu-row{padding:16px 12px;border-radius:18px}
+    .menu-row+.menu-row{border-top:1px solid rgba(255,255,255,.06)}
+    .menu-ico{width:30px;height:30px}
+    .sheet{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:flex-end;justify-content:center;z-index:20;padding:18px}
+    .sheet.active{display:flex}
+    .sheet-panel{width:min(460px,100%);background:#090909;border:1px solid rgba(255,255,255,.08);border-radius:26px 26px 22px 22px;padding:18px;box-shadow:var(--shadow)}
+    .sheet-handle{width:54px;height:5px;background:#2d2d2d;border-radius:999px;margin:0 auto 16px}
+    .sheet-panel h3{margin:0 0 16px;font-size:20px}
+    .form{display:grid;gap:12px}
+    .field label{display:block;font-size:13px;color:#bcbcbc;margin-bottom:6px}
+    .field input,.field select{width:100%;background:#111;border:1px solid rgba(255,255,255,.08);color:#fff;border-radius:14px;padding:14px 12px}
+    .row-actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+    .toast{position:fixed;top:18px;left:50%;transform:translateX(-50%);z-index:30;background:#f3f3f3;color:#000;padding:12px 16px;border-radius:999px;box-shadow:var(--shadow);display:none;font-size:14px;font-weight:600}
+    .empty{padding:30px 14px;text-align:center;color:#9d9d9d}
+    .nav{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;width:min(460px, calc(100% - 20px));display:grid;grid-template-columns:repeat(5,1fr);gap:8px;padding:10px 10px var(--safe-bottom);background:rgba(7,7,7,.94);border:1px solid rgba(255,255,255,.08);backdrop-filter:blur(18px);border-radius:28px;box-shadow:var(--shadow);z-index:15}
+    .nav button{border:0;background:transparent;color:#9f9f9f;padding:12px 8px;border-radius:18px;display:grid;justify-items:center;gap:6px;font-size:12px}
+    .nav button svg{width:20px;height:20px}
+    .nav button.active{background:#171717;color:#fff}
+    .hidden{display:none!important}
+    @media (max-width:380px){
+      .app{padding-inline:14px}
+      .stats{grid-template-columns:1fr}
+      .register-stats{grid-template-columns:1fr}
+      .table-head,.set-row{grid-template-columns:40px 1fr 1fr 30px;gap:6px}
+      .page-head h2,.page-head h1{font-size:28px}
+      .nav{gap:4px}
+    }
+
+    /* Lume Fit — responsive visual system */
+    body{background:#000;color:#fff}
+    .hero-card{background:linear-gradient(100deg,rgba(0,0,0,.86),rgba(0,0,0,.45)),url("weights-bg.webp") center 65%/cover;border:1px solid #292929;min-height:205px;display:flex;align-items:flex-end}
+    .hero-card:after{display:none}
+    .hero-card .today-workout{width:100%;backdrop-filter:blur(8px);background:rgba(5,5,5,.53)}
+    .dumbbell-art{opacity:.14}
+    .brandname{font-size:23px;letter-spacing:-.05em}
+    .brandname span{font-weight:300}
+    .eyebrow{display:none}
+    .offline-pill{font-size:12px;padding:7px 12px}
+    .app{padding-top:24px}
+    .header{margin-bottom:25px}
+    .mini-item strong,.exercise-card strong,.menu-row strong{font-size:15px}
+    .stats .stat-value{font-size:22px}
+    .stats .stat-label{font-size:11px}
+    .hero-card,.card,.stat-card,.menu-card,.exercise-card,.calendar-card,.chart-card,.profile-card{box-shadow:none}
+    button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid white;outline-offset:2px}
+    .nav button{transition:background .15s,color .15s}
+    @media(min-width:900px){
+      body:before{content:"";position:fixed;bottom:0;left:0;width:35vw;height:75vh;pointer-events:none;background:linear-gradient(90deg,rgba(0,0,0,.08),rgba(0,0,0,1)),linear-gradient(0deg,transparent,rgba(0,0,0,.7)),url("weights-bg.webp") bottom left/cover no-repeat;opacity:.36}
+      .app{max-width:1190px;padding:35px 40px 90px 270px;min-height:100vh}
+      .header{margin-bottom:38px}
+      .brandname{font-size:29px}
+      .brandmark{width:38px;height:43px}
+      .nav{left:max(24px,calc(50% - 565px));top:34px;bottom:auto;transform:none;width:210px;display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:24px;background:#0c0c0c}
+      .nav button{display:flex;justify-content:flex-start;gap:15px;padding:16px;font-size:14px}
+      .nav button svg{width:21px;height:21px}
+      .page-head h1,.page-head h2{font-size:42px}
+      #screen-home.active{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:16px;align-content:start}
+      #screen-home .page-head{grid-column:1/-1}
+      #screen-home .hero-card{grid-column:1/5;grid-row:2/4;min-height:300px}
+      #screen-home .stats{grid-column:5/-1;grid-row:2/4;display:flex;flex-direction:column;margin:0}
+      #screen-home .stat-card{flex:1;display:flex;align-items:center;gap:16px}
+      #screen-home .stat-icon{margin:0}
+      #screen-home .stat-label{font-size:13px}
+      #screen-home .section-title{grid-column:1/-1;margin-top:18px}
+      #screen-home .mini-list{grid-column:1/-1;grid-template-columns:repeat(2,minmax(0,1fr))}
+      #screen-workouts.active,#screen-history.active,#screen-frequency.active,#screen-settings.active,#screen-register.active{max-width:780px;margin:0 auto}
+      .bottom-cta{bottom:20px}
+      .nav button.active{background:#262626}
+    }
+    @media(min-width:900px) and (max-width:1140px){.app{padding-left:260px;padding-right:22px}.nav{left:24px}}
+    @media(max-width:380px){.stats{grid-template-columns:repeat(3,1fr)}.stat-card{padding:12px 8px}.stats .stat-value{font-size:18px}.stats .stat-label{font-size:10px}.nav button{padding:11px 4px;font-size:10px}}
+
+
+    /* Lume Fit · motion system */
+    .app{padding-bottom:135px}
+    .screen.active{animation:page-in .38s cubic-bezier(.2,.7,.2,1) both}
+    #screen-home.active .page-head,#screen-home.active .hero-card,#screen-home.active .stats,#screen-home.active .section-title,#screen-home.active .mini-list{animation:rise-in .56s cubic-bezier(.2,.75,.2,1) both}
+    #screen-home.active .hero-card{animation-delay:.06s}
+    #screen-home.active .stats{animation-delay:.11s}
+    #screen-home.active .section-title{animation-delay:.17s}
+    #screen-home.active .mini-list{animation-delay:.21s}
+    @keyframes page-in{from{opacity:0}to{opacity:1}}
+    @keyframes rise-in{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}
+    button,.mini-item,.exercise-card,.menu-row,.today-workout,.stat-card,.card.screen-card{transition:transform .2s ease,background-color .2s ease,border-color .2s ease,box-shadow .2s ease}
+    button:active,.mini-item:active,.exercise-card:active,.menu-row:active,.today-workout:active{transform:scale(.965)}
+    button:hover{filter:brightness(1.13)}
+    .mini-item,.exercise-card,.menu-row,.today-workout,.card.screen-card{cursor:pointer}
+    @media(hover:hover){button:hover,.mini-item:hover,.exercise-card:hover,.menu-row:hover,.today-workout:hover,.card.screen-card:hover{transform:translateY(-2px);border-color:#555}.primary-btn:hover{box-shadow:0 9px 26px rgba(255,255,255,.16)}}
+    .card,.calendar-card,.chart-card,.menu-card,.register-hero,.profile-card{margin-bottom:18px}
+    .register-stats,.stats,.section-title{margin-bottom:18px}
+    .sheet{overflow-y:auto;align-items:center}
+    .sheet-panel{max-height:min(90dvh,850px);overflow-y:auto;overscroll-behavior:contain}
+    .dialog-panel{max-width:390px;text-align:center;padding:24px}
+    .dialog-icon{font-size:27px;display:grid;place-items:center;width:56px;height:56px;margin:0 auto 18px;background:#1c1c1c;border-radius:18px}
+    .dialog-panel h3{margin:0 0 8px}.dialog-panel p{color:#aaa;line-height:1.5;margin:0 0 22px}
+    .dialog-panel .row-actions{margin-top:4px}
+    .chart-line{stroke-dasharray:180;stroke-dashoffset:180;animation:draw-line 1.3s cubic-bezier(.18,.7,.2,1) forwards}
+    .chart-dot{opacity:0;animation:pop-dot .34s ease forwards}
+    @keyframes draw-line{to{stroke-dashoffset:0}}
+    @keyframes pop-dot{to{opacity:1}}
+    .graph-bar{transform-box:fill-box;transform-origin:bottom;transform:scaleY(.02);animation:grow-bar .72s cubic-bezier(.2,.8,.2,1) forwards}
+    @keyframes grow-bar{to{transform:scaleY(1)}}
+    .switcher{display:flex;gap:8px;margin-bottom:18px}
+    .switcher button{flex:1;background:#121212;border:1px solid #292929;color:#bbb;padding:13px 10px;border-radius:13px}
+    .switcher button.active{background:#eee;color:#0b0b0b}
+    .metric-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0 20px}
+    .metric-tile{background:#131313;border:1px solid #292929;padding:17px;border-radius:18px;min-width:0}
+    .metric-tile span{color:#aaa;font-size:12px;display:block;margin-bottom:9px}
+    .metric-tile b{font-size:23px;letter-spacing:-.04em}
+    .metric-tile small{display:block;color:#999;margin-top:4px;font-size:11px}
+    .hint{color:#9b9b9b;font-size:13px;line-height:1.55}
+    .knowledge-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .knowledge-form .wide{grid-column:1/-1}
+    .profile-photo{width:60px;height:60px;object-fit:cover;border-radius:50%;border:1px solid #555}
+    .avatar{overflow:hidden}
+    .exercise-thumb{width:49px;height:49px;overflow:hidden}
+    .exercise-thumb svg{width:43px;height:43px;opacity:1}
+    .machine-art svg{width:112px;height:72px}
+    .nav{grid-template-columns:repeat(6,minmax(0,1fr));gap:2px;padding:8px 5px var(--safe-bottom)}
+    .nav button{padding:10px 2px;font-size:10px}
+    @media(min-width:900px){.nav{display:flex;gap:9px}.nav button{font-size:14px;padding:16px}.app{padding-bottom:85px}#screen-knowledge.active{max-width:780px;margin:0 auto}}
+    @media(max-width:420px){.nav button svg{width:19px;height:19px}.nav button{font-size:10px}.metric-tile b{font-size:20px}}
+    /* Evolução por exercício — sem esticar textos, eixos ou pontos */
+    .chart-wrap{height:auto;min-height:255px;padding:14px 12px 12px;overflow:hidden}
+    .progress-summary{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:0 2px 8px}
+    .progress-summary span{color:#969696;font-size:12px}
+    .progress-summary strong{color:#f5f5f5;font-size:19px;font-weight:650}
+    .progress-summary small{margin-left:auto;color:#777;font-size:11px}
+    .progress-chart{width:100%;height:auto;display:block;overflow:visible}
+    .progress-path{stroke-dasharray:1;stroke-dashoffset:1;animation:progress-draw 1s ease-out forwards}
+    .progress-point{opacity:0;transform-box:fill-box;transform-origin:center;animation:progress-pop .35s ease-out forwards}
+    @keyframes progress-draw{to{stroke-dashoffset:0}}
+    @keyframes progress-pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
+    @media(max-width:480px){.chart-wrap{padding:10px 6px 12px}.progress-summary{padding:0 8px}.progress-summary strong{font-size:17px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+  
+    [hidden]{display:none!important}
+    /* Acesso — mesma linguagem visual monocromática do Lume Fit */
+    body.auth-locked .app, body.auth-locked #bottomNav{display:none!important}
+    .auth-screen{min-height:100dvh;display:grid;place-items:center;padding:25px 18px 45px;background:radial-gradient(circle at 50% -15%,#252525 0%,#080808 42%,#000 78%)}
+    .auth-screen[hidden]{display:none!important}
+    .auth-shell{width:min(420px,100%);animation:auth-rise .45s ease both}
+    .auth-logo{display:flex;justify-content:center;align-items:center;gap:13px;font-size:31px;letter-spacing:-1.5px;font-weight:700;margin-bottom:15px}
+    .auth-logo img{width:51px;height:62px;object-fit:contain}
+    .auth-logo em{font-weight:300;font-style:normal}
+    .auth-kicker{font-size:11px;letter-spacing:4px;text-transform:uppercase;text-align:center;color:#898989;margin-bottom:30px}
+    .auth-card{background:linear-gradient(145deg,#141414,#080808);border:1px solid #292929;border-radius:27px;padding:27px 23px;box-shadow:0 32px 80px #0008}
+    .auth-card h1{font-size:28px;letter-spacing:-1px;margin:0 0 7px}
+    .auth-desc{font-size:14px;line-height:1.5;color:#aaa;margin:0 0 22px}
+    .auth-tabs{display:grid;grid-template-columns:1fr 1fr;background:#070707;padding:5px;gap:4px;border:1px solid #242424;border-radius:15px;margin-bottom:21px}
+    .auth-tabs button{border:0;border-radius:11px;background:transparent;color:#999;padding:12px 8px;font-size:14px;transition:background .2s,color .2s}
+    .auth-tabs button.active{background:#272727;color:#fff}
+    .auth-field{display:block;color:#d6d6d6;font-size:13px;margin:0 0 14px}
+    .auth-field span{display:block;margin-bottom:7px}
+    .auth-field input{display:block;width:100%;padding:15px 13px;border:1px solid #303030;border-radius:13px;background:#111;color:#fff;outline:none;font-size:15px;transition:border .2s,box-shadow .2s}
+    .auth-field input:focus{border-color:#9a9a9a;box-shadow:0 0 0 3px #ffffff12}
+    .auth-submit{width:100%;background:#f1f1f1;border:0;border-radius:14px;color:#090909;font-weight:750;padding:16px;cursor:pointer;margin-top:7px;transition:transform .18s,background .18s}
+    .auth-submit:active{transform:scale(.98)}
+    .auth-submit:disabled{opacity:.5;cursor:wait}
+    .auth-secondary{display:block;margin:16px auto 0;border:0;background:transparent;color:#ddd;font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+    .auth-msg{min-height:22px;color:#c9c9c9;font-size:13px;line-height:1.5;margin-top:14px}
+    .auth-note{font-size:12px;line-height:1.6;color:#878787;text-align:center;margin:22px 15px 0}
+    .auth-setup{padding:15px;background:#171717;border:1px solid #383838;border-radius:14px;font-size:13px;color:#cfcfcf;line-height:1.6;margin-bottom:14px}
+    .auth-setup code{color:#fff}
+    .cloud-status{color:#adadad;font-size:12px;white-space:nowrap}
+    .cloud-status.error{color:#efb6b6}
+    .session-card{margin-top:16px;border:1px solid #2c2c2c;border-radius:17px;padding:15px;background:#101010;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .session-card small{color:#999;word-break:break-all}
+    .session-card button{background:#212121;color:#eee;padding:11px 14px;border-radius:12px;border:1px solid #444;flex-shrink:0}
+    @keyframes auth-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+    @media(min-width:900px){.auth-card{padding:33px}.auth-screen{padding:45px}}
+    @media(prefers-reduced-motion:reduce){.auth-shell{animation:none}}
+
+  </style>
+</head>
+<body class="auth-locked">
+  <section id="authScreen" class="auth-screen" aria-label="Entrar no Lume Fit">
+    <div class="auth-shell">
+      <div class="auth-logo"><img src="lume-symbol.png" alt=""><span>Lume <em>Fit</em></span></div>
+      <div class="auth-kicker">DISCIPLINA EM DADOS</div>
+      <div class="auth-card">
+        <div class="auth-tabs"><button id="authTabLogin" type="button" class="active" onclick="LumeAuth.showMode('login')">Entrar</button><button id="authTabSignup" type="button" onclick="LumeAuth.showMode('signup')">Criar conta</button></div>
+        <h1 id="authTitle">Bem-vindo de volta.</h1>
+        <p class="auth-desc" id="authDescription">Seus treinos, sua evolução. Tudo no mesmo lugar.</p>
+        <div class="auth-setup" id="authSetup" hidden>O banco de dados ainda não está configurado. Preencha <code>config.js</code> com a URL e a chave pública do seu projeto Supabase para ativar contas reais. Você pode experimentar a interface no modo local abaixo.</div>
+        <form id="authForm" onsubmit="LumeAuth.submit(event)">
+          <label id="authNameWrap" class="auth-field" hidden><span>Como podemos chamar você?</span><input id="authName" name="name" autocomplete="name" maxlength="60" placeholder="Seu nome"></label>
+          <label id="authEmailWrap" class="auth-field"><span>E-mail</span><input id="authEmail" name="email" type="email" autocomplete="email" required placeholder="voce@exemplo.com"></label>
+          <label id="authPasswordWrap" class="auth-field"><span>Senha</span><input id="authPassword" name="password" type="password" autocomplete="current-password" minlength="6" required placeholder="No mínimo 6 caracteres"></label>
+          <button id="authSubmit" type="submit" class="auth-submit">Entrar</button>
+        </form>
+        <button id="authForgot" class="auth-secondary" type="button" onclick="LumeAuth.resetPassword()">Esqueci minha senha</button>
+        <div id="authMessage" class="auth-msg" role="status"></div>
+        <button id="authDemo" class="auth-secondary" type="button" onclick="LumeAuth.startDemo()">Testar sem conta (somente neste dispositivo)</button>
+      </div>
+      <p class="auth-note">Sua conta é individual. Quando conectado, os dados ficam vinculados ao seu usuário no banco de dados.</p>
+    </div>
+  </section>
+  <div id="toast" class="toast"></div>
+  <div class="app">
+    
+    <header class="header">
+      <div>
+        <div class="eyebrow">Seu diário de treino</div>
+        <div class="brandline">
+          <img src="lume-symbol.png" class="brandmark" alt="Símbolo da Lume Fit">
+          <div class="brandname">Lume <span>Fit</span></div>
+        </div>
+      </div>
+      <div class="offline-pill">Lume Cloud</div>
+    </header>
+
+    <main>
+      <section id="screen-home" class="screen active"></section>
+      <section id="screen-workouts" class="screen"></section>
+      <section id="screen-register" class="screen"></section>
+      <section id="screen-history" class="screen"></section>
+      <section id="screen-frequency" class="screen"></section>
+      <section id="screen-settings" class="screen"></section>
+      <section id="screen-knowledge" class="screen"></section>
+    </main>
+  </div>
+
+  <nav class="nav" id="bottomNav">
+    <button data-tab="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5.5v-7h-5v7H4a1 1 0 0 1-1-1z"/></svg><span>Início</span></button>
+    <button data-tab="workouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h3v6H4zM17 9h3v6h-3zM7 10.5h10M7 13.5h10M2 7h2v10H2zM20 7h2v10h-2z"/></svg><span>Treinos</span></button>
+    <button data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h12v14H4z"/><path d="M16 9h4v10h-12v-4"/><path d="M7 10h6M7 14h6"/></svg><span>Histórico</span></button>
+    <button data-tab="frequency"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v15H3z"/><path d="M3 10h18M7 3v6M17 3v6"/></svg><span>Frequência</span></button>
+    <button data-tab="knowledge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5.5C7 4 9 4 12 6c3-2 5-2 8-.5v14c-3-1.5-5-1.5-8 .5-3-2-5-2-8-.5zM12 6v14"/></svg><span>Saber</span></button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 15.5 1.1-.64 1.27.34 1.08 1.26 1.84-1.06-.37-1.62.74-1.13 1.56-.41v-2.12l-1.56-.4-.74-1.14.37-1.61-1.84-1.06-1.08 1.26-1.27.34L12 3.5l-1.1.64-1.27-.34L8.55 2.54 6.7 3.6l.37 1.61-.74 1.14-1.56.4v2.12l1.56.41.74 1.13-.37 1.62 1.84 1.06 1.08-1.26 1.27-.34z"/><circle cx="12" cy="10.75" r="2.6"/></svg><span>Ajustes</span></button>
+  </nav>
+
+  <div id="dialogOverlay" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
+    <div class="sheet-panel dialog-panel"><div class="sheet-handle"></div><div class="dialog-icon">✦</div><h3 id="dialogTitle"></h3><p id="dialogMessage"></p><div class="row-actions"><button class="ghost-btn" id="dialogCancel">Cancelar</button><button class="primary-btn" id="dialogConfirm">Confirmar</button></div></div>
+  </div>
+  <div id="sheet" class="sheet" aria-hidden="true">
+    <div class="sheet-panel">
+      <div class="sheet-handle"></div>
+      <div id="sheetContent"></div>
+    </div>
+  </div>
+
+  <script src="config.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js" defer></script>
+  <script src="app.js" defer></script>
+  <script src="auth.js" defer></script>
+</body>
+</html>
