@@ -238,6 +238,16 @@ function render(){
   renderKnowledge();
 }
 
+function weeklyActivityCard(){
+ const now=new Date(); const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
+ monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
+ const key=d=>`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+ const hits=new Set(state.db.sessions.map(s=>key(new Date(s.date))));
+ const days=Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return d;});
+ const count=days.filter(d=>hits.has(key(d))).length;
+ return `<section class="week-card" aria-label="Atividade desta semana"><div class="week-heading"><h3>Seu ritmo nesta semana</h3><small>${count} ${count===1?'dia ativo':'dias ativos'}</small></div><div class="week-days">${days.map((d,i)=>`<div class="week-day ${hits.has(key(d))?'hit':''} ${key(d)===key(now)?'today':''}" aria-label="${['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i]}, dia ${d.getDate()}${hits.has(key(d))?', treino registrado':''}${key(d)===key(now)?', hoje':''}"><span>${['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]}</span><b>${d.getDate()}</b></div>`).join('')}</div><p class="week-note">${count?'Cada registro conta a sua história. Confira sua evolução no Histórico.':'Sua semana começa com um registro. Organize suas rotinas e treine no seu ritmo.'} Dias de descanso também fazem parte do planejamento.</p></section>`;
+}
+
 function renderHome(){
   const root = $('#screen-home');
   const profile = state.db.profile;
@@ -273,6 +283,7 @@ function renderHome(){
         <div class="stat-label">Volume total</div>
       </div>
     </div>
+    ${weeklyActivityCard()}
     <div class="section-title"><h3>Últimos treinos</h3><button class="link" onclick="switchTab('history')">Ver todos</button></div>
     <div class="mini-list">
       ${recent.length ? recent.map(s => `
@@ -283,7 +294,7 @@ function renderHome(){
             <small>${shortDate(s.date)} • ${(s.entries||[]).length} exercícios</small>
           </div>
           <div class="push">›</div>
-        </div>`).join('') : `<div class="empty">Ainda não há treinos registrados.</div>`}
+        </div>`).join('') : `<div class="empty">Sua evolução começa aqui.<br>Conclua seu primeiro treino para acompanhar os resultados.</div>`}
     </div>`;
 }
 

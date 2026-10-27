@@ -1,8 +1,10 @@
-const CACHE = 'lume-fit-static-v9-delete';
+const CACHE = 'lume-fit-static-v10-experience';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
+  './experience.css',
+  './experience.js',
   './auth.js',
   './config.js',
   './manifest.webmanifest',
@@ -17,7 +19,7 @@ self.addEventListener('install', event => {
 });
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
+    caches.keys().then(keys => Promise.all(keys.filter(k => k.startsWith('lume-fit-static-') && k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
   );
 });
 self.addEventListener('fetch', event => {

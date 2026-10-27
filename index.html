@@ -312,8 +312,10 @@
     @media(prefers-reduced-motion:reduce){.auth-shell{animation:none}}
 
   </style>
+  <link rel="stylesheet" href="experience.css">
 </head>
 <body class="auth-locked">
+  <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
   <section id="authScreen" class="auth-screen" aria-label="Entrar no Lume Fit">
     <div class="auth-shell">
       <div class="auth-logo"><img src="lume-symbol.png" alt=""><span>Lume <em>Fit</em></span></div>
@@ -333,10 +335,10 @@
         <div id="authMessage" class="auth-msg" role="status"></div>
         <button id="authDemo" class="auth-secondary" type="button" onclick="LumeAuth.startDemo()">Testar sem conta (somente neste dispositivo)</button>
       </div>
-      <p class="auth-note">Sua conta é individual. Quando conectado, os dados ficam vinculados ao seu usuário no banco de dados.</p>
+      <div class="app-footer auth-links"><a href="#privacy" data-policy="privacy">Privacidade</a><a href="#storage" data-policy="storage">Armazenamento</a><a href="#terms" data-policy="terms">Sobre o uso</a></div><p class="auth-note">Sua conta é individual. Quando conectado, os dados ficam vinculados ao seu usuário no banco de dados.</p>
     </div>
   </section>
-  <div id="toast" class="toast"></div>
+  <div id="toast" role="status" aria-live="polite" class="toast"></div>
   <div class="app">
     
     <header class="header">
@@ -350,7 +352,7 @@
       <div class="offline-pill">Lume Cloud</div>
     </header>
 
-    <main>
+    <main id="mainContent" tabindex="-1">
       <section id="screen-home" class="screen active"></section>
       <section id="screen-workouts" class="screen"></section>
       <section id="screen-register" class="screen"></section>
@@ -358,10 +360,10 @@
       <section id="screen-frequency" class="screen"></section>
       <section id="screen-settings" class="screen"></section>
       <section id="screen-knowledge" class="screen"></section>
-    </main>
+    </main><footer class="app-footer"><span>LUME FIT · NO SEU RITMO</span><a href="#privacy" data-policy="privacy">Privacidade</a><a href="#storage" data-policy="storage">Armazenamento</a><a href="#terms" data-policy="terms">Sobre o uso</a></footer>
   </div>
 
-  <nav class="nav" id="bottomNav">
+  <nav aria-label="Navegação principal" class="nav" id="bottomNav">
     <button data-tab="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5.5v-7h-5v7H4a1 1 0 0 1-1-1z"/></svg><span>Início</span></button>
     <button data-tab="workouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h3v6H4zM17 9h3v6h-3zM7 10.5h10M7 13.5h10M2 7h2v10H2zM20 7h2v10h-2z"/></svg><span>Treinos</span></button>
     <button data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h12v14H4z"/><path d="M16 9h4v10h-12v-4"/><path d="M7 10h6M7 14h6"/></svg><span>Histórico</span></button>
@@ -373,13 +375,15 @@
   <div id="dialogOverlay" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
     <div class="sheet-panel dialog-panel"><div class="sheet-handle"></div><div class="dialog-icon">✦</div><h3 id="dialogTitle"></h3><p id="dialogMessage"></p><div class="row-actions"><button class="ghost-btn" id="dialogCancel">Cancelar</button><button class="primary-btn" id="dialogConfirm">Confirmar</button></div></div>
   </div>
-  <div id="sheet" class="sheet" aria-hidden="true">
+  <div id="sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Editar informações">
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
       <div id="sheetContent"></div>
     </div>
   </div>
 
+  <dialog id="legalDialog" class="legal-dialog" aria-labelledby="legalTitle"><button class="ghost-btn" aria-label="Fechar informações">Fechar</button><h2 id="legalTitle"></h2><div id="legalBody"></div></dialog>
+  <script src="experience.js" defer></script>
   <script src="config.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js" defer></script>
   <script src="app.js" defer></script>
