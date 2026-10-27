@@ -1,10 +1,11 @@
-const CACHE = 'lume-fit-static-v11-knowledge';
+const CACHE = 'lume-fit-static-v12-routines';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
   './experience.css',
   './experience.js',
+  './routines.js',
   './auth.js',
   './config.js',
   './manifest.webmanifest',

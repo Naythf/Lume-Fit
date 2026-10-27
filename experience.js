@@ -28,9 +28,10 @@
  document.querySelectorAll('.sheet').forEach(sheet=>{
   new MutationObserver(()=>{
    if(sheet.classList.contains('active')){
+    enhance();
     returnFocus=document.activeElement;
     document.querySelector('.app').inert=true; document.getElementById('bottomNav').inert=true;
-    requestAnimationFrame(()=>sheet.querySelector('input,select,button,[tabindex]')?.focus());
+    requestAnimationFrame(()=>[...sheet.querySelectorAll('input,select,button,[tabindex]')].find(el=>el.type!=='hidden'&&!el.disabled&&el.getClientRects().length)?.focus());
    }else if(!document.querySelector('.sheet.active')){
     document.querySelector('.app').inert=false;document.getElementById('bottomNav').inert=false;
     if(returnFocus?.isConnected)returnFocus.focus();
