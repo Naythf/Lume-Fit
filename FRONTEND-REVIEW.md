@@ -24,3 +24,12 @@ Integrar o PR na main para publicação pelo fluxo existente do GitHub Pages. Ca
 - Animações de entrada, ilustração discreta e detalhes expansíveis; redução de movimento respeitada. Sem novas imagens de terceiros ou bibliotecas.
 - Testes adicionais: 70 kg / 175 cm / 25 anos; hidratação 2,1–2,45 L, IMC 22,9, energia 2.337–2.594 kcal no intervalo das equações; diferença de 5 kg; bloqueio de entrada com 17 anos. Dados apenas em testes, não nas contas.
 - Conferido no navegador desktop: campos, resultado, estado sem objetivo e espaçamento de Ajustes. Validação móvel em aparelho continua pendente.
+
+## Rotinas e ícones — issue #4
+- Branch dedicada `feat/routines-icons`, baseada na atualização visual do PR #2.
+- Rotinas com resumo, dia, edição e início explícito. Estado vazio direciona à criação; rotina sem exercícios não inicia treino vazio.
+- Criação/edição com seletor de dia, galeria de 20 ícones, sugestão pelo nome e imagem própria para rotina ou exercício. Exercícios existentes podem ter nome, séries, repetições e ícone editados sem mudar seu ID nem histórico.
+- Imagens JPG/PNG/WebP de até 5 MB: decodificação local, redimensionamento a 128×128, codificação JPEG e apresentação em tons de cinza. Sem SVG/URLs externas. Campos iconImage opcionais são preservados ao normalizar backups e sincronizar o JSON existente. Schema inalterado.
+- Testes: sugestões em português, rejeição de formatos de imagem inseguros, restauração de imagens e ícones antigos, histórico preservado e edição com ID estável. No navegador desktop: criar rotina com dia, adicionar exercício automático, editar e enviar PNG, salvar, recarregar e restaurar ícone próprio. Imagem de 128×128 carregada durante treino confirmada pelo DOM.
+- Não incluídos dados fictícios na versão publicada: os exemplos foram criados somente no navegador de QA. Ainda necessário testar em aparelho móvel e com duas contas Supabase reais.
+- Cache PWA v12 inclui routines.js. Prévia mantém Supabase desabilitado para testar sem atingir dados reais.
