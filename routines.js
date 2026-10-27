@@ -4,26 +4,42 @@ const TRAINING_ICONS = [
 ];
 function suggestTrainingIcon(name){
  const n=String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const rules=[[/leg\s*press/,'legpress'],[/supino|bench|peitoral|peito|crucifixo/,'bench'],[/remada|row/,'row'],[/puxada|barra fixa|costas|pulldown/,'pull'],[/triceps|frances|testa/,'triceps'],[/rosca|biceps/,'curl'],[/agacha|squat|afundo|passada/,'squat'],[/terra|stiff|deadlift/,'deadlift'],[/panturr|gemeos/,'calf'],[/prancha|plank/,'plank'],[/abdomin|core/,'core'],[/corrida|esteira|caminhada/,'run'],[/bicic|bike|ciclismo/,'bike'],[/along|mobilidade|stretch/,'stretch'],[/kettlebell/,'kettlebell'],[/desenvolvimento|ombro/,'press'],[/elevacao lateral|elevacao frontal/,'raise'],[/polia|crossover/,'cable'],[/perna|extensora|flexora|gluteo/,'legs']];
+ const rules=[[/leg\s*press/,'legpress'],[/supino|bench|peitoral|peito|crucifixo/,'bench'],[/remada|row/,'row'],[/puxada|barra fixa|costas|pulldown/,'pull'],[/triceps|frances|testa/,'triceps'],[/rosca|biceps/,'curl'],[/agacha|squat|afundo|passada/,'squat'],[/terra|stiff|deadlift/,'deadlift'],[/panturr|gemeos/,'calf'],[/prancha|plank/,'plank'],[/abdomin|core/,'core'],[/corrida|esteira|caminhada/,'run'],[/bicic|bike|ciclismo/,'bike'],[/along|mobilidade|stretch/,'stretch'],[/kettlebell/,'kettlebell'],[/elevacao lateral|elevacao frontal/,'raise'],[/desenvolvimento|ombro/,'press'],[/polia|crossover/,'cable'],[/perna|extensora|flexora|gluteo/,'legs']];
  return rules.find(([rx])=>rx.test(n))?.[1]||'dumbbell';
 }
 function safeIconImage(value){return typeof value==='string'&&value.length<=65000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)?value:'';}
 function trainingGraphic(kind){
+ // One silhouette language: solid heads, connected limbs, lighter equipment.
+ const head=(x,y)=>`<circle cx="${x}" cy="${y}" r="6" fill="currentColor" stroke="none"/>`;
+ const body=d=>`<path d="${d}" fill="none" stroke="currentColor" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>`;
+ const gear=d=>`<path d="${d}" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;
+ const dumbbell=(x,y)=>`<g transform="translate(${x} ${y})" stroke="currentColor" stroke-width="3" fill="none"><path d="M-10 0h20M-7-7V7M7-7V7M-11-4v8M11-4v8"/></g>`;
+ const bar=(y)=>gear(`M35 ${y}h90M42 ${y-9}v18M48 ${y-12}v24M112 ${y-12}v24M118 ${y-9}v18`);
+ const standing=head(80,16)+body('M80 28v26M80 54 68 78M80 54l12 24');
  const shapes={
- row:'<path d="M18 74h46l25-9 31 13M30 30v44M30 42h25l20 15 25-13M100 44l26-8M21 22h18"/><circle cx="62" cy="28" r="8"/>',
- triceps:'<circle cx="80" cy="20" r="8"/><path d="M80 29v35M80 40l-20 5-5-21M80 40l20 5 5-21M46 21h18M96 21h18M80 64 63 83M80 64l17 19"/>',
- squat:'<circle cx="79" cy="18" r="8"/><path d="M79 26 68 47l26 14-26 21M68 47 50 59l-8 23M42 82h18M68 82h16M38 33h83M44 23v20M116 23v20M68 34l-13 5M85 33l15 7"/>',
- legpress:'<path d="M25 20v55h44M38 58l26-9 18 12 29-31M64 49l15-14 24 8M99 21l24 24M18 82h114M40 76v6M116 74l23-55"/><circle cx="38" cy="43" r="8"/>',
- deadlift:'<circle cx="60" cy="20" r="8"/><path d="m62 28 28 20-9 18 22 17M90 48l18 18-5 17M69 32l-8 33M86 43l-7 22M35 68h87M42 58v20M114 58v20M76 83h13M101 83h15"/>',
- calf:'<circle cx="80" cy="17" r="8"/><path d="M80 25v30M80 36l-22 9M80 36l22 9M80 55l-11 23 10-3M80 55l13 23 10-3M58 84h50M47 84v-8h14"/>',
- core:'<circle cx="46" cy="32" r="8"/><path d="m52 39 30 21 22-25 28 27M62 47l-17 7M74 57l-18 7M20 75h120M18 81h124"/>',
- plank:'<circle cx="30" cy="41" r="8"/><path d="m39 45 58 7 30 18M45 46l-10 22H19M97 52l15 18h20M17 78h124"/>',
- run:'<circle cx="88" cy="18" r="8"/><path d="m84 28-16 23 21 12-15 20M68 51 47 67l-22-2M76 38l-24 1-13-12M83 33l17 19 22-4"/>',
- bike:'<circle cx="40" cy="65" r="20"/><circle cx="121" cy="65" r="20"/><path d="m40 65 23-32 22 32H40m23-32h43l-21 32m36 0-15-42h-11M55 28h18"/>',
- stretch:'<circle cx="78" cy="18" r="8"/><path d="m78 27-6 27-31 27M72 54l35 27M73 38 39 24M74 38l32-20M35 19l7 11M105 14l5 10M34 82h14M104 82h14"/>',
- kettlebell:'<path d="M64 35c-14-28 47-28 32 0M65 34C45 40 43 79 67 82h26c24-3 22-42 2-48Z"/>'
+  dumbbell:bar(45),
+  bench:head(52,47)+body('M65 51h31M96 51l13 22h15M73 50V28')+gear('M40 60h63M47 60v18M94 60v18')+bar(21),
+  press:head(80,27)+body('M80 39v24M80 42 59 37V20M80 42l21-5V20M80 63 65 78M80 63l15 15')+gear('M66 66h28M80 66v15')+dumbbell(59,14)+dumbbell(101,14),
+  raise:standing+body('M80 33H48M80 33h32')+dumbbell(38,33)+dumbbell(122,33),
+  pull:head(80,34)+body('M80 46v20M80 48 59 38V24M80 48l21-10V24M80 66H60l-4 13M80 66h20l4 13')+gear('M32 79V10h96v69M80 10v11M55 24h50M65 70h30'),
+  row:head(69,28)+body('M70 40 74 57H57l-5 18M70 43l24 5 20-2')+gear('M43 65h37M49 65v14M83 79h48M126 15v64M126 20h-12v19M114 46h12M32 79h32'),
+  curl:standing+body('M80 34 59 49 48 36M80 34l21 15 11-13')+dumbbell(45,29)+dumbbell(115,29),
+  triceps:head(71,23)+body('M72 35v22M72 39l20 8 7 13M72 57 62 79M72 57l15 22')+gear('M118 79V11H99v12M99 23v28M91 61l8-10 9 10M108 70h19M108 75h19'),
+  cable:gear('M33 79V11h94v68M42 20h14v42H42zM104 20h14v42h-14zM49 20v-4h62v4M61 16l9 29M99 16l-9 29M64 48l7-6 6 7M83 49l6-7 7 6M24 79h40M96 79h40'),
+  squat:head(77,20)+body('M77 32 66 48 91 61 79 79M66 48 47 60 52 79M77 33H61M77 33h20')+bar(30)+gear('M46 81h13M73 81h15'),
+  legpress:head(49,38)+body('M53 50 69 66 87 54 105 33M69 66l27-2 16-26')+gear('M35 39l18 33h30M48 75h36M48 75v7M79 75v7M91 19l31 27M97 81l35-63M108 81l35-63M31 83h111'),
+  deadlift:head(65,22)+body('M69 33 92 48 78 62 88 79M92 48l14 14-5 17M74 36 65 65M86 44l-6 21')+bar(69),
+  legs:gear('M53 15h54M56 15v22l14 17-4 24M104 15v22L90 54l4 24M80 26v18M70 54l10-10 10 10M59 80h13M88 80h13'),
+  calf:gear('M68 12v31l-8 22 3 11h17l23-12M80 12v33l-7 17 7 3M61 80h27v-9h24M87 80h25')+gear('M101 33v17M96 38l5-5 5 5'),
+  core:head(55,34)+body('M62 44 83 62l20-23 20 23M69 50 61 25M61 25l-7 5')+gear('M31 78h103M35 82h95'),
+  plank:head(41,40)+body('M53 46 100 52l26 22M60 47 51 69H36')+gear('M29 80h105'),
+  run:head(91,15)+body('M85 27 72 48 93 61 79 79M72 48 55 65H34M81 32 62 30 52 42M83 30l17 15h18'),
+  bike:gear('M48 77h68M61 77l18-24M79 53l23 24M79 53l-5-18M64 35h21M94 23h19M102 23 90 54M87 59l-15 8M87 59l14-8')+'<circle cx="87" cy="59" r="15" fill="none" stroke="currentColor" stroke-width="3"/>',
+  stretch:head(78,26)+body('M78 38v21M78 59 60 79M78 59l28 20M78 40 59 25l17-13M78 40l19 4 11-13'),
+  kettlebell:gear('M65 35V24c0-14 30-14 30 0v11')+'<path d="M65 35h30c18 11 21 42 2 45H63c-19-3-16-34 2-45Z" fill="currentColor" stroke="none"/>'
  };
- return shapes[kind]?`<svg viewBox="0 0 160 90" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${shapes[kind]}</svg>`:machineArt(kind);
+ const drawing=Object.prototype.hasOwnProperty.call(shapes,kind)?shapes[kind]:shapes.dumbbell;
+ return `<svg viewBox="0 0 160 90" xmlns="http://www.w3.org/2000/svg" fill="none" aria-hidden="true">${drawing}</svg>`;
 }
 function trainingVisual(item){const image=safeIconImage(item?.iconImage);return image?`<img class="custom-training-icon" src="${image}" alt="" width="128" height="128" loading="lazy" decoding="async">`:trainingGraphic(item?.icon||suggestTrainingIcon(item?.name));}
 let trainingDraft={icon:'auto',image:'',busy:false};
