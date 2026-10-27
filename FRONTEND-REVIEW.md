@@ -17,3 +17,10 @@ Referência Motion Principles solicitada retornou 404. Não foi instalada.
 
 ## Publicação
 Integrar o PR na main para publicação pelo fluxo existente do GitHub Pages. Cache atualizado para v10; abrir novamente o PWA conectado para obter os assets novos. Não há migração de banco.
+
+## Ajustes da issue #3
+- Espaçamento explícito entre conta, sincronização e menu, com maior área interna nas linhas.
+- Saber: introdução ilustrada, prévia das quatro métricas, cartões SVG, hidratação em litros e mL, escala numérica de IMC e comparação entre peso atual e desejado. Ícones decorativos não simulam dados registrados. Mantidas fórmulas e validações.
+- Animações de entrada, ilustração discreta e detalhes expansíveis; redução de movimento respeitada. Sem novas imagens de terceiros ou bibliotecas.
+- Testes adicionais: 70 kg / 175 cm / 25 anos; hidratação 2,1–2,45 L, IMC 22,9, energia 2.337–2.594 kcal no intervalo das equações; diferença de 5 kg; bloqueio de entrada com 17 anos. Dados apenas em testes, não nas contas.
+- Conferido no navegador desktop: campos, resultado, estado sem objetivo e espaçamento de Ajustes. Validação móvel em aparelho continua pendente.

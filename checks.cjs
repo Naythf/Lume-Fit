@@ -19,3 +19,11 @@ assert.ok(html.includes('id="mainContent"'));assert.ok(html.includes('<dialog'))
 const sw=fs.readFileSync('sw.js','utf8');
 assert.ok(sw.includes('experience.css'));assert.ok(sw.includes('experience.js'));
 console.log('PASS: syntax, weekly aggregation (empty/duplicates/outside week), HTML and PWA assets');
+const knowledge=source.slice(source.indexOf('function metricIllustration('),source.indexOf('window.switchTab ='));
+const fields={kWeight:{value:'70'},kHeight:{value:'175'},kAge:{value:'25'},kSex:{value:'unspecified'},kActivity:{value:'moderate'},kGoal:{value:'maintain'},kTarget:{value:''},metricResults:{innerHTML:'',scrollIntoView(){}}};
+const sandbox={state:{db:{profile:{}}},$:(selector)=>fields[selector.slice(1)],knowledgeState:{},toast:()=>{},window:{matchMedia:()=>({matches:true})}};
+vm.createContext(sandbox);vm.runInContext(knowledge,sandbox);vm.runInContext('calculateMetrics()',sandbox);
+assert.match(fields.metricResults.innerHTML,/2,1–2,45/);assert.match(fields.metricResults.innerHTML,/22,9/);assert.match(fields.metricResults.innerHTML,/2\.337–2\.594/);assert.match(fields.metricResults.innerHTML,/Não é uma prescrição/);
+fields.kGoal.value='gain';fields.kTarget.value='75';vm.runInContext('calculateMetrics()',sandbox);assert.match(fields.metricResults.innerHTML,/5 <em>kg/);assert.match(fields.metricResults.innerHTML,/não progresso já realizado/);
+fields.kAge.value='17';const before=fields.metricResults.innerHTML;vm.runInContext('calculateMetrics()',sandbox);assert.equal(fields.metricResults.innerHTML,before);
+console.log('PASS: visual metrics preserve hydration/energy/BMI, target difference and adult validation');

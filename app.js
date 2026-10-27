@@ -914,11 +914,22 @@ async function receivePhoto(input){
 }
 
 const knowledgeState={sex:'unspecified',activity:'moderate',goal:'maintain',target:''};
+function metricIllustration(kind){
+ const paths={water:'<path d="M48 12C39 27 27 38 27 51a21 21 0 0 0 42 0C69 38 57 27 48 12Z"/><path d="M35 53c0 8 5 13 12 13"/>',energy:'<path d="m53 13-25 39h19l-4 29 25-40H49Z"/>',body:'<path d="M24 69a31 31 0 1 1 48 0M48 48l16-17"/><circle cx="48" cy="48" r="4"/><path d="M25 78h46"/>',goal:'<circle cx="48" cy="48" r="29"/><circle cx="48" cy="48" r="16"/><path d="m48 48 29-29m-1 1v13m0-13H63"/>'};
+ return `<svg class="metric-illustration metric-${kind}" viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind]||paths.goal}</svg>`;
+}
+function knowledgeIntro(){
+ return `<section class="knowledge-intro"><div><div class="eyebrow">SABER · ENTENDER PARA EVOLUIR</div><h3>Conheça os números.<br>Respeite seu ritmo.</h3><p>Transforme suas informações em referências fáceis de entender. Sem metas automáticas, sem comparações.</p></div><div class="knowledge-art" aria-hidden="true">${metricIllustration('body')}<span>SEU CORPO, SEU CONTEXTO</span></div></section>`;
+}
+function knowledgeEmpty(){
+ return `<section class="metrics-preview" aria-label="Métricas disponíveis"><div class="section-title"><h3>Seu painel começa aqui</h3><span class="hint">Preencha e calcule</span></div><div class="metric-grid">${[['water','Hidratação','Referência de líquidos por dia'],['energy','Energia','Estimativa de manutenção'],['body','IMC','Um indicador, com limites'],['goal','Seu objetivo','Diferença até o peso informado']].map(([kind,title,note])=>`<div class="metric-preview">${metricIllustration(kind)}<div><strong>${title}</strong><p>${note}</p></div></div>`).join('')}</div></section>`;
+}
 function renderKnowledge(){
  const root=$('#screen-knowledge'),p=state.db.profile;
  root.innerHTML=`
-  <div class="page-head"><div><h2>Conhecimento</h2><p>Entenda suas métricas e planeje com consciência.</p></div></div>
-  <div class="card"><h3 style="margin-top:0">Calculadora pessoal</h3>
+  <div class="page-head"><div><h2>Saber</h2><p>Referências para compreender o seu corpo.</p></div></div>
+  ${knowledgeIntro()}
+  <div class="card knowledge-calculator"><div class="calculator-heading"><div><span class="step-label">01 / SEUS DADOS</span><h3>Vamos entender seu momento?</h3><p>Preencha abaixo para montar seu painel. Estes campos não alteram o perfil.</p></div></div>
    <div class="knowledge-form">
     <div class="field"><label>Peso (kg)</label><input id="kWeight" type="number" min="20" max="400" step=".1" placeholder="Ex.: 65" value="${p.weight||''}"></div>
     <div class="field"><label>Altura (cm)</label><input id="kHeight" type="number" min="100" max="250" placeholder="Ex.: 170" value="${parseHeight(p.height)||''}"></div>
@@ -931,12 +942,13 @@ function renderKnowledge(){
    <button class="primary-btn" style="margin-top:20px" onclick="calculateMetrics()">Calcular métricas</button>
    <p class="hint">As estimativas dependem de idade, altura, peso e nível de atividade. Não representam uma prescrição nutricional.</p>
   </div>
-  <div id="metricResults" aria-live="polite"></div>
-  <div class="card"><h3 style="margin-top:0">O que estes números significam?</h3>
-   <p class="hint"><b style="color:white">Hidratação:</b> referência geral de 30–35 mL de líquidos por kg por dia. Calor, exercícios, alimentação e condições de saúde podem alterar essa necessidade.</p>
-   <p class="hint"><b style="color:white">Calorias:</b> a manutenção é uma estimativa baseada na equação Mifflin-St Jeor para adultos e em um fator de atividade. Seu consumo real pode ser diferente.</p>
-   <p class="hint"><b style="color:white">Meta corporal:</b> mudanças sustentáveis variam de pessoa para pessoa; as projeções são apenas ilustrativas. Caso tenha menos de 18 anos, gestação ou condição clínica, procure orientação individualizada.</p>
-  </div>`;
+  <div id="metricResults" aria-live="polite" aria-atomic="true">${knowledgeEmpty()}</div>
+  <section class="knowledge-guide"><span class="step-label">LEIA ALÉM DOS NÚMEROS</span><h3>O contexto também importa.</h3>
+   <details><summary>${metricIllustration('water')}<span>Hidratação não é uma meta fixa</span></summary><p>Referência geral de 30–35 mL de líquidos por kg por dia. Calor, exercícios, alimentação e condições de saúde podem alterar essa necessidade. O desenho não representa consumo registrado.</p></details>
+   <details><summary>${metricIllustration('energy')}<span>Calorias são uma estimativa</span></summary><p>A manutenção usa a equação Mifflin-St Jeor para adultos e um fator de atividade. Não indica quanto você deve comer. Seu consumo real pode ser diferente.</p></details>
+   <details><summary>${metricIllustration('body')}<span>IMC não conta a história toda</span></summary><p>Relaciona peso e altura, mas não distingue massa muscular de gordura. Não é diagnóstico nem medida direta de desempenho.</p></details>
+   <details><summary>${metricIllustration('goal')}<span>Sua evolução tem seu próprio ritmo</span></summary><p>Diferença de peso e projeções são apenas ilustrativas, não uma previsão individual. Caso tenha menos de 18 anos, gestação ou condição clínica, procure orientação individualizada.</p></details>
+  </section>`;
 }
 function parseHeight(h){const n=Number(String(h||'').replace(',','.').replace(/[^0-9.]/g,''));if(!n)return '';return n<3?Math.round(n*100):Math.round(n)}
 function setGoal(goal){knowledgeState.goal=goal}
@@ -957,15 +969,16 @@ function calculateMetrics(){
  const weeks=targetValid ? `${Math.ceil(diff/(weight*.005))}–${Math.ceil(diff/(weight*.0025))} semanas` : '—';
  const energy=cal==null?`${fem.toLocaleString('pt-BR')}–${male.toLocaleString('pt-BR')}`:cal.toLocaleString('pt-BR');
  const extra=goal==='maintain'?'Manutenção':goal==='gain'?'Ganho de peso':'Perda de peso';
- $('#metricResults').innerHTML=`<div class="card"><div class="section-title"><h3>Seu painel de métricas</h3><span class="hint">Estimativas</span></div>
+ const marker=Math.max(0,Math.min(100,(Number(imc)-10)/35*100));
+ $('#metricResults').innerHTML=`<section class="metrics-dashboard"><div class="section-title"><div><span class="step-label">02 / SUAS REFERÊNCIAS</span><h3>Um olhar sobre você.</h3></div><span class="estimate-tag">Estimativas</span></div>
  <div class="metric-grid">
-  <div class="metric-tile"><span>Hidratação de referência</span><b>${hydration[0]}–${hydration[1]}</b><small>mL / dia</small></div>
-  <div class="metric-tile"><span>Calorias de manutenção</span><b>${energy}</b><small>kcal / dia</small></div>
-  <div class="metric-tile"><span>Índice de massa corporal</span><b>${imc}</b><small>IMC é um indicador limitado</small></div>
-  <div class="metric-tile"><span>Diferença até a meta</span><b>${targetValid?diff.toFixed(1)+' kg':'—'}</b><small>${extra}</small></div>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Hidratação</span>${metricIllustration('water')}</div><b>${(hydration[0]/1000).toLocaleString('pt-BR')}–${(hydration[1]/1000).toLocaleString('pt-BR')} <em>L</em></b><small>Referência diária de líquidos</small><div class="metric-divider"></div><p>${hydration[0].toLocaleString('pt-BR')}–${hydration[1].toLocaleString('pt-BR')} mL por dia. Ajustes dependem do seu contexto.</p></article>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Energia de manutenção</span>${metricIllustration('energy')}</div><b>${energy}</b><small>kcal / dia · estimativa</small><div class="metric-divider"></div><p>${sex==='unspecified'?'Intervalo entre as duas referências da equação.':'Referência da equação selecionada.'} Não é uma prescrição alimentar.</p></article>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Índice de massa corporal</span>${metricIllustration('body')}</div><b>${Number(imc).toLocaleString('pt-BR')}</b><small>Relação entre peso e altura</small><div class="imc-scale" aria-hidden="true"><i style="--marker:${marker}%"></i></div><div class="scale-labels" aria-hidden="true"><span>10</span><span>27,5</span><span>45</span></div><p>Escala visual de 10 a 45, com extremos limitados. Não distingue músculo de gordura.</p></article>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Diferença até o objetivo</span>${metricIllustration('goal')}</div><b>${targetValid?diff.toLocaleString('pt-BR',{maximumFractionDigits:1})+' <em>kg</em>':'—'}</b><small>${extra}</small>${targetValid?`<div class="weight-route"><span>Agora<strong>${weight.toLocaleString('pt-BR')} kg</strong></span><i aria-hidden="true">→</i><span>Objetivo<strong>${target.toLocaleString('pt-BR')} kg</strong></span></div><p>Distância ao valor informado, não progresso já realizado.</p>`:'<div class="metric-divider"></div><p>Escolha ganhar ou perder peso e informe um peso desejado coerente para visualizar a diferença.</p>'}</article>
  </div>
- <p class="hint">${targetValid?'Projeção meramente matemática a uma taxa de 0,25–0,5% do peso por semana: '+weeks+'. Não é previsão individual.':'Informe um peso desejado coerente com o objetivo para ver uma projeção ilustrativa.'}</p>
- <p class="hint">Não definimos automaticamente um déficit ou superávit calórico: ajustes devem levar em conta treino, alimentação, saúde e acompanhamento profissional.</p></div>`;
+ <aside class="metric-context"><strong>Referências, não regras.</strong><p>${targetValid?'Projeção meramente matemática a uma taxa de 0,25–0,5% do peso por semana: '+weeks+'. Não é previsão individual.':'Os resultados usam os valores informados nesta calculadora.'}</p><p>Não definimos automaticamente déficit ou superávit calórico. Treino, alimentação e saúde precisam ser considerados com acompanhamento profissional.</p></aside></section>`;
+ $('#metricResults').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
 }
 window.switchTab = switchTab;
 window.openRoutine = openRoutine;

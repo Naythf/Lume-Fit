@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v10-experience';
+const CACHE = 'lume-fit-static-v11-knowledge';
 const ASSETS = [
   './',
   './index.html',
