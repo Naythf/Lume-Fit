@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v12-routines';
+const CACHE = 'lume-fit-static-v13-coherent-icons';
 const ASSETS = [
   './',
   './index.html',
