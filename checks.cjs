@@ -2,7 +2,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
 const context={state:{db:{sessions:[]}}};vm.createContext(context);
@@ -32,6 +32,7 @@ const plannerCtx={esc:s=>String(s),machineArt:()=>'<svg></svg>',clamp:(n,a,b)=>M
 vm.createContext(plannerCtx);vm.runInContext(planner,plannerCtx);
 const personal=fs.readFileSync('personalization.js','utf8');
 vm.runInContext(personal.slice(0,personal.indexOf('window.ProfileExperience=')),plannerCtx);
+vm.runInContext(fs.readFileSync('exercise-catalog.js','utf8'),plannerCtx);
 for(const [name,icon] of [['Supino reto','bench'],['Remada baixa','row'],['Elevação lateral','raise'],['Bíceps','curl'],['Leg press 45','legpress'],['Prancha','plank'],['Corrida','run'],['Exercício novo','dumbbell']])assert.equal(vm.runInContext(`suggestTrainingIcon(${JSON.stringify(name)})`,plannerCtx),icon);
 assert.equal(vm.runInContext("safeIconImage('javascript:alert(1)')",plannerCtx),'');
 assert.equal(vm.runInContext("safeIconImage('data:image/svg+xml;base64,PHN2Zz4=')",plannerCtx),'');
@@ -75,3 +76,31 @@ profileCtx.window.ProfileExperience.afterLogin();assert.equal(fakePanel.hidden,f
 profileCtx.window.ProfileExperience.start(true);profileCtx.window.ProfileExperience.skip();assert.equal(profileSaves,1);assert.equal(profileCtx.state.db.profile.bio,'Keep me');
 profileCtx.window.ProfileExperience.start(true);profileCtx.window.ProfileExperience.reset();profileCtx.state.db.profile={name:'Second account',bio:'',onboardingComplete:false};profileCtx.window.ProfileExperience.afterLogin();assert.ok(fakePanel.innerHTML.includes('Second account'));assert.ok(!fakePanel.innerHTML.includes('Existing user'));assert.ok(!fakePanel.innerHTML.includes('Keep me'));
 console.log('PASS: skip/cancel preserve existing profile and resetting clears the previous account draft');
+// Planner properties across every day count, modality, duration and experience.
+const catalog=vm.runInContext('EXERCISE_CATALOG',plannerCtx);
+assert.equal(new Set(catalog.map(e=>e.id)).size,catalog.length);
+for(const e of catalog){assert.ok(e.primary);assert.ok(e.note);assert.equal(e.measurement,'reps');assert.ok(!e.secondary.includes(e.primary));}
+let combinations=0;
+for(const mode of ['gym','home','calisthenics'])for(const level of ['beginner','intermediate'])for(const minutes of [15,30,45,60,90])for(let dayCount=1;dayCount<=6;dayCount++){
+ plannerCtx.p={modes:[mode],goal:'consistency',focus:['triceps'],days:[1,3,5,0,2,4].slice(0,dayCount),minutes,equipment:mode==='gym'?['machines','dumbbells']:[]};plannerCtx.level=level;
+ const result=vm.runInContext('buildAutomaticPlan(p,level)',plannerCtx);assert.ok(!result.error);assert.equal(result.routines.length,dayCount);
+ for(const r of result.routines){assert.ok(r.exercises.length>=1&&r.exercises.length<=6);assert.equal(new Set(r.exercises.map(e=>e.catalogId)).size,r.exercises.length);assert.ok(vm.runInContext('plannedMinutes',plannerCtx)(r.exercises,'consistency')<=minutes);for(const e of r.exercises){const c=catalog.find(x=>x.id===e.catalogId);assert.ok(c.modes.includes(mode));assert.ok(c.equipment.every(k=>plannerCtx.p.equipment.includes(k)));assert.ok(c.level<=(level==='beginner'?0:1));}}
+ combinations++;
+}
+plannerCtx.p={modes:['home'],days:[1,3],focus:['biceps'],minutes:30,equipment:[]};
+assert.ok(vm.runInContext('buildAutomaticPlan(p).warnings',plannerCtx).some(w=>w.includes('Bíceps')));
+plannerCtx.p={modes:['gym'],days:[0,1],focus:['triceps'],minutes:45,equipment:['machines']};
+const focused=vm.runInContext('buildAutomaticPlan(p)',plannerCtx);assert.ok(focused.routines.every(r=>r.exercises.some(e=>catalog.find(c=>c.id===e.catalogId).primary==='triceps')));assert.ok(focused.warnings.some(w=>w.includes('consecutivos')));
+plannerCtx.p.days=[];assert.ok(vm.runInContext('buildAutomaticPlan(p).error',plannerCtx));plannerCtx.p.days=[0,1,2,3,4,5,6];assert.ok(vm.runInContext('buildAutomaticPlan(p).error',plannerCtx));plannerCtx.p.days=[1];plannerCtx.p.goal='mobility';assert.ok(vm.runInContext('buildAutomaticPlan(p).error',plannerCtx));
+plannerCtx.backup.routines[0].exercises[0].catalogId='db-floor';plannerCtx.backup.routines[0].exercises[0].name='Supino no chão com halteres';const metadata=vm.runInContext('normalizeDB(backup)',plannerCtx);assert.equal(metadata.routines[0].exercises[0].catalogId,'db-floor');assert.equal(metadata.sessions[0].id,'history1');
+for(const file of ['exercise-catalog.js','automatic-routines.js','automatic-routines.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
+console.log(`PASS: ${combinations} planner combinations, equipment/level filters, unique movements, time budgets, unavailable focus, recovery, unsupported goals and backup catalog metadata`);
+// Exercise the composer lifecycle against a private existing document.
+const autoDialog={open:false,innerHTML:'',scrollTop:0,showModal(){this.open=true},close(){this.open=false},querySelector(selector){if(selector==='#autoConfig')return {elements:{goal:{value:'consistency'},minutes:{value:'30'},level:{value:'beginner'}}};return {focus(){},textContent:''}},querySelectorAll(){return []}};
+const autoCtx={window:{},document:{getElementById:()=>autoDialog,activeElement:{isConnected:true,focus(){}},addEventListener(){}},requestAnimationFrame:fn=>fn(),state:{activeWorkout:null,db:{profile:{trainingPreferences:{modes:['home'],days:[1,3],focus:['quads'],minutes:30,equipment:[]}},routines:[{id:'keep-routine',exercises:[]}],sessions:[{id:'keep-history'}]}},esc:s=>String(s),closeSheet(){},switchTab(){},toast(){},uid:(()=>{let n=0;return()=>`auto-${++n}`})(),saveDB(){autoCtx.saved=(autoCtx.saved||0)+1}};
+vm.createContext(autoCtx);vm.runInContext(planner,autoCtx);vm.runInContext(personal.slice(0,personal.indexOf('window.ProfileExperience=')),autoCtx);vm.runInContext(fs.readFileSync('exercise-catalog.js','utf8'),autoCtx);vm.runInContext(fs.readFileSync('automatic-routines.js','utf8'),autoCtx);
+autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.close();assert.equal(autoCtx.state.db.routines.length,1);assert.equal(autoCtx.saved,undefined);
+autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.save();autoCtx.window.AutoRoutine.save();assert.equal(autoCtx.saved,1);assert.equal(autoCtx.state.db.routines.length,3);assert.equal(autoCtx.state.db.routines[0].id,'keep-routine');assert.equal(autoCtx.state.db.sessions[0].id,'keep-history');assert.equal(autoCtx.state.db.profile.trainingPreferences.days.length,2);
+const newIds=autoCtx.state.db.routines.slice(1).flatMap(r=>[r.id,...r.exercises.map(e=>e.id)]);assert.equal(new Set(newIds).size,newIds.length);assert.ok(autoCtx.state.db.routines[1].exercises.every(e=>e.muscleMode==='manual'&&e.catalogId));
+autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.reset();autoCtx.window.AutoRoutine.save();assert.equal(autoCtx.saved,1);assert.equal(autoDialog.open,false);
+console.log('PASS: composer cancel/reset never persist; save appends once with unique IDs and preserves routines/history/preferences');

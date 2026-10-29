@@ -26,3 +26,5 @@ Pendente: cadastro/login reais com confirmação, isolamento com duas contas Sup
 
 ## Continuidade
 Esta entrega não implementa rotina automática, amigos/perfil público, alimentação, ofensiva ou movimentação do Histórico para Frequência. São próximas etapas do plano aprovado, com issues próprias. Nenhum botão sugere que esses recursos já estão ativos. Cache PWA v14 inclui personalization.js e personalization.css.
+
+A etapa seguinte de rotina automática está descrita em AUTOMATIC-ROUTINES.md (issue #10); o escopo acima documenta a primeira entrega.

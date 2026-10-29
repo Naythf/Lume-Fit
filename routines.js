@@ -1,10 +1,10 @@
 /* Local icon artwork and routine editor helpers. No remote uploads. */
 const TRAINING_ICONS = [
- ['dumbbell','Halter'],['bench','Supino'],['press','Desenvolvimento'],['raise','Elevação lateral'],['pull','Puxada'],['row','Remada'],['curl','Rosca'],['triceps','Tríceps'],['cable','Polia'],['squat','Agachamento'],['legpress','Leg press'],['deadlift','Levantamento terra'],['legs','Pernas'],['calf','Panturrilha'],['core','Abdominal'],['plank','Prancha'],['run','Corrida'],['bike','Bicicleta'],['stretch','Alongamento'],['kettlebell','Kettlebell']
+ ['dumbbell','Halter'],['pushup','Flexão'],['bridge','Elevação de quadril'],['bench','Supino'],['press','Desenvolvimento'],['raise','Elevação lateral'],['pull','Puxada'],['row','Remada'],['curl','Rosca'],['triceps','Tríceps'],['cable','Polia'],['squat','Agachamento'],['legpress','Leg press'],['deadlift','Levantamento terra'],['legs','Pernas'],['calf','Panturrilha'],['core','Abdominal'],['plank','Prancha'],['run','Corrida'],['bike','Bicicleta'],['stretch','Alongamento'],['kettlebell','Kettlebell']
 ];
 function suggestTrainingIcon(name){
  const n=String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
- const rules=[[/leg\s*press/,'legpress'],[/supino|bench|peitoral|peito|crucifixo/,'bench'],[/remada|row/,'row'],[/puxada|barra fixa|costas|pulldown/,'pull'],[/triceps|frances|testa/,'triceps'],[/rosca|biceps/,'curl'],[/agacha|squat|afundo|passada/,'squat'],[/terra|stiff|deadlift/,'deadlift'],[/panturr|gemeos/,'calf'],[/prancha|plank/,'plank'],[/abdomin|core/,'core'],[/corrida|esteira|caminhada/,'run'],[/bicic|bike|ciclismo/,'bike'],[/along|mobilidade|stretch/,'stretch'],[/kettlebell/,'kettlebell'],[/elevacao lateral|elevacao frontal/,'raise'],[/desenvolvimento|ombro/,'press'],[/polia|crossover/,'cable'],[/perna|extensora|flexora|gluteo/,'legs']];
+ const rules=[[/flexao.*joelhos/ ,'legs'],[/flexao|flexoes|push.?up/,'pushup'],[/elevacao de quadril|ponte com apoio/,'bridge'],[/bracos em w/,'stretch'],[/leg\s*press/,'legpress'],[/supino|bench|peitoral|peito|crucifixo/,'bench'],[/remada|row/,'row'],[/puxada|barra fixa|costas|pulldown/,'pull'],[/triceps|frances|testa/,'triceps'],[/rosca|biceps/,'curl'],[/agacha|squat|afundo|passada/,'squat'],[/terra|stiff|deadlift/,'deadlift'],[/panturr|gemeos/,'calf'],[/prancha|plank/,'plank'],[/abdomin|core|dead bug|bird dog/,'core'],[/corrida|esteira|caminhada/,'run'],[/bicic|bike|ciclismo/,'bike'],[/along|mobilidade|stretch/,'stretch'],[/kettlebell/,'kettlebell'],[/elevacao lateral|elevacao frontal/,'raise'],[/desenvolvimento|ombro/,'press'],[/polia|crossover/,'cable'],[/perna|extensora|flexora|gluteo|quadril|ponte|joelhos na maquina/,'legs']];
  return rules.find(([rx])=>rx.test(n))?.[1]||'dumbbell';
 }
 function safeIconImage(value){return typeof value==='string'&&value.length<=65000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)?value:'';}
@@ -18,6 +18,8 @@ function trainingGraphic(kind){
  const standing=head(80,16)+body('M80 28v26M80 54 68 78M80 54l12 24');
  const shapes={
   dumbbell:bar(45),
+  pushup:head(42,32)+body('M53 40 102 51l26 24M60 42l-8 32H35')+gear('M27 81h112'),
+  bridge:head(35,64)+body('M47 67 77 42l25 4 20 28M102 46l-7 29M49 69h27')+gear('M25 82h111'),
   bench:head(52,47)+body('M65 51h31M96 51l13 22h15M73 50V28')+gear('M40 60h63M47 60v18M94 60v18')+bar(21),
   press:head(80,27)+body('M80 39v24M80 42 59 37V20M80 42l21-5V20M80 63 65 78M80 63l15 15')+gear('M66 66h28M80 66v15')+dumbbell(59,14)+dumbbell(101,14),
   raise:standing+body('M80 33H48M80 33h32')+dumbbell(38,33)+dumbbell(122,33),

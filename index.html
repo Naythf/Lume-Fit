@@ -314,6 +314,7 @@
   </style>
   <link rel="stylesheet" href="experience.css">
   <link rel="stylesheet" href="personalization.css">
+  <link rel="stylesheet" href="automatic-routines.css">
 </head>
 <body class="auth-locked">
   <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
@@ -384,6 +385,7 @@
     </div>
   </div>
 
+  <dialog id="autoRoutineDialog" class="auto-dialog" aria-labelledby="autoTitle"></dialog>
   <section id="personalizePanel" class="personalize-panel" hidden role="dialog" aria-modal="true" aria-labelledby="setupTitle"></section>
   <dialog id="legalDialog" class="legal-dialog" aria-labelledby="legalTitle"><button class="ghost-btn" aria-label="Fechar informações">Fechar</button><h2 id="legalTitle"></h2><div id="legalBody"></div></dialog>
   <script src="experience.js" defer></script>
@@ -391,6 +393,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js" defer></script>
   <script src="routines.js" defer></script>
   <script src="personalization.js" defer></script>
+  <script src="exercise-catalog.js" defer></script>
+  <script src="automatic-routines.js" defer></script>
   <script src="app.js" defer></script>
   <script src="auth.js" defer></script>
 </body>
