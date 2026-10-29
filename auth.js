@@ -126,8 +126,10 @@
     document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='home'));
     render();
     setSyncLabel();
+    window.ProfileExperience?.afterLogin();
   }
   function showLogin(){
+    window.ProfileExperience?.reset();
     document.body.classList.add('auth-locked');
     authEl.hidden=false;
     user=null;demo=false;state.db=initialData();
@@ -141,6 +143,7 @@
     catch {state.db=initialData();}
     document.body.classList.remove('auth-locked');authEl.hidden=true;
     switchTab('home');
+    window.ProfileExperience?.afterLogin();
     toast('Modo local: seus dados não estão na nuvem.');
   }
   function persist(db){

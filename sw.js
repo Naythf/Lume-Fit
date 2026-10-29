@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v13-coherent-icons';
+const CACHE = 'lume-fit-static-v14-personalization';
 const ASSETS = [
   './',
   './index.html',
@@ -6,6 +6,8 @@ const ASSETS = [
   './experience.css',
   './experience.js',
   './routines.js',
+  './personalization.js',
+  './personalization.css',
   './auth.js',
   './config.js',
   './manifest.webmanifest',

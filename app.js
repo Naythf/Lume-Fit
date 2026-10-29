@@ -61,6 +61,10 @@ function normalizeDB(db){
     routines: Array.isArray(db.routines) && db.routines.length ? db.routines : fresh.routines,
     sessions: Array.isArray(db.sessions) ? db.sessions : []
   };
+  out.profile.trainingPreferences=normalizeTrainingPreferences(out.profile.trainingPreferences);
+  out.profile.visibility='private';
+  out.profile.onboardingComplete=out.profile.onboardingComplete===true;
+  out.profile.bio=String(out.profile.bio||'').slice(0,160);
   out.routines = out.routines.map(r => ({
     id: r.id || uid(),
     name: r.name || 'Treino',
@@ -74,7 +78,8 @@ function normalizeDB(db){
       minReps: clamp(Number(e.minReps)||8, 1, 99),
       maxReps: clamp(Number(e.maxReps)||12, 1, 99),
       icon: e.icon || suggestTrainingIcon(e.name),
-      iconImage: safeIconImage(e.iconImage)
+      iconImage: safeIconImage(e.iconImage),
+      ...normalizeMuscleFields(e)
     })) : []
   }));
   return out;
@@ -239,6 +244,7 @@ function render(){
   renderFrequency();
   renderSettings();
   renderKnowledge();
+  renderProfile();
 }
 
 function weeklyActivityCard(){
@@ -311,7 +317,7 @@ function renderWorkouts(){
   return;
  }
  const routine=selected;
- root.innerHTML=`<div class="routine-toolbar"><button class="ghost-btn" onclick="closeRoutine()">‹ Todas as rotinas</button><button class="ghost-btn" onclick="openEditRoutineSheet('${routine.id}')">Editar rotina</button></div><div class="routine-detail-heading"><div class="routine-art">${trainingVisual(routine)}</div><div><span class="routine-day">${dayLabel(routine)}</span><h2>${esc(routine.name)}</h2><p>${routine.exercises.length} ${routine.exercises.length===1?'exercício':'exercícios'} · ${routine.exercises.reduce((n,e)=>n+e.sets,0)} séries planejadas</p></div></div><div class="section-title"><h3>Seus movimentos</h3><button class="ghost-btn" onclick="openExerciseSheet('${routine.id}')">＋ Adicionar</button></div><p class="hint">Toque em um exercício para começar por ele. Use o lápis para editar o nome, as séries ou o ícone.</p><div class="exercise-plan-list">${routine.exercises.length?routine.exercises.map((e,i)=>`<article class="exercise-plan"><span class="exercise-order">${i+1}</span><button class="exercise-open" onclick="startWorkout('${routine.id}','${e.id}')"><div class="exercise-thumb">${trainingVisual(e)}</div><div><strong>${esc(e.name)}</strong><small>${e.sets} séries · ${e.minReps}–${e.maxReps} repetições</small></div></button><button class="icon-btn" aria-label="Editar exercício ${esc(e.name)}" onclick="openExerciseSheet('${routine.id}','${e.id}')">${editTrainingIcon()}</button></article>`).join(''):`<div class="empty"><strong>A rotina está criada.</strong><p>Agora adicione seu primeiro exercício e escolha o ícone que combina com ele.</p><button class="secondary-btn" onclick="openExerciseSheet('${routine.id}')">＋ Adicionar exercício</button></div>`}</div><div class="routine-detail-actions"><button class="primary-btn" ${routine.exercises.length?'':'disabled'} onclick="startWorkout('${routine.id}')">Iniciar treino</button><button class="ghost-btn" onclick="deleteRoutine('${routine.id}')">Excluir rotina</button></div>`;
+ root.innerHTML=`<div class="routine-toolbar"><button class="ghost-btn" onclick="closeRoutine()">‹ Todas as rotinas</button><button class="ghost-btn" onclick="openEditRoutineSheet('${routine.id}')">Editar rotina</button></div><div class="routine-detail-heading"><div class="routine-art">${trainingVisual(routine)}</div><div><span class="routine-day">${dayLabel(routine)}</span><h2>${esc(routine.name)}</h2><p>${routine.exercises.length} ${routine.exercises.length===1?'exercício':'exercícios'} · ${routine.exercises.reduce((n,e)=>n+e.sets,0)} séries planejadas</p></div></div><div class="section-title"><h3>Seus movimentos</h3><button class="ghost-btn" onclick="openExerciseSheet('${routine.id}')">＋ Adicionar</button></div><p class="hint">Toque em um exercício para começar por ele. Use o lápis para editar o nome, as séries ou o ícone.</p><div class="exercise-plan-list">${routine.exercises.length?routine.exercises.map((e,i)=>`<article class="exercise-plan"><span class="exercise-order">${i+1}</span><button class="exercise-open" onclick="startWorkout('${routine.id}','${e.id}')"><div class="exercise-thumb">${trainingVisual(e)}</div><div><strong>${esc(e.name)}</strong><small>${e.sets} séries · ${e.minReps}–${e.maxReps} repetições</small>${muscleBadges(e)}</div></button><button class="muscle-link" onclick="openMuscleDetails('${routine.id}','${e.id}')" aria-label="Ver músculos de ${esc(e.name)}">Músculos</button><button class="icon-btn" aria-label="Editar exercício ${esc(e.name)}" onclick="openExerciseSheet('${routine.id}','${e.id}')">${editTrainingIcon()}</button></article>`).join(''):`<div class="empty"><strong>A rotina está criada.</strong><p>Agora adicione seu primeiro exercício e escolha o ícone que combina com ele.</p><button class="secondary-btn" onclick="openExerciseSheet('${routine.id}')">＋ Adicionar exercício</button></div>`}</div><div class="routine-detail-actions"><button class="primary-btn" ${routine.exercises.length?'':'disabled'} onclick="startWorkout('${routine.id}')">Iniciar treino</button><button class="ghost-btn" onclick="deleteRoutine('${routine.id}')">Excluir rotina</button></div>`;
 }
 function editTrainingIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5 5 5M4 20l5-1L21 7l-4-4L5 15Z"/></svg>';}
 
@@ -340,6 +346,7 @@ function renderRegister(){
       </div>
       <div class="machine-art">${trainingVisual(current)}</div>
     </div>
+    <button class="register-muscles" onclick="openMuscleDetails('${routine.id}','${current.exerciseId}')">${muscleBadges(current)}<span>Ver músculos</span></button>
     <div class="segmented">
       <button class="seg-btn ${state.registerMode==='history' ? 'active' : ''}" onclick="setRegisterMode('history')">Histórico</button>
       <button class="seg-btn ${state.registerMode==='details' ? 'active' : ''}" onclick="setRegisterMode('details')">Detalhes</button>
@@ -447,6 +454,7 @@ function renderSettings(){
   const p = state.db.profile;
   root.innerHTML = `
     <div class="page-head"><div><h2>Ajustes</h2></div></div>
+    <button class="secondary-btn" style="margin-bottom:20px" onclick="ProfileExperience.open()">Meu perfil e preferências</button>
     <div class="profile-card">
       <div class="avatar">${p.photo ? `<img class="profile-photo" src="${p.photo}" alt="Foto de perfil">` : userIcon()}</div>
       <div class="profile-meta">
@@ -492,6 +500,7 @@ function startWorkout(routineId, exerciseId=null){
       name: exercise.name,
       icon: exercise.icon,
       iconImage: safeIconImage(exercise.iconImage),
+      ...normalizeMuscleFields(exercise),
       targetText: `${exercise.minReps}-${exercise.maxReps} reps`,
       sets: Array.from({length: exercise.sets}, () => ({kg:'', reps:'', done:false}))
     }))
@@ -619,6 +628,7 @@ function saveProfile(ev){
   ev.preventDefault();
   const f = new FormData(ev.target);
   state.db.profile = {
+    ...state.db.profile,
     name: String(f.get('name')).trim(),
     age: Number(f.get('age')),
     weight: Number(f.get('weight')),
@@ -694,8 +704,9 @@ function openExerciseSheet(routineId = state.selectedRoutineId,exerciseId=null){
  if(exerciseId&&!item)return;
  resetTrainingDraft(item);
  const list=state.db.routines.map(r=>`<option value="${r.id}" ${r.id===routine.id?'selected':''}>${esc(r.name)}</option>`).join('');
- openSheet(`<h3>${item?'Editar exercício':'Adicione um movimento'}</h3><p class="editor-intro">Defina as séries e repetições planejadas. As cargas serão registradas durante o treino.</p><form class="form training-form" onsubmit="saveExercise(event)"><input type="hidden" name="exerciseId" value="${item?.id||''}"><div class="field"><label>Rotina</label><select name="routineId" ${item?'disabled':''}>${list}</select></div><div class="field"><label>Nome do exercício</label><input name="name" maxlength="100" placeholder="Ex.: Supino reto" oninput="updateTrainingPreview()" value="${esc(item?.name||'')}" required></div><div class="training-numbers"><div class="field"><label>Séries</label><input name="sets" type="number" min="1" max="12" value="${item?.sets||3}" required></div><div class="field"><label>Reps mín.</label><input name="minReps" type="number" min="1" max="99" value="${item?.minReps||8}" required></div><div class="field"><label>Reps máx.</label><input name="maxReps" type="number" min="1" max="99" value="${item?.maxReps||12}" required></div></div>${iconPicker()}<div class="row-actions editor-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">${item?'Salvar mudanças':'Adicionar exercício'}</button></div></form>`);
+ openSheet(`<h3>${item?'Editar exercício':'Adicione um movimento'}</h3><p class="editor-intro">Defina as séries e repetições planejadas. As cargas serão registradas durante o treino.</p><form class="form training-form" onsubmit="saveExercise(event)"><input type="hidden" name="exerciseId" value="${item?.id||''}"><div class="field"><label>Rotina</label><select name="routineId" ${item?'disabled':''}>${list}</select></div><div class="field"><label>Nome do exercício</label><input name="name" maxlength="100" placeholder="Ex.: Supino reto" oninput="updateTrainingPreview()" value="${esc(item?.name||'')}" required></div><div class="training-numbers"><div class="field"><label>Séries</label><input name="sets" type="number" min="1" max="12" value="${item?.sets||3}" required></div><div class="field"><label>Reps mín.</label><input name="minReps" type="number" min="1" max="99" value="${item?.minReps||8}" required></div><div class="field"><label>Reps máx.</label><input name="maxReps" type="number" min="1" max="99" value="${item?.maxReps||12}" required></div></div>${muscleEditor(item)}${iconPicker()}<div class="row-actions editor-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">${item?'Salvar mudanças':'Adicionar exercício'}</button></div></form>`);
  updateTrainingPreview();
+ updateMuscleEditor();
 }
 function saveExercise(ev){
  ev.preventDefault();if(trainingDraft.busy)return;
@@ -706,7 +717,7 @@ function saveExercise(ev){
  if(!Number.isInteger(sets)||sets<1||sets>12||!Number.isInteger(minReps)||minReps<1||minReps>99||!Number.isInteger(maxReps)||maxReps<1||maxReps>99)return toast('Confira as séries e repetições.');
  if(minReps>maxReps)return toast('As repetições mínimas não podem superar as máximas.');
  const id=String(f.get('exerciseId')||'');const item=id?routine.exercises.find(e=>e.id===id):null;if(id&&!item)return;
- const values={name,sets,minReps,maxReps,...chosenTrainingFields(name)};
+ const values={name,sets,minReps,maxReps,...chosenTrainingFields(name),...readMuscleEditor(form)};
  if(item)Object.assign(item,values);else routine.exercises.push({id:uid(),...values});
  saveDB();closeSheet();state.selectedRoutineId=routine.id;switchTab('workouts');toast(item?'Exercício atualizado.':'Exercício adicionado.');
 }
