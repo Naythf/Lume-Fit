@@ -8,3 +8,5 @@
 - Cada mudança deve considerar observabilidade sem dados pessoais, qualidade/lint e testes unitários, de integração e de interface proporcionais ao risco. Não instalar todos os serviços citados como exemplos (Sentry, Datadog, New Relic, OpenTelemetry, Biome, Knip, Stryker, Codecov etc.) sem avaliar utilidade, custo e privacidade.
 - Não adicionar rastreadores sem informar finalidade e implementar o controle necessário antes do carregamento. Não afirmar conformidade LGPD, inventar dados do responsável ou licenças de assets.
 - Rodar `node checks.cjs`. Validar fluxos no navegador quando disponível; registrar claramente o que não foi testado. Atualizar o cache do PWA quando alterar assets.
+
+- Seletores simples usam controls.js/css (LumeControls), preservando o select como fonte do formulário. Novos selects são melhorados automaticamente; manter rótulos, callbacks, navegação por teclado e compatibilidade de modais. Não substituir novamente pelos menus visuais nativos sem solicitação.

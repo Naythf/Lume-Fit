@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v16-frequency-progress-final';
+const CACHE = 'lume-fit-static-v17-custom-controls-final';
 const ASSETS = [
   './',
   './index.html',
@@ -13,6 +13,8 @@ const ASSETS = [
   './automatic-routines.css',
   './frequency.js',
   './frequency.css',
+  './controls.js',
+  './controls.css',
   './auth.js',
   './config.js',
   './manifest.webmanifest',

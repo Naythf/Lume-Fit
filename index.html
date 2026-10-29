@@ -316,8 +316,10 @@
   <link rel="stylesheet" href="personalization.css">
   <link rel="stylesheet" href="automatic-routines.css">
   <link rel="stylesheet" href="frequency.css">
+  <link rel="stylesheet" href="controls.css">
 </head>
 <body class="auth-locked">
+  <div class="ambient-aura" aria-hidden="true"></div>
   <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
   <section id="authScreen" class="auth-screen" aria-label="Entrar no Lume Fit">
     <div class="auth-shell">
@@ -371,7 +373,7 @@
     <button data-tab="workouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h3v6H4zM17 9h3v6h-3zM7 10.5h10M7 13.5h10M2 7h2v10H2zM20 7h2v10h-2z"/></svg><span>Treinos</span></button>
     <button data-tab="frequency"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v15H3z"/><path d="M3 10h18M7 3v6M17 3v6"/></svg><span>Frequência</span></button>
     <button data-tab="knowledge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5.5C7 4 9 4 12 6c3-2 5-2 8-.5v14c-3-1.5-5-1.5-8 .5-3-2-5-2-8-.5zM12 6v14"/></svg><span>Saber</span></button>
-    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 15.5 1.1-.64 1.27.34 1.08 1.26 1.84-1.06-.37-1.62.74-1.13 1.56-.41v-2.12l-1.56-.4-.74-1.14.37-1.61-1.84-1.06-1.08 1.26-1.27.34L12 3.5l-1.1.64-1.27-.34L8.55 2.54 6.7 3.6l.37 1.61-.74 1.14-1.56.4v2.12l1.56.41.74 1.13-.37 1.62 1.84 1.06 1.08-1.26 1.27-.34z"/><circle cx="12" cy="10.75" r="2.6"/></svg><span>Ajustes</span></button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="9.77,5.26 10.15,2.89 13.85,2.89 14.23,5.26 15.19,5.66 17.14,4.25 19.75,6.86 18.34,8.81 18.74,9.77 21.11,10.15 21.11,13.85 18.74,14.23 18.34,15.19 19.75,17.14 17.14,19.75 15.19,18.34 14.23,18.74 13.85,21.11 10.15,21.11 9.77,18.74 8.81,18.34 6.86,19.75 4.25,17.14 5.66,15.19 5.26,14.23 2.89,13.85 2.89,10.15 5.26,9.77 5.66,8.81 4.25,6.86 6.86,4.25 8.81,5.66"/><circle cx="12" cy="12" r="3.1"/></svg><span>Ajustes</span></button>
   </nav>
 
   <div id="dialogOverlay" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
@@ -397,5 +399,6 @@
   <script src="frequency.js" defer></script>
   <script src="app.js" defer></script>
   <script src="auth.js" defer></script>
+  <script src="controls.js" defer></script>
 </body>
 </html>
