@@ -15,7 +15,7 @@ window.AutoRoutine=(()=>{
  function header(title,subtitle){return `<div class="auto-heading"><div><span class="privacy-badge">Rotina automática · versão inicial</span><h1 id="autoTitle" tabindex="-1">${title}</h1><p>${subtitle}</p></div><button type="button" class="ghost-btn" onclick="AutoRoutine.close()" aria-label="Fechar rotina automática">Fechar</button></div>`;}
  function draw(markup,focus,preserve=false){
   const scroll=dialog().scrollTop;
-  dialog().innerHTML=`<div class="auto-shell">${markup}</div>`;dialog().scrollTop=0;
+  dialog().innerHTML=`<div class="auto-shell${preserve||focus?' auto-shell-update':''}">${markup}</div>`;dialog().scrollTop=0;
   requestAnimationFrame(()=>{const target=focus?[...dialog().querySelectorAll('[data-choice]')].find(el=>el.dataset.choice===focus):dialog().querySelector('h1');target?.focus({preventScroll:preserve||!!focus});if(preserve||focus)dialog().scrollTop=scroll;});
  }
  function options(field,dict){return `<div class="preference-options">${Object.entries(dict).map(([id,label])=>`<button type="button" data-choice="${field}-${id}" aria-pressed="${prefs[field].includes(id)}" onclick="AutoRoutine.toggle('${field}','${id}')">${label}</button>`).join('')}</div>`;}
@@ -27,7 +27,17 @@ window.AutoRoutine=(()=>{
   captureConfig();if(!['modes','focus','equipment','days'].includes(field))return;
   const selected=prefs[field];if(selected.includes(id))prefs[field]=selected.filter(k=>k!==id);
   else{if(field==='focus'&&selected.length>=3){status('Escolha até 3 regiões para manter uma prioridade clara.');return;}if(field==='days'&&selected.length>=6){status('Reserve pelo menos um dia sem sessão no plano.');return;}selected.push(id);}
-  drawConfig(field+'-'+id);
+  // Keep the form, focus and scroll stable; only the selection and muscle map change.
+  dialog().querySelectorAll('[data-choice]').forEach(button=>{
+   const prefix=field+'-';if(!button.dataset.choice.startsWith(prefix))return;
+   const value=field==='days'?Number(button.dataset.choice.slice(prefix.length)):button.dataset.choice.slice(prefix.length);
+   button.setAttribute('aria-pressed',String(prefs[field].includes(value)));
+  });
+  if(field==='focus'){
+   const figure=dialog().querySelector('.auto-focus .muscle-figure');if(figure)figure.outerHTML=muscleFigure(prefs.focus);
+   const label=dialog().querySelector('.auto-focus-label');if(label)label.textContent=prefs.focus.length?prefs.focus.map(k=>MUSCLE_GROUPS[k]).join(' · '):'Foco geral';
+  }
+  status('');
  }
  function status(message){const target=dialog().querySelector('#autoStatus');if(target)target.textContent=message;}
  function drawConfig(focus){

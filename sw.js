@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v21-motion-default';
+const CACHE = 'lume-fit-static-v22-settings-selection';
 const ASSETS = [
   './',
   './index.html',

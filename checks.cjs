@@ -105,6 +105,15 @@ autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.
 const newIds=autoCtx.state.db.routines.slice(1).flatMap(r=>[r.id,...r.exercises.map(e=>e.id)]);assert.equal(new Set(newIds).size,newIds.length);assert.ok(autoCtx.state.db.routines[1].exercises.every(e=>e.muscleMode==='manual'&&e.catalogId));
 autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.reset();autoCtx.window.AutoRoutine.save();assert.equal(autoCtx.saved,1);assert.equal(autoDialog.open,false);
 console.log('PASS: composer cancel/reset never persist; save appends once with unique IDs and preserves routines/history/preferences');
+// Selection must leave the existing form in place instead of replaying its entrance.
+autoCtx.window.AutoRoutine.open();
+const stableMarkup=autoDialog.innerHTML, choiceButtons=[{dataset:{choice:'modes-gym'},setAttribute(k,v){this[k]=v}},{dataset:{choice:'days-2'},setAttribute(k,v){this[k]=v}}];
+autoDialog.scrollTop=240;autoDialog.querySelectorAll=()=>choiceButtons;
+autoCtx.window.AutoRoutine.toggle('modes','gym');assert.equal(choiceButtons[0]['aria-pressed'],'true');assert.equal(autoDialog.innerHTML,stableMarkup);assert.equal(autoDialog.scrollTop,240);
+autoCtx.window.AutoRoutine.toggle('modes','gym');assert.equal(choiceButtons[0]['aria-pressed'],'false');
+autoCtx.window.AutoRoutine.toggle('days',2);assert.equal(choiceButtons[1]['aria-pressed'],'true');assert.equal(autoDialog.innerHTML,stableMarkup);assert.equal(autoCtx.saved,1);autoCtx.window.AutoRoutine.close();
+console.log('PASS: plan selection preserves form, scroll and unsaved lifecycle');
+
 // Frequency uses local calendar dates, distinct active days and historical goal policies.
 const frequencyCode=fs.readFileSync('frequency.js','utf8');
 const fc={window:{},shortDate:v=>String(v),esc:s=>String(s)};vm.createContext(fc);vm.runInContext(frequencyCode,fc);

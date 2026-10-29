@@ -6,3 +6,5 @@
 html[data-motion="reduced"] .auto-shell{animation:none}
 .auto-plan-days:has(>.auto-plan-day:only-child){grid-template-columns:1fr;max-width:760px;margin-inline:auto}
 html:has(.auto-dialog[open]),body:has(.auto-dialog[open]){overflow:hidden}
+
+.auto-shell.auto-shell-update{animation:none}
