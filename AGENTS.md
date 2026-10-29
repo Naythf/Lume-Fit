@@ -12,3 +12,5 @@
 - Seletores simples usam controls.js/css (LumeControls), preservando o select como fonte do formulário. Novos selects são melhorados automaticamente; manter rótulos, callbacks, navegação por teclado e compatibilidade de modais. Não substituir novamente pelos menus visuais nativos sem solicitação.
 
 - motion.js/css melhora details/summary dinamicamente: o conteúdo fica em .lume-disclosure-body; preservar rótulos, validação e movimento reduzido ao alterar expansões. Não depender de conteúdo como filho direto de details, exceto summary.
+
+- Usar LumeMotionPreference como fonte única de movimento em JS e html[data-motion] em CSS. O padrão segue o sistema; Ativadas é escolha explícita por navegador. Não reintroduzir regras de prefers-reduced-motion que ignorem a escolha. Assets do service worker usam lista permitida, validação de tipo e rede primeiro, sem cachear APIs ou páginas de autenticação.
