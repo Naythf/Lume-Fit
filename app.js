@@ -20,9 +20,7 @@ const state = {
   selectedRoutineId: null,
   editingExerciseId: null,
   registerMode: 'history',
-  historyExerciseFilter: 'all',
   calendarRef: new Date(),
-  frequencyView: 'week',
 };
 
 function initialData(){
@@ -65,6 +63,7 @@ function normalizeDB(db){
   out.profile.visibility='private';
   out.profile.onboardingComplete=out.profile.onboardingComplete===true;
   out.profile.bio=String(out.profile.bio||'').slice(0,160);
+  out.profile.frequencyGoals=normalizeFrequencyGoals(out.profile.frequencyGoals);
   out.routines = out.routines.map(r => ({
     id: r.id || uid(),
     name: r.name || 'Treino',
@@ -156,6 +155,7 @@ function toast(msg){
 }
 
 function switchTab(tab){
+  if(tab==='history'){window.FrequencyExperience.go('history');return;}
   state.currentTab = tab;
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === `screen-${tab}`));
   $$('#bottomNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
@@ -175,18 +175,12 @@ function volumeOfSession(session){
 }
 
 function getMonthSessions(date){
-  return state.db.sessions.filter(s => {
-    const d = new Date(s.date);
-    return d.getMonth()===date.getMonth() && d.getFullYear()===date.getFullYear();
-  });
+  return activitySessions(state.db.sessions).filter(s=>{const d=activityDate(s.date);return d.getMonth()===date.getMonth()&&d.getFullYear()===date.getFullYear();});
 }
 
 function frequencyPct(){
-  const now = new Date();
-  const sessions = getMonthSessions(now);
-  const trainedDays = new Set(sessions.map(s => new Date(s.date).toDateString())).size;
-  const daysPassed = now.getDate();
-  return Math.min(100, Math.round((trainedDays / 20) * 100));
+  const stats=weeklyConsistency(state.db.sessions,state.db.profile.frequencyGoals);
+  return stats.target?Math.min(100,Math.round(stats.count/stats.target*100)):null;
 }
 
 function bestWeight(exerciseId){
@@ -241,7 +235,6 @@ function render(){
   renderHome();
   renderWorkouts();
   renderRegister();
-  renderHistory();
   renderFrequency();
   renderSettings();
   renderKnowledge();
@@ -249,13 +242,11 @@ function render(){
 }
 
 function weeklyActivityCard(){
- const now=new Date(); const monday=new Date(now.getFullYear(),now.getMonth(),now.getDate());
- monday.setDate(monday.getDate()-((monday.getDay()+6)%7));
- const key=d=>`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
- const hits=new Set(state.db.sessions.map(s=>key(new Date(s.date))));
+ const now=new Date(),monday=activityMonday(now),key=activityKey;
+ const hits=activityDays(state.db.sessions,monday,activityAddDays(monday,6),now);
  const days=Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return d;});
  const count=days.filter(d=>hits.has(key(d))).length;
- return `<section class="week-card" aria-label="Atividade desta semana"><div class="week-heading"><h3>Seu ritmo nesta semana</h3><small>${count} ${count===1?'dia ativo':'dias ativos'}</small></div><div class="week-days">${days.map((d,i)=>`<div class="week-day ${hits.has(key(d))?'hit':''} ${key(d)===key(now)?'today':''}" aria-label="${['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i]}, dia ${d.getDate()}${hits.has(key(d))?', treino registrado':''}${key(d)===key(now)?', hoje':''}"><span>${['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]}</span><b>${d.getDate()}</b></div>`).join('')}</div><p class="week-note">${count?'Cada registro conta a sua história. Confira sua evolução no Histórico.':'Sua semana começa com um registro. Organize suas rotinas e treine no seu ritmo.'} Dias de descanso também fazem parte do planejamento.</p></section>`;
+ return `<section class="week-card" aria-label="Atividade desta semana"><div class="week-heading"><h3>Seu ritmo nesta semana</h3><small>${count} ${count===1?'dia ativo':'dias ativos'}</small></div><div class="week-days">${days.map((d,i)=>`<div class="week-day ${hits.has(key(d))?'hit':''} ${key(d)===key(now)?'today':''}" aria-label="${['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i]}, dia ${d.getDate()}${hits.has(key(d))?', treino registrado':''}${key(d)===key(now)?', hoje':''}"><span>${['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]}</span><b>${d.getDate()}</b></div>`).join('')}</div><p class="week-note">${count?'Cada registro conta a sua história. Confira seus registros e evolução em Frequência.':'Sua semana começa com um registro. Organize suas rotinas e treine no seu ritmo.'} Dias de descanso também fazem parte do planejamento.</p></section>`;
 }
 
 function renderHome(){
@@ -264,7 +255,7 @@ function renderHome(){
   const total = getMonthSessions(new Date()).length;
   const freq = frequencyPct();
   const vol = state.db.sessions.reduce((s, session) => s + volumeOfSession(session), 0);
-  const recent = state.db.sessions.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,2);
+  const recent = activitySessions(state.db.sessions).slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,2);
   root.innerHTML = `
     <div class="page-head">
       <div>
@@ -284,8 +275,8 @@ function renderHome(){
       </div>
       <div class="stat-card">
         <div class="stat-icon">${barsIcon()}</div>
-        <div class="stat-value">${freq}%</div>
-        <div class="stat-label">Meta mensal</div>
+        <div class="stat-value">${freq===null?'—':freq+'%'}</div>
+        <div class="stat-label">Meta da semana</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">${boltIcon()}</div>
@@ -374,81 +365,6 @@ function renderRegister(){
       <button class="primary-btn" onclick="completeExercise()">${active.index === active.entries.length-1 ? 'Concluir treino' : 'Concluir exercício'}</button><button class="ghost-btn" onclick="finishWorkout()" style="width:100%">Salvar séries concluídas e finalizar</button>
       <div class="pager"><span>${active.index>0 ? '← Exercício anterior' : ''}</span><span>${active.index < active.entries.length-1 ? 'Próximo exercício →' : ''}</span></div>
     </div>`;
-}
-
-function renderHistory(){
-  const root = $('#screen-history');
-  const exercises = allExercises();
-  if (!exercises.length && !state.db.sessions.length){ root.innerHTML = `<div class="page-head"><h2>Histórico</h2></div><div class="empty">Seu histórico aparecerá aqui após registrar um treino.</div>`; return; }
-  const selected = state.historyExerciseFilter === 'all' ? exercises.find(e => exerciseProgress(e.id).length) || exercises[0] : exercises.find(e => e.id===state.historyExerciseFilter) || exercises[0];
-  const progress = selected ? exerciseProgress(selected.id) : [];
-  root.innerHTML = `
-    <div class="page-head"><div><h2>Histórico</h2></div></div>
-    <div class="chart-card">
-      <div class="chart-top">
-        <div>
-          <div style="font-size:13px;color:#b8b8b8;margin-bottom:8px">Todos os exercícios</div>
-          <select class="select" onchange="changeHistoryExercise(this.value)" ${exercises.length ? '' : 'disabled'}>
-            <option value="all" ${state.historyExerciseFilter==='all'?'selected':''}>Auto</option>
-            ${exercises.map(e => `<option value="${e.id}" ${state.historyExerciseFilter===e.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}
-          </select>
-        </div>
-        <button class="icon-btn" onclick="switchTab('frequency')">↗</button>
-      </div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:8px">${esc(selected?.name || 'Supino reto')}</div>
-      <div class="chart-wrap">${lineChart(progress)}</div>
-      <div class="legend">Carga (kg)</div>
-    </div>
-    <div class="list-stack" style="margin-top:14px">
-      ${state.db.sessions.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(s => `
-        <div class="card screen-card">
-          <div class="section-title" style="margin:0 0 10px"><h3>${esc(s.name)}</h3><span style="color:#a3a3a3;font-size:14px">${shortDate(s.date)}</span></div>
-          ${(s.entries||[]).map(e => `<div style="padding:8px 0;color:#cecece"><strong style="font-size:15px">${esc(e.name)}</strong><br><small>${e.sets.map(x=>`${x.kg} kg × ${x.reps}`).join(' • ')}</small></div>`).join('')}
-          <div style="margin-top:8px"><button class="ghost-btn" onclick="deleteSession('${s.id}')">Excluir registro</button></div>
-        </div>`).join('')}
-    </div>`;
-}
-
-function renderFrequency(){
-  const root = $('#screen-frequency');
-  const ref = state.calendarRef;
-  const monthTitle = ref.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-  root.innerHTML = `
-    <div class="page-head"><div><h2>Frequência</h2><p>Consistência, um dia de cada vez.</p></div></div>
-    <div class="switcher"><button class="${state.frequencyView==='week'?'active':''}" onclick="setFrequencyView('week')">Semanal</button><button class="${state.frequencyView==='month'?'active':''}" onclick="setFrequencyView('month')">Mensal</button></div>
-    <div class="chart-card">
-      <div class="section-title"><h3>${state.frequencyView==='week'?'Últimas 8 semanas':'Últimos 6 meses'}</h3><span class="hint">Treinos concluídos</span></div>
-      <div class="chart-wrap">${frequencyBars()}</div>
-      <p class="hint">Cada barra representa a quantidade de dias em que você registrou um treino.</p>
-    </div>
-    <div class="calendar-card">
-      <div class="calendar-head"><button class="month-nav" onclick="moveMonth(-1)">‹</button><div style="font-size:18px;font-weight:600">${capitalize(monthTitle)}</div><button class="month-nav" onclick="moveMonth(1)">›</button></div>
-      <div class="weekdays"><div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div></div>
-      <div class="days-grid" style="margin-top:12px">${calendarGrid(ref)}</div>
-      <p class="hint" style="margin-bottom:0">Dias claros representam treinos registrados. Dois treinos no mesmo dia contam como um dia de frequência.</p>
-    </div>`;
-}
-function setFrequencyView(view){state.frequencyView=view;renderFrequency()}
-function frequencyBars(){
-  const now=new Date();now.setHours(0,0,0,0);
-  const keys=new Set(state.db.sessions.map(s=>new Date(s.date).toDateString()));
-  let bars=[];
-  if(state.frequencyView==='week'){
-    const current=new Date(now);current.setDate(current.getDate()-((current.getDay()+6)%7));
-    for(let i=7;i>=0;i--){let st=new Date(current);st.setDate(st.getDate()-7*i);let count=0;
-      for(let k=0;k<7;k++){let d=new Date(st);d.setDate(d.getDate()+k);if(d<=now&&keys.has(d.toDateString()))count++}
-      bars.push({name:st.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),value:count})}
-  }else{
-    for(let i=5;i>=0;i--){let d=new Date(now.getFullYear(),now.getMonth()-i,1);let count=new Set(getMonthSessions(d).map(s=>new Date(s.date).toDateString())).size;bars.push({name:d.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''),value:count})}
-  }
-  const top=Math.max(1,...bars.map(b=>b.value));
-  const width=320,height=170,left=20,bottom=29,usable=height-bottom-12;
-  let svg=`<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="Gráfico de frequência">`;
-  [0,1,2,3].forEach(n=>{let y=height-bottom-(n/3)*usable;svg+=`<line x1="${left}" y1="${y}" x2="${width-5}" y2="${y}" stroke="#303030" stroke-width=".7"/><text x="2" y="${y+4}" font-size="9" fill="#999">${Math.round((n/3)*top)}</text>`});
-  bars.forEach((bar,i)=>{let step=(width-left-9)/bars.length,w=Math.min(24,step*.6),x=left+i*step+(step-w)/2,bh=(bar.value/top)*usable,y=height-bottom-bh;
-    svg+=`<rect class="graph-bar" style="animation-delay:${i*65}ms" x="${x}" y="${y}" width="${w}" height="${Math.max(bh,1)}" rx="4" fill="${bar.value?'#eee':'#303030'}"/><text x="${x+w/2}" y="${height-10}" text-anchor="middle" font-size="9" fill="#bbb">${bar.name}</text>`;
-    if(bar.value)svg+=`<text x="${x+w/2}" y="${Math.max(10,y-5)}" text-anchor="middle" font-size="9" fill="#fff">${bar.value}</text>`;
-  });return svg+'</svg>';
 }
 
 function renderSettings(){
@@ -601,16 +517,6 @@ async function deleteSession(id){
   state.db.sessions = state.db.sessions.filter(s => s.id !== id);
   saveDB();
   render();
-}
-
-function moveMonth(delta){
-  state.calendarRef = new Date(state.calendarRef.getFullYear(), state.calendarRef.getMonth()+delta, 1);
-  renderFrequency();
-}
-
-function changeHistoryExercise(id){
-  state.historyExerciseFilter = id;
-  renderHistory();
 }
 
 function openProfileSheet(){
@@ -790,29 +696,6 @@ function lineChart(points){
   return `<div class="progress-summary"><span>Melhor carga</span><strong>${rawMax.toLocaleString('pt-BR')} kg</strong><small>${values.length} ${values.length===1?'registro':'registros'} exibidos</small></div><svg class="progress-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução de carga por data" xmlns="http://www.w3.org/2000/svg">${grid}${values.length>1?`<path class="progress-path" d="${d}" fill="none" stroke="#eeeeee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>`:''}${dots}${xLabels}</svg>`;
 }
 
-function calendarGrid(ref){
-  const sessions = new Set(getMonthSessions(ref).map(s => new Date(s.date).getDate()));
-  const year = ref.getFullYear(), month = ref.getMonth();
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
-  const start = first.getDay();
-  const total = last.getDate();
-  const prevLast = new Date(year, month, 0).getDate();
-  let cells = '';
-  for (let i = 0; i < start; i++){
-    cells += `<div class="day-cell muted">${prevLast - start + i + 1}</div>`;
-  }
-  const now = new Date();
-  for (let day = 1; day <= total; day++){
-    const isToday = now.getFullYear()===year && now.getMonth()===month && now.getDate()===day;
-    cells += `<div class="day-cell ${sessions.has(day)?'hit':''} ${isToday?'today':''}">${day}</div>`;
-  }
-  const filled = start + total;
-  const rest = (7 - (filled % 7)) % 7;
-  for (let d = 1; d <= rest; d++) cells += `<div class="day-cell muted">${d}</div>`;
-  return cells;
-}
-
 function capitalize(str){ return str.charAt(0).toUpperCase() + str.slice(1); }
 function firstName(name){ return String(name||'').split(' ')[0] || 'Atleta'; }
 
@@ -961,8 +844,6 @@ window.toggleSet = toggleSet;
 window.addSetRow = addSetRow;
 window.completeExercise = completeExercise;
 window.finishWorkout = finishWorkout;
-window.changeHistoryExercise = changeHistoryExercise;
-window.moveMonth = moveMonth;
 window.openProfileSheet = openProfileSheet;
 window.saveProfile = saveProfile;
 window.openRoutineSheet = openRoutineSheet;
@@ -977,7 +858,6 @@ window.exportData = exportData;
 window.openImportFile = openImportFile;
 window.importData = importData;
 window.closeSheet = closeSheet;
-window.setFrequencyView = setFrequencyView;
 window.openPhotoPicker = openPhotoPicker;
 window.receivePhoto = receivePhoto;
 window.calculateMetrics = calculateMetrics;

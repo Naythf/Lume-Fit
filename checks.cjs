@@ -2,10 +2,10 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
-const context={state:{db:{sessions:[]}}};vm.createContext(context);
+const context={window:{},state:{db:{sessions:[]}}};vm.createContext(context);vm.runInContext(fs.readFileSync('frequency.js','utf8'),context);
 vm.runInContext(week,context);
 const empty=vm.runInContext('weeklyActivityCard()',context);
 assert.match(empty,/0 dias ativos/);assert.equal((empty.match(/class="week-day /g)||[]).length,7);
@@ -33,6 +33,7 @@ vm.createContext(plannerCtx);vm.runInContext(planner,plannerCtx);
 const personal=fs.readFileSync('personalization.js','utf8');
 vm.runInContext(personal.slice(0,personal.indexOf('window.ProfileExperience=')),plannerCtx);
 vm.runInContext(fs.readFileSync('exercise-catalog.js','utf8'),plannerCtx);
+plannerCtx.window={};vm.runInContext(fs.readFileSync('frequency.js','utf8'),plannerCtx);
 for(const [name,icon] of [['Supino reto','bench'],['Remada baixa','row'],['Elevação lateral','raise'],['Bíceps','curl'],['Leg press 45','legpress'],['Prancha','plank'],['Corrida','run'],['Exercício novo','dumbbell']])assert.equal(vm.runInContext(`suggestTrainingIcon(${JSON.stringify(name)})`,plannerCtx),icon);
 assert.equal(vm.runInContext("safeIconImage('javascript:alert(1)')",plannerCtx),'');
 assert.equal(vm.runInContext("safeIconImage('data:image/svg+xml;base64,PHN2Zz4=')",plannerCtx),'');
@@ -104,3 +105,36 @@ autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.
 const newIds=autoCtx.state.db.routines.slice(1).flatMap(r=>[r.id,...r.exercises.map(e=>e.id)]);assert.equal(new Set(newIds).size,newIds.length);assert.ok(autoCtx.state.db.routines[1].exercises.every(e=>e.muscleMode==='manual'&&e.catalogId));
 autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.reset();autoCtx.window.AutoRoutine.save();assert.equal(autoCtx.saved,1);assert.equal(autoDialog.open,false);
 console.log('PASS: composer cancel/reset never persist; save appends once with unique IDs and preserves routines/history/preferences');
+// Frequency uses local calendar dates, distinct active days and historical goal policies.
+const frequencyCode=fs.readFileSync('frequency.js','utf8');
+const fc={window:{},shortDate:v=>String(v),esc:s=>String(s)};vm.createContext(fc);vm.runInContext(frequencyCode,fc);
+const run=(code)=>vm.runInContext(code,fc);
+const json=v=>JSON.parse(JSON.stringify(v));
+assert.equal(run("activityKey('2026-10-29')"),'2026-10-29');assert.equal(run("activityKey('2026-02-30')"),'');assert.equal(run("activityKey('garbage')"),'');assert.equal(run("activityKey(activityMonday('2027-01-01'))"),'2026-12-28');
+fc.goals=[{week:'2026-10-05',days:2},{week:'2026-10-12',days:2},{week:'2026-10-19',days:3},{week:'2026-10-26',days:2},{week:'2026-10-27',days:1},{week:'2026-10-26',days:2},{week:'2026-11-02',days:1},{week:'invalid',days:2}];
+assert.equal(run('normalizeFrequencyGoals(goals).length'),5);
+fc.sessions=['2026-10-05','2026-10-07','2026-10-12','2026-10-14','2026-10-19','2026-10-21','2026-10-23','2026-10-26','2026-10-26','2026-11-04','invalid'].map((date,i)=>({id:'s'+i,date}));
+let score=run("weeklyConsistency(sessions,goals,activityDate('2026-10-29'))");assert.equal(score.current,3);assert.equal(score.best,3);assert.equal(score.count,1);assert.equal(score.target,2);assert.equal(score.met,false);
+fc.sessions.push({date:'2026-10-29'});score=run("weeklyConsistency(sessions,goals,activityDate('2026-10-29'))");assert.equal(score.current,4);assert.equal(score.count,2);assert.equal(score.best,4);
+score=run("weeklyConsistency(sessions,goals,activityDate('2026-11-10'))");assert.equal(score.current,5); // the Nov 4 record meets the archived target of 1
+fc.sessions=fc.sessions.filter(s=>s.date!=='2026-11-04');score=run("weeklyConsistency(sessions,goals,activityDate('2026-11-10'))");assert.equal(score.current,0);assert.equal(score.best,4);
+fc.sessions=[{date:'2026-10-05'},{date:'2026-10-06'}];fc.goals=[];
+assert.equal(run("weeklyConsistency(sessions,goals,activityDate('2026-10-29')).current"),0);
+const firstGoal=run("nextFrequencyGoal(goals,3,activityDate('2026-10-29'))");assert.deepEqual(json(firstGoal),[{week:'2026-10-26',days:3}]);fc.goals=firstGoal;
+const editedGoal=run("nextFrequencyGoal(goals,1,activityDate('2026-10-29'))");assert.deepEqual(json(editedGoal),[{week:'2026-10-26',days:3},{week:'2026-11-02',days:1}]);fc.goals=editedGoal;
+assert.equal(run("activityTarget(goals,activityDate('2026-10-29'))"),3);assert.equal(run("activityTarget(goals,activityDate('2026-11-04'))"),1);
+assert.deepEqual(json(run("nextFrequencyGoal(goals,3,activityDate('2026-10-29'))")),[{week:'2026-10-26',days:3}]);assert.equal(run('nextFrequencyGoal(goals,0)'),null);
+fc.sessions=[{date:'2026-02-28'},{date:'2026-03-29'},{date:'2026-03-29'},{date:'2026-03-30'},{date:'2026-03-31'}];
+const monthStats=run("activityMonthSummary(sessions,activityDate('2026-03-01'),activityDate('2026-03-29'))");assert.equal(monthStats.days,1);assert.equal(monthStats.sessions,2);assert.equal(monthStats.prior,1);assert.equal(monthStats.cutoff,28);
+assert.equal(run("activityKey(activityAddDays(activityDate('2024-02-28'),1))"),'2024-02-29');assert.equal(run("activityKey(activityAddDays(activityDate('2024-02-29'),1))"),'2024-03-01');
+fc.routines=[];fc.sessions=[{date:'2026-10-26',entries:[{exerciseId:'deleted-id',name:'Antigo',sets:[{kg:0,reps:10},{kg:5,reps:8},{kg:-2,reps:6},{kg:'',reps:10}]}]},{date:'2026-10-28',entries:[{exerciseId:'deleted-id',name:'Antigo',sets:[{kg:10,reps:8}]}]},{date:'2026-10-29',entries:[{name:'Sem ID',sets:[{kg:0,reps:5}]}]}];
+assert.equal(run('activityExerciseOptions(routines,sessions).length'),2);const points=run("activityExercisePoints(sessions,'id:deleted-id',activityDate('2026-10-29'))");assert.equal(points.length,2);assert.equal(points[0].load,5);assert.equal(points[0].reps,18);assert.equal(points[0].volume,40);assert.equal(points[1].volume,80);
+assert.equal(run("activityExercisePoints(sessions,'legacy:Sem ID',activityDate('2026-10-29'))[0].volume"),0);assert.match(run("activityLineChart(activityExercisePoints(sessions,'id:deleted-id'),'reps')"),/tabela abaixo/);
+plannerCtx.backup.profile={frequencyGoals:editedGoal};assert.equal(vm.runInContext('normalizeDB(backup)',plannerCtx).profile.frequencyGoals.length,2);assert.equal(plannerCtx.backup.sessions[0].id,'history1');
+assert.ok(!html.includes('data-tab="history"'));for(const file of ['frequency.js','frequency.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
+// Run the date and streak edge cases in time zones with negative offsets and DST.
+for(const zone of ['America/Sao_Paulo','America/New_York','UTC'])execFileSync(process.execPath,['-e',`const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const c={window:{}};vm.createContext(c);vm.runInContext(fs.readFileSync('frequency.js','utf8'),c);const run=s=>vm.runInContext(s,c);assert.equal(run("activityKey('2026-10-29')"),'2026-10-29');assert.equal(run("activityKey(activityAddDays(activityDate('2026-03-07'),2))"),'2026-03-09');assert.equal(run("activityKey(activityMonday('2026-03-08'))"),'2026-03-02');assert.equal(run("weeklyConsistency([{date:'2026-03-08'},{date:'2026-03-08'}],[{week:'2026-03-02',days:1}],activityDate('2026-03-08')).count"),1);`],{env:{...process.env,TZ:zone}});
+console.log('PASS: distinct active days, open/closed weeks, streak/best/reset, historical goals, no retroactive rewards, invalid/future dates, leap/month/year/DST boundaries, deleted exercises, zero-load metrics and 3 time zones');
+fc.sessions=[{date:'2026-10-29'},{date:'2026-10-29'},{date:'2026-10-28'},{date:'2026-11-02'}];
+assert.equal(run("activityFrequencySeries(sessions,'week',activityDate('2026-10-29')).at(-1).count"),2);assert.equal(run("activityFrequencySeries(sessions,'month',activityDate('2026-10-29')).at(-1).count"),2);assert.equal(run("activityFrequencySeries(sessions,'week',activityDate('2026-10-29')).length"),8);assert.equal(run("activityFrequencySeries(sessions,'month',activityDate('2026-10-29')).length"),6);
+console.log('PASS: retained 8-week/6-month frequency charts deduplicate days and ignore future records');
