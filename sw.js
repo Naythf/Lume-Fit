@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v17-custom-controls-final';
+const CACHE = 'lume-fit-static-v18-lume-hub-glass';
 const ASSETS = [
   './',
   './index.html',
