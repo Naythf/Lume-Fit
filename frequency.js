@@ -132,5 +132,5 @@ window.FrequencyExperience=(()=>{
  }
  return {render,go,view,reset,trend(value){trendView=value==='month'?'month':'week';renderFrequency();document.querySelector(`[data-trend="${trendView}"]`)?.focus({preventScroll:true});},goalEditor,saveGoal,month,today,selectDay,calendarKey,changeMetric,changeExercise,deleteRecord(index){const s=state.db.sessions[index];if(s)deleteSession(s.id);},openPlan(index){const r=state.db.routines[index];if(r)openRoutine(r.id);},more(){limit+=20;renderFrequency();}};
 })();
-function constancySymbol(){return '<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 28a15 15 0 1 0 6-16M9 12v10h10"/><path d="m18 26 5 5 10-13"/></svg>';}
+function constancySymbol(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3c1 4-3 6-3 9-1-1-2-2-2-4-2 2-3 5-3 7a8 8 0 0 0 16 0c0-5-4-9-8-12Z"/><path d="M12 13c0 2-2 3-2 5a2 2 0 0 0 4 0c0-2-1-3-2-5Z"/></svg>';}
 function renderFrequency(){window.FrequencyExperience.render();}
