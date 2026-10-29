@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v23-release-updates';
+const CACHE = 'lume-fit-static-v24-guided-workout';
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,8 @@ const ASSETS = [
   './frequency.css',
   './controls.js',
   './controls.css',
+  './guided-workout.js',
+  './guided-workout.css',
   './updates.js',
   './motion.js',
   './motion.css',

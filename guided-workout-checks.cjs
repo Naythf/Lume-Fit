@@ -1,0 +1,32 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+let now=Date.parse('2026-10-29T15:00:00Z'),tick,sequence=0,confirm=true,failSave=false;
+const storage=new Map(),root={innerHTML:'',querySelector(){return {focus(){}}}},nodes=new Map();
+const ctx={window:{addEventListener(){}},document:{getElementById:id=>id==='screen-register'?root:nodes.get(id)||null,addEventListener(){}},localStorage:{getItem:key=>storage.get(key)||null,setItem:(key,value)=>storage.set(key,value),removeItem:key=>storage.delete(key)},state:{db:{routines:[{id:'routine1',name:'Treino A',exercises:[{id:'e1',name:'Supino',sets:2,minReps:8,maxReps:12},{id:'e2',name:'Rosca',sets:1,minReps:8,maxReps:12}]}],sessions:[]},activeWorkout:null},Date:class extends Date{constructor(...args){super(...(args.length?args:[now]))}static now(){return now}},setInterval:fn=>{tick=fn;return 1},clearInterval(){},uid:()=>`guided-${++sequence}`,safeIconImage:()=>'',normalizeMuscleFields:()=>({muscleMode:'auto',primaryMuscle:'',secondaryMuscles:[]}),esc:value=>String(value).replace(/[<>]/g,''),trainingVisual:()=>'',muscleBadges:()=>'',exerciseMuscles:()=>({primary:'chest',secondary:[]}),muscleFigure:()=>'',shortDate:()=>'',toast(){},lumeConfirm:async()=>confirm,saveDB(){if(failSave)throw Error('full');ctx.saved=(ctx.saved||0)+1;return true},switchTab(tab){ctx.tab=tab;ctx.window.GuidedWorkout.render()}};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync('guided-workout.js','utf8'),ctx);const g=ctx.window.GuidedWorkout,json=value=>JSON.parse(JSON.stringify(value));
+(async()=>{
+ assert.equal(ctx.guidedValidSet({kg:0,reps:10}),true);
+ for(const set of [{kg:' ',reps:10},{kg:true,reps:10},{kg:'',reps:10},{kg:-1,reps:10},{kg:2,reps:0},{kg:2,reps:1.5},{kg:Infinity,reps:10},{kg:2,reps:1000},{kg:2001,reps:10}])assert.equal(ctx.guidedValidSet(set),false);
+ g.attach('demo');g.start('routine1');const id=ctx.state.activeWorkout.id;g.start('routine1');assert.equal(ctx.state.activeWorkout.id,id);
+ g.toggle(0);assert.equal(ctx.state.activeWorkout.entries[0].sets[0].done,false);
+ g.update(0,'kg','0');g.update(0,'reps','12');g.toggle(0);assert.equal(ctx.state.activeWorkout.rest.status,'running');
+ now+=15000;assert.equal(ctx.guidedRestRemaining(ctx.state.activeWorkout.rest),45);g.restToggle();assert.equal(ctx.state.activeWorkout.rest.status,'paused');now+=100000;assert.equal(ctx.guidedRestRemaining(ctx.state.activeWorkout.rest),45);g.restToggle();assert.equal(ctx.state.activeWorkout.rest.status,'running');
+ // Background expiry updates only timer nodes, preserving the input DOM and focus.
+ const form=root.innerHTML;now+=50000;tick();assert.equal(ctx.state.activeWorkout.rest.status,'done');assert.equal(root.innerHTML,form);
+ const beforeConfigure=root.innerHTML;g.restConfigure(90);assert.equal(root.innerHTML,beforeConfigure);g.restStart();assert.equal(ctx.guidedRestRemaining(ctx.state.activeWorkout.rest),90);g.restSkip();assert.equal(ctx.state.activeWorkout.rest.status,'idle');
+ g.update(0,'kg','10');assert.equal(ctx.state.activeWorkout.entries[0].sets[0].done,false);g.toggle(0);
+ g.update(1,'kg','12');g.update(1,'reps','8');g.toggle(1);g.go(1);g.update(0,'kg','6');g.update(0,'reps','10');g.toggle(0);
+ const snapshot=json(ctx.state.activeWorkout);g.detach();assert.equal(ctx.state.activeWorkout,null);g.attach('user-other');assert.equal(ctx.state.activeWorkout,null);g.detach();g.attach('demo');assert.equal(ctx.state.activeWorkout.id,id);assert.equal(ctx.state.activeWorkout.index,1);assert.deepEqual(json(ctx.state.activeWorkout.entries[0].sets),snapshot.entries[0].sets);
+ // Returning to an earlier exercise and editing invalidates its completion, no stale cleanedSets.
+ ctx.state.activeWorkout.entries[0].cleanedSets=[{kg:999,reps:999}];g.go(0);g.update(0,'kg','11');g.toggle(0);assert.equal(ctx.guidedSession(ctx.state.activeWorkout,now).entries[0].sets[0].kg,11);
+ failSave=true;await g.finish();assert.ok(ctx.state.activeWorkout);assert.equal(ctx.state.db.sessions.length,0);failSave=false;
+ await g.finish();await g.finish();assert.equal(ctx.state.activeWorkout,null);assert.equal(ctx.state.db.sessions.length,1);assert.equal(ctx.state.db.sessions[0].id,id);assert.equal(ctx.saved,1);assert.equal(storage.has('lume_fit_workout_draft:demo'),false);assert.match(root.innerHTML,/Treino salvo/);
+ const saved=json(ctx.state.db.sessions[0]);assert.equal(saved.entries[0].sets[0].kg,11);assert.ok(saved.durationSeconds>=165);
+ storage.set('lume_fit_workout_draft:demo',JSON.stringify(snapshot));g.detach();g.attach('demo');assert.equal(ctx.state.activeWorkout,null); // crash after saving before draft removal
+ g.start('routine1');g.update(0,'kg','5');g.update(0,'reps','5');g.toggle(0);confirm=false;await g.finish();assert.ok(ctx.state.activeWorkout);assert.equal(ctx.state.db.sessions.length,1);await g.discard();assert.ok(ctx.state.activeWorkout);confirm=true;await g.discard();assert.equal(ctx.state.activeWorkout,null);assert.equal(ctx.state.db.sessions.length,1);
+ const changed=json(saved);changed.id='new';changed.date=new Date(now+1000).toISOString();changed.entries[0].sets[0].kg=12;
+ let comparison=ctx.guidedComparison(changed,[saved]);assert.equal(comparison.comparable,true);assert.equal(comparison.delta,12);changed.entries[0].sets.push({kg:0,reps:5});assert.equal(ctx.guidedComparison(changed,[saved]).comparable,false);
+ const expired=ctx.guidedDraft({...snapshot,rest:{seconds:60,status:'running',endsAt:now-1000,remaining:60}},now);assert.equal(expired.rest.status,'done');assert.equal(ctx.guidedRestRemaining(expired.rest,now),0);
+ assert.equal(ctx.guidedDraft({...snapshot,version:7},now),null);assert.equal(ctx.guidedDraft({...snapshot,entries:[null]},now),null);assert.equal(ctx.guidedDraft({...snapshot,startedAt:now+100000},now),null);
+ const future={date:new Date(now+10000).toISOString(),entries:[{exerciseId:'e1',sets:[{kg:100,reps:10}]}]};assert.equal(ctx.guidedLastEntry([saved,future],'e1',now).sets[0].kg,11);
+ console.log('PASS: guided validation, rest deadlines/pause/background expiry without form redraw, account-isolated restore, stale-set edits, save failure recovery, idempotency, partial/cancel and equivalent comparisons');
+})().catch(error=>{console.error(error);process.exitCode=1});
