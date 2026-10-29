@@ -59,6 +59,7 @@ function normalizeDB(db){
     routines: Array.isArray(db.routines) && db.routines.length ? db.routines : fresh.routines,
     sessions: Array.isArray(db.sessions) ? db.sessions : []
   };
+  out.profile.social=normalizeSocialProfile(out.profile.social);
   out.profile.trainingPreferences=normalizeTrainingPreferences(out.profile.trainingPreferences);
   out.profile.visibility='private';
   out.profile.onboardingComplete=out.profile.onboardingComplete===true;

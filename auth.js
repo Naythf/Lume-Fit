@@ -129,8 +129,10 @@
     render();
     setSyncLabel();
     window.ProfileExperience?.afterLogin();
+    window.SocialProfile?.connect(profileConnection());
   }
   function showLogin(){
+    window.SocialProfile?.reset();
     window.GuidedWorkout?.detach();
     window.FrequencyExperience?.reset();
     window.AutoRoutine?.reset();
@@ -150,6 +152,7 @@
     document.body.classList.remove('auth-locked');authEl.hidden=true;
     switchTab('home');
     window.ProfileExperience?.afterLogin();
+    window.SocialProfile?.connect(profileConnection());
     toast('Modo local: seus dados não estão na nuvem.');
   }
   function persist(db){
@@ -232,7 +235,8 @@
       else if(!data.session)showLogin();
     }catch(e){showLogin();notify(printError(e));}
   }
-  window.LumeAuth={showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
+  function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args)=>{const result=await client.rpc(name,args);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
+  window.LumeAuth={profileConnection,showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
   window.addEventListener('online',()=>{if(user)syncNow();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden' && user && revision>savedRevision)syncNow();});
   init();
