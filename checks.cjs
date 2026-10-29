@@ -2,7 +2,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
 const context={window:{},state:{db:{sessions:[]}}};vm.createContext(context);vm.runInContext(fs.readFileSync('frequency.js','utf8'),context);
@@ -138,3 +138,11 @@ console.log('PASS: distinct active days, open/closed weeks, streak/best/reset, h
 fc.sessions=[{date:'2026-10-29'},{date:'2026-10-29'},{date:'2026-10-28'},{date:'2026-11-02'}];
 assert.equal(run("activityFrequencySeries(sessions,'week',activityDate('2026-10-29')).at(-1).count"),2);assert.equal(run("activityFrequencySeries(sessions,'month',activityDate('2026-10-29')).at(-1).count"),2);assert.equal(run("activityFrequencySeries(sessions,'week',activityDate('2026-10-29')).length"),8);assert.equal(run("activityFrequencySeries(sessions,'month',activityDate('2026-10-29')).length"),6);
 console.log('PASS: retained 8-week/6-month frequency charts deduplicate days and ignore future records');
+// These helpers drive live filtering and keyboard navigation in the combobox.
+const controlContext={};vm.createContext(controlContext);const controlsCode=fs.readFileSync('controls.js','utf8');vm.runInContext(controlsCode.slice(0,controlsCode.indexOf('window.LumeControls=')),controlContext);
+controlContext.options=[{index:0,label:'Tríceps na polia',disabled:false},{index:1,label:'Rosca com halteres',disabled:true},{index:2,label:'Remada · Superior 1',disabled:false},{index:3,label:'Opção oculta',hidden:true,disabled:false}];
+assert.equal(vm.runInContext("lumeOptionSearch(options,'triceps polia')[0].index",controlContext),0);assert.equal(vm.runInContext("lumeOptionSearch(options,'superior remada')[0].index",controlContext),2);assert.equal(vm.runInContext("lumeOptionSearch(options,'oculta').length",controlContext),0);assert.equal(vm.runInContext("lumeOptionSearch(options,'não existe').length",controlContext),0);
+assert.equal(vm.runInContext('lumeOptionStep(options.slice(0,3),0,1)',controlContext),2);assert.equal(vm.runInContext('lumeOptionStep(options.slice(0,3),0,-1)',controlContext),2);assert.equal(vm.runInContext('lumeOptionStep([],0,1)',controlContext),-1);
+for(const file of ['controls.js','controls.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
+assert.ok(html.includes('class="ambient-aura" aria-hidden="true"'));assert.ok(fs.readFileSync('controls.css','utf8').includes('prefers-reduced-motion'));
+console.log('PASS: combobox accent-insensitive multiword search, hidden/disabled options, keyboard wrapping, assets and reduced-motion aura');
