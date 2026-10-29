@@ -33,7 +33,7 @@
     document.querySelector('.app').inert=true; document.getElementById('bottomNav').inert=true;
     requestAnimationFrame(()=>[...sheet.querySelectorAll('input,select,button,[tabindex]')].find(el=>el.type!=='hidden'&&!el.disabled&&el.getClientRects().length)?.focus());
    }else if(!document.querySelector('.sheet.active')){
-    const blocked=document.body.classList.contains('personalizing')||!!document.querySelector('dialog[open]');
+    const blocked=document.body.classList.contains('personalizing'); // Native dialogs manage their own modal inertness.
     document.querySelector('.app').inert=blocked;document.getElementById('bottomNav').inert=blocked;
     if(returnFocus?.isConnected)returnFocus.focus();
    }

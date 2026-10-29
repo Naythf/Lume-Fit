@@ -4,14 +4,14 @@ Primeira etapa da base social; não inclui lista de amigos, solicitações, busc
 
 ## Ativação no Supabase
 
-A migração foi preparada e testada localmente, mas NÃO aplicada ao projeto remoto: não há conector administrativo disponível nesta sessão. Não usar a chave pública do aplicativo para executar DDL.
+Atualização da Issue #34: migração aplicada ao projeto sbaixfmxjoekcjfikiro pela integração Supabase, com verificação de RLS, privilégios e RPC sem modificar documentos pessoais. As instruções abaixo ficam para instalação em outro ambiente.
 
 1. No Supabase do Lume Fit, abrir SQL Editor → New query.
 2. Copiar todo o conteúdo de `migrations/20261029-profile-privacy.sql` e executar. Pressupõe a estrutura user_data já existente; não é necessário executar novamente supabase-schema.sql se ela já está instalada. A migração é transacional e pode ser reaplicada, sem alterar os registros de user_data.
 3. Na versão desta branch conectada ao Supabase, entrar na conta e abrir Meu perfil → Editar perfil e privacidade. O aplicativo consulta a configuração do servidor. Só depois dessa confirmação o botão passa de Salvar rascunho para Salvar perfil e privacidade.
 4. Salvar o username para reservá-lo. A restrição UNIQUE resolve concorrência e retorna nome em uso. Compartilhar com Pessoas no Lume pede confirmação; voltar a Somente eu revoga a projeção na próxima leitura.
 
-A prévia chatgpt.site mantém config.js vazio e continua em modo local mesmo após a migração. Para validar contas reais, integrar/publicar a branch no ambiente configurado existente. Main não foi alterada nesta etapa. Nenhum dado real foi publicado ou editado nos testes.
+A prévia está conectada ao mesmo projeto com chave publishable pública. Entrar na conta habilita o fluxo real; Testar sem conta continua local. Config original e main preservados; nenhum perfil foi publicado automaticamente.
 
 ## Dados e acesso
 
