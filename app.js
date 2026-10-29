@@ -142,8 +142,9 @@ function createSeedSessions(routines){
 }
 
 function saveDB(){
-  if (window.LumeAuth) window.LumeAuth.persist(state.db);
-  else localStorage.setItem(STORAGE_KEY, JSON.stringify(state.db));
+  if (window.LumeAuth) return window.LumeAuth.persist(state.db);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.db));
+  return true;
 }
 
 function toast(msg){
@@ -264,6 +265,7 @@ function renderHome(){
       </div>
       <button class="icon-btn" onclick="switchTab('frequency')">${calendarIcon()}</button>
     </div>
+    ${GuidedWorkout.banner()}
     <div class="hero-card">
       ${nextWorkoutCard()}
     </div>
@@ -305,6 +307,7 @@ function renderWorkouts(){
  if(!selected){
   state.selectedRoutineId=null;
   root.innerHTML=`<div class="page-head"><div><h2>Seus treinos</h2><p>Seu plano, organizado do seu jeito.</p></div><button class="primary-btn compact" onclick="openRoutineSheet()">＋ Nova rotina</button></div>
+  ${GuidedWorkout.banner()}
   ${automaticRoutineEntry()}
   ${!state.db.routines.length?`<section class="routine-empty"><div class="routine-empty-art">${trainingGraphic('dumbbell')}</div><h3>Comece pelo seu próximo treino.</h3><p>Dê um nome à rotina, escolha o dia e adicione seus exercícios. Os ícones ajudam a reconhecer cada movimento.</p><button class="primary-btn" onclick="openRoutineSheet()">Criar minha primeira rotina</button></section>`:`<div class="routine-summary"><span>${state.db.routines.length} ${state.db.routines.length===1?'rotina':'rotinas'}</span><span>${state.db.routines.reduce((n,r)=>n+r.exercises.length,0)} ${state.db.routines.reduce((n,r)=>n+r.exercises.length,0)===1?'exercício':'exercícios'} no seu plano</span></div><div class="routine-list">${state.db.routines.map(r=>`<article class="routine-plan ${r.weekday===new Date().getDay()?'scheduled-today':''}"><div class="routine-plan-head"><div class="routine-art">${trainingVisual(r)}</div><div class="routine-plan-title"><span class="routine-day">${r.weekday===new Date().getDay()?'Hoje · ':''}${dayLabel(r)}</span><h3>${esc(r.name)}</h3><p>${r.exercises.length} ${r.exercises.length===1?'exercício':'exercícios'}${r.exercises.length?' · '+r.exercises.reduce((n,e)=>n+e.sets,0)+' séries':''}</p></div><button class="icon-btn" aria-label="Editar rotina ${esc(r.name)}" onclick="openEditRoutineSheet('${r.id}')">${editTrainingIcon()}</button></div><div class="routine-preview">${r.exercises.length?r.exercises.slice(0,3).map(e=>`<span>${esc(e.name)}</span>`).join('')+(r.exercises.length>3?`<span>＋${r.exercises.length-3}</span>`:''):'<span>Adicione os movimentos que fazem parte do seu treino.</span>'}</div><div class="routine-plan-actions"><button class="secondary-btn" onclick="openRoutine('${r.id}')">${r.exercises.length?'Ver exercícios':'Adicionar exercícios'}</button><button class="primary-btn" ${r.exercises.length?'':'disabled'} onclick="startWorkout('${r.id}')">Iniciar treino</button></div></article>`).join('')}</div>`}`;
   return;
@@ -314,58 +317,7 @@ function renderWorkouts(){
 }
 function editTrainingIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5 5 5M4 20l5-1L21 7l-4-4L5 15Z"/></svg>';}
 
-function renderRegister(){
-  const root = $('#screen-register');
-  const active = state.activeWorkout;
-  if (!active){
-    root.innerHTML = `<div class="empty">Selecione um treino para registrar suas séries.</div>`;
-    return;
-  }
-  const routine = state.db.routines.find(r => r.id === active.routineId);
-  const current = active.entries[active.index];
-  const prev = lastEntry(current.exerciseId);
-  const best = bestWeight(current.exerciseId);
-  const detailsText = current.targetText;
-  root.innerHTML = `
-    <div class="bar">
-      <button class="back" onclick="cancelWorkout()">‹</button>
-      <div style="flex:1;text-align:center;font-weight:600;letter-spacing:-.02em">Registrar</div>
-      <button class="back dot-menu" onclick="switchRegisterMode()">⋯</button>
-    </div>
-    <div class="register-hero">
-      <div>
-        <h3>${esc(current.name)}</h3>
-        <small style="color:#bdbdbd">${esc(routine.name)}</small>
-      </div>
-      <div class="machine-art">${trainingVisual(current)}</div>
-    </div>
-    <button class="register-muscles" onclick="openMuscleDetails('${routine.id}','${current.exerciseId}')">${muscleBadges(current)}<span>Ver músculos</span></button>
-    <div class="segmented">
-      <button class="seg-btn ${state.registerMode==='history' ? 'active' : ''}" onclick="setRegisterMode('history')">Histórico</button>
-      <button class="seg-btn ${state.registerMode==='details' ? 'active' : ''}" onclick="setRegisterMode('details')">Detalhes</button>
-    </div>
-    ${state.registerMode==='history' ? `
-      <div class="register-stats">
-        <div class="mini-stat"><div class="k">Último treino</div><div class="v">${prev ? `${prev.sets[0]?.kg ?? '-'} kg` : '—'}</div><small style="color:#8e8e8e">${prev ? prev.sets.map(s => `${s.kg} x ${s.reps}`).join(' • ') : 'Sem registro'}</small></div>
-        <div class="mini-stat"><div class="k">Melhor carga</div><div class="v">${best ?? '—'} kg</div><small style="color:#8e8e8e">meta ${current.targetText}</small></div>
-      </div>` : `
-      <div class="card"><div class="section-title" style="margin:0 0 10px"><h3>Detalhes</h3></div><p style="margin:0;color:#cacaca">Faça ${current.sets.length} séries dentro da faixa alvo de ${detailsText}. Toque no círculo para marcar a série concluída.</p></div>`}
-    <div class="sets-table">
-      <div class="table-head"><div>Série</div><div>Carga (kg)</div><div>Repetições</div><div></div></div>
-      ${current.sets.map((set, i) => `
-        <div class="set-row">
-          <div style="text-align:center">${i+1}</div>
-          <div><input type="number" inputmode="decimal" min="0" step="0.5" value="${set.kg ?? ''}" onchange="updateSet(${i}, 'kg', this.value)"></div>
-          <div><input type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ''}" onchange="updateSet(${i}, 'reps', this.value)"></div>
-          <button class="check-btn ${set.done ? 'done' : ''}" onclick="toggleSet(${i})">✓</button>
-        </div>`).join('')}
-    </div>
-    <div class="bottom-actions">
-      <button class="secondary-btn" onclick="addSetRow()">＋ Adicionar série</button>
-      <button class="primary-btn" onclick="completeExercise()">${active.index === active.entries.length-1 ? 'Concluir treino' : 'Concluir exercício'}</button><button class="ghost-btn" onclick="finishWorkout()" style="width:100%">Salvar séries concluídas e finalizar</button>
-      <div class="pager"><span>${active.index>0 ? '← Exercício anterior' : ''}</span><span>${active.index < active.entries.length-1 ? 'Próximo exercício →' : ''}</span></div>
-    </div>`;
-}
+function renderRegister(){ window.GuidedWorkout.render(); }
 
 function renderSettings(){
   const root = $('#screen-settings');
@@ -409,94 +361,15 @@ function openRoutine(id){
 }
 function closeRoutine(){ state.selectedRoutineId = null; render(); }
 
-function startWorkout(routineId, exerciseId=null){
-  const routine = state.db.routines.find(r=>r.id===routineId);
-  if (!routine) return;
-  if(!routine.exercises.length){toast('Adicione um exercício para iniciar.');return;}
-  state.activeWorkout = {
-    routineId,
-    index: exerciseId ? Math.max(0, routine.exercises.findIndex(e=>e.id===exerciseId)) : 0,
-    entries: routine.exercises.map(exercise => ({
-      exerciseId: exercise.id,
-      name: exercise.name,
-      icon: exercise.icon,
-      iconImage: safeIconImage(exercise.iconImage),
-      ...normalizeMuscleFields(exercise),
-      targetText: `${exercise.minReps}-${exercise.maxReps} reps`,
-      sets: Array.from({length: exercise.sets}, () => ({kg:'', reps:'', done:false}))
-    }))
-  };
-  state.registerMode = 'history';
-  switchTab('register');
-}
-
-async function cancelWorkout(){
-  if (!state.activeWorkout) return;
-  if (await lumeConfirm('Descartar treino?', 'As séries ainda não salvas serão perdidas.')) {
-    state.activeWorkout = null;
-    switchTab('workouts');
-  }
-}
-
-function setRegisterMode(mode){ state.registerMode = mode; renderRegister(); }
-function switchRegisterMode(){ state.registerMode = state.registerMode === 'history' ? 'details' : 'history'; renderRegister(); }
-
-function updateSet(index, key, value){
-  const set = state.activeWorkout?.entries[state.activeWorkout.index]?.sets[index];
-  if (!set) return;
-  set[key] = value;
-}
-function toggleSet(index){
-  const set = state.activeWorkout?.entries[state.activeWorkout.index]?.sets[index];
-  if (!set) return;
-  set.done = !set.done;
-  renderRegister();
-}
-function addSetRow(){
-  const current = state.activeWorkout?.entries[state.activeWorkout.index];
-  if (!current) return;
-  current.sets.push({kg:'', reps:'', done:false});
-  renderRegister();
-}
-
-function completeExercise(){
-  const active = state.activeWorkout;
-  if (!active) return;
-  const current = active.entries[active.index];
-  const validSets = current.sets.filter(s => s.done && s.kg !== '' && s.reps !== '' && Number(s.kg) >= 0 && Number(s.reps) > 0);
-  if (!validSets.length){ toast('Preencha e marque pelo menos uma série.'); return; }
-  current.cleanedSets = validSets.map(s => ({kg:Number(s.kg), reps:Number(s.reps)}));
-  if (active.index < active.entries.length - 1){
-    active.index += 1;
-    state.registerMode = 'history';
-    renderRegister();
-    return;
-  }
-  finishWorkout();
-}
-
-function finishWorkout(){
-  const active = state.activeWorkout;
-  if (!active) return;
-  const routine = state.db.routines.find(r => r.id === active.routineId);
-  const entries = active.entries.map(entry => ({
-    exerciseId: entry.exerciseId,
-    name: entry.name,
-    sets: (entry.cleanedSets || entry.sets.filter(s => s.done && s.kg !== '' && s.reps !== '').map(s => ({kg:Number(s.kg), reps:Number(s.reps)})))
-  })).filter(e => e.sets.length);
-  if (!entries.length){ toast('Nenhuma série válida para salvar.'); return; }
-  state.db.sessions.push({
-    id: uid(),
-    date: new Date().toISOString(),
-    name: routine.name,
-    routineId: routine.id,
-    entries
-  });
-  saveDB();
-  state.activeWorkout = null;
-  toast('Treino salvo com sucesso!');
-  switchTab('history');
-}
+function startWorkout(routineId,exerciseId=null){ return GuidedWorkout.start(routineId,exerciseId); }
+function cancelWorkout(){ return GuidedWorkout.discard(); }
+function setRegisterMode(mode){state.registerMode=mode;renderRegister();}
+function switchRegisterMode(){state.registerMode=state.registerMode==='history'?'details':'history';renderRegister();}
+function updateSet(index,key,value){ GuidedWorkout.update(index,key,value); }
+function toggleSet(index){ GuidedWorkout.toggle(index); }
+function addSetRow(){ GuidedWorkout.add(); }
+function completeExercise(){ GuidedWorkout.next(); }
+function finishWorkout(){ return GuidedWorkout.finish(); }
 
 async function deleteRoutine(id){
   const routine = state.db.routines.find(r => r.id === id);
@@ -509,7 +382,7 @@ async function deleteRoutine(id){
   // Apenas a rotina é excluída. O histórico é mantido para não perder evolução.
   state.db.routines = state.db.routines.filter(r => r.id !== id);
   if (state.selectedRoutineId === id) state.selectedRoutineId = null;
-  if (state.activeWorkout?.routineId === id) state.activeWorkout = null;
+  // An active session owns a snapshot and may be finished after routine deletion.
   saveDB();
   render();
   toast('Rotina excluída.');
@@ -651,6 +524,7 @@ async function importData(input){
     const parsed = JSON.parse(await file.text());
     if (!Array.isArray(parsed.routines)||!Array.isArray(parsed.sessions))throw Error('Backup inválido');
     if (!await lumeConfirm('Importar backup?', 'Isso substituirá os treinos e os dados atuais deste aparelho.'))return;
+    GuidedWorkout.clearDraft();
     state.db = normalizeDB(parsed);
     saveDB();
     render();

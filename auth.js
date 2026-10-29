@@ -119,6 +119,7 @@
     if(!cloud && local) scheduleSync();
     state.selectedRoutineId=null;
     state.activeWorkout=null;
+    window.GuidedWorkout?.attach(key);
     window.FrequencyExperience?.reset();
     document.body.classList.remove('auth-locked');
     authEl.hidden=true;
@@ -130,6 +131,7 @@
     window.ProfileExperience?.afterLogin();
   }
   function showLogin(){
+    window.GuidedWorkout?.detach();
     window.FrequencyExperience?.reset();
     window.AutoRoutine?.reset();
     window.ProfileExperience?.reset();
@@ -144,13 +146,14 @@
     demo=true;
     try {state.db=normalizeDB(JSON.parse(localStorage.getItem('lumefit_v4_demo')||'null')||initialData());}
     catch {state.db=initialData();}
+    window.GuidedWorkout?.attach('demo');
     document.body.classList.remove('auth-locked');authEl.hidden=true;
     switchTab('home');
     window.ProfileExperience?.afterLogin();
     toast('Modo local: seus dados não estão na nuvem.');
   }
   function persist(db){
-    if(demo){try{localStorage.setItem('lumefit_v4_demo',JSON.stringify(db));}catch{toast('Armazenamento local cheio. Exporte um backup.');}return;}
+    if(demo){try{localStorage.setItem('lumefit_v4_demo',JSON.stringify(db));return true;}catch{toast('Armazenamento local cheio. Exporte um backup.');return false;}}
     if(!user)return;
     try{localStorage.setItem(localKey(user.id), JSON.stringify(db));}catch{syncError='Armazenamento local cheio';}
     revision++;
