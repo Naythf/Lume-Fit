@@ -14,3 +14,5 @@
 - motion.js/css melhora details/summary dinamicamente: o conteúdo fica em .lume-disclosure-body; preservar rótulos, validação e movimento reduzido ao alterar expansões. Não depender de conteúdo como filho direto de details, exceto summary.
 
 - Usar LumeMotionPreference como fonte única de movimento em JS e html[data-motion] em CSS. Conforme solicitação do usuário na Issue #22, Ativadas é o padrão quando não há escolha válida salva; preservar escolhas explícitas Seguir o sistema e Reduzidas. Não reintroduzir regras de prefers-reduced-motion que ignorem a escolha. Assets do service worker usam lista permitida, validação de tipo e rede primeiro, sem cachear APIs ou páginas de autenticação.
+
+- Antes de testar/publicar alterações nos assets, rodar `node prepare-release.cjs`, depois `node checks.cjs`. Isso gera app-version.json e URLs versionadas no index. Copiar ambos e todos os assets alterados juntos para a prévia. Nunca gerar um hash com config.js. A prévia chatgpt.site não usa cache offline; o PWA fora dela continua disponível. updates.js verifica novas publicações e não recarrega automaticamente com treino, modal ou edição pendente.

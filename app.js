@@ -867,6 +867,6 @@ window.calculateMetrics = calculateMetrics;
 window.setGoal = setGoal;
 
 render();
-if ('serviceWorker' in navigator) {
+if ('serviceWorker' in navigator && !location.hostname.endsWith('.chatgpt.site')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{}));
 }

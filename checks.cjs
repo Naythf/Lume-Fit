@@ -2,7 +2,9 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','motion.js','motion-preference.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+execFileSync(process.execPath,['updates-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['prepare-release.cjs','--check'],{stdio:'inherit'});
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','motion.js','motion-preference.js','updates.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
 const context={window:{},state:{db:{sessions:[]}}};vm.createContext(context);vm.runInContext(fs.readFileSync('frequency.js','utf8'),context);
@@ -45,7 +47,7 @@ plannerCtx.backup={routines:[{id:'r1',name:'Pernas',icon:'squat',iconImage:image
 const restored=vm.runInContext('normalizeDB(backup)',plannerCtx);assert.equal(restored.routines[0].iconImage,image);assert.equal(restored.routines[0].exercises[0].iconImage,image);assert.equal(restored.sessions[0].id,'history1');
 plannerCtx.legacy={routines:[{id:'old',name:'Costas',exercises:[{id:'old-ex',name:'Remada',icon:'pull',sets:4,minReps:10,maxReps:12}]}],sessions:[]};
 const old=vm.runInContext('normalizeDB(legacy)',plannerCtx);assert.equal(old.routines[0].exercises[0].icon,'pull');assert.equal(old.routines[0].exercises[0].iconImage,'');
-assert.ok(html.indexOf('routines.js')<html.indexOf('src="app.js"'));assert.ok(sw.includes('./routines.js'));
+assert.ok(html.indexOf('routines.js')<html.indexOf('src="app.js'));assert.ok(sw.includes('./routines.js'));
 console.log('PASS: icon suggestions, unsafe images rejected, custom images restored, legacy icons/history preserved');
 const editor=source.slice(source.indexOf('function saveExercise('),source.indexOf('function exportData('));
 const editorState={db:JSON.parse(JSON.stringify(plannerCtx.backup)),selectedRoutineId:null};let saves=0;
@@ -165,7 +167,7 @@ policy.storage.set('lume_motion_preference','full');policy.events.storage({key:'
 const blockedPolicy=preferenceHarness(true,null,true,true);assert.equal(blockedPolicy.policy.matches,false);blockedPolicy.policy.set('full');assert.equal(blockedPolicy.policy.matches,false);
 for(const osReduced of [true,false]){assert.equal(preferenceHarness(osReduced).policy.matches,false);assert.equal(preferenceHarness(osReduced,'invalid').policy.choice,'full');assert.equal(preferenceHarness(osReduced,'reduced').policy.matches,true);assert.equal(preferenceHarness(osReduced,'system').policy.matches,osReduced);}
 policy.storage.delete('lume_motion_preference');policy.events.storage({key:'lume_motion_preference'});assert.equal(policy.policy.choice,'full');assert.equal(policy.policy.matches,false);
-assert.ok(html.indexOf('motion-preference.js')<html.indexOf('src="app.js"'));assert.ok(sw.includes('motion-preference.js'));assert.ok(html.includes('motion-preference.css'));
+assert.ok(html.indexOf('motion-preference.js')<html.indexOf('src="app.js'));assert.ok(sw.includes('motion-preference.js'));assert.ok(html.includes('motion-preference.css'));
 console.log('PASS: system/full/reduced policy, OS changes, cross-tab updates, blocked storage, legacy media listeners and load order');
 (async()=>{
  const map=new Map(),swContext={URL,Request,Response,Set,Error,self:{location:{href:'https://example.test/Lume-Fit/sw.js'},addEventListener(){}},caches:{open:async()=>({put:async(key,value)=>map.set(key,value.clone()),match:async key=>map.get(key)?.clone()})},fetch:async()=>new Response('new-script',{headers:{'content-type':'text/javascript'}})};vm.createContext(swContext);vm.runInContext(sw,swContext);
