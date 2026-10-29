@@ -346,7 +346,7 @@ function renderSettings(){
     </div>
     <div class="settings-groups">
       <details class="settings-group" data-setting="preferences" ${expanded.includes('preferences')?'open':''}>
-        <summary><span class="settings-group-icon" aria-hidden="true">${gearIcon()}</span><span><strong>Preferências</strong><small>Animações e movimento do aplicativo</small></span></summary>
+        <summary><span class="settings-group-icon" aria-hidden="true">${preferencesIcon()}</span><span><strong>Preferências</strong><small>Animações e movimento do aplicativo</small></span></summary>
         <div class="settings-group-content">${motionPreferenceCard()}</div>
       </details>
       <details class="settings-group" data-setting="backup" ${expanded.includes('backup')?'open':''}>
@@ -747,3 +747,5 @@ render();
 if ('serviceWorker' in navigator && !location.hostname.endsWith('.chatgpt.site')) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{}));
 }
+
+function preferencesIcon(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3m4 0h9M4 17h9m4 0h3"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></svg>`;}
