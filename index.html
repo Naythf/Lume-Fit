@@ -313,6 +313,7 @@
 
   </style>
   <link rel="stylesheet" href="experience.css">
+  <link rel="stylesheet" href="personalization.css">
 </head>
 <body class="auth-locked">
   <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
@@ -349,7 +350,7 @@
           <div class="brandname">Lume <span>Fit</span></div>
         </div>
       </div>
-      <div class="offline-pill">Lume Cloud</div>
+      <div class="header-account"><div class="offline-pill">Lume Cloud</div><button class="profile-trigger" id="profileAvatar" aria-label="Abrir meu perfil" onclick="ProfileExperience.open()"></button></div>
     </header>
 
     <main id="mainContent" tabindex="-1">
@@ -359,6 +360,7 @@
       <section id="screen-history" class="screen"></section>
       <section id="screen-frequency" class="screen"></section>
       <section id="screen-settings" class="screen"></section>
+      <section id="screen-profile" class="screen"></section>
       <section id="screen-knowledge" class="screen"></section>
     </main><footer class="app-footer"><span>LUME FIT · NO SEU RITMO</span><a href="#privacy" data-policy="privacy">Privacidade</a><a href="#storage" data-policy="storage">Armazenamento</a><a href="#terms" data-policy="terms">Sobre o uso</a></footer>
   </div>
@@ -382,11 +384,13 @@
     </div>
   </div>
 
+  <section id="personalizePanel" class="personalize-panel" hidden role="dialog" aria-modal="true" aria-labelledby="setupTitle"></section>
   <dialog id="legalDialog" class="legal-dialog" aria-labelledby="legalTitle"><button class="ghost-btn" aria-label="Fechar informações">Fechar</button><h2 id="legalTitle"></h2><div id="legalBody"></div></dialog>
   <script src="experience.js" defer></script>
   <script src="config.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js" defer></script>
   <script src="routines.js" defer></script>
+  <script src="personalization.js" defer></script>
   <script src="app.js" defer></script>
   <script src="auth.js" defer></script>
 </body>

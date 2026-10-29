@@ -2,7 +2,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
 const context={state:{db:{sessions:[]}}};vm.createContext(context);
@@ -30,6 +30,8 @@ console.log('PASS: visual metrics preserve hydration/energy/BMI, target differen
 const planner=fs.readFileSync('routines.js','utf8');
 const plannerCtx={esc:s=>String(s),machineArt:()=>'<svg></svg>',clamp:(n,a,b)=>Math.max(a,Math.min(b,n)),uid:()=> 'new-id'};
 vm.createContext(plannerCtx);vm.runInContext(planner,plannerCtx);
+const personal=fs.readFileSync('personalization.js','utf8');
+vm.runInContext(personal.slice(0,personal.indexOf('window.ProfileExperience=')),plannerCtx);
 for(const [name,icon] of [['Supino reto','bench'],['Remada baixa','row'],['Elevação lateral','raise'],['Bíceps','curl'],['Leg press 45','legpress'],['Prancha','plank'],['Corrida','run'],['Exercício novo','dumbbell']])assert.equal(vm.runInContext(`suggestTrainingIcon(${JSON.stringify(name)})`,plannerCtx),icon);
 assert.equal(vm.runInContext("safeIconImage('javascript:alert(1)')",plannerCtx),'');
 assert.equal(vm.runInContext("safeIconImage('data:image/svg+xml;base64,PHN2Zz4=')",plannerCtx),'');
@@ -51,3 +53,25 @@ plannerCtx.ev={preventDefault(){},target:{elements:{routineId:{value:'r1'}},valu
 vm.runInContext('saveExercise(ev)',plannerCtx);assert.equal(saves,1);assert.equal(editorState.db.routines[0].exercises.length,1);assert.equal(editorState.db.routines[0].exercises[0].id,'e1');assert.equal(editorState.db.routines[0].exercises[0].iconImage,image);assert.equal(editorState.db.sessions[0].id,'history1');
 plannerCtx.ev.target.values.minReps='12';plannerCtx.ev.target.values.maxReps='8';vm.runInContext('saveExercise(ev)',plannerCtx);assert.equal(saves,1);
 console.log('PASS: editing preserves exercise IDs/custom icons/history and rejects inverted repetition ranges');
+plannerCtx.preferenceInput={modes:['gym','home','gym','invalid'],goal:'strength',focus:['triceps','bogus'],days:[1,3,1,9,'2'],minutes:45,equipment:['bodyweight','dumbbells','alien']};
+const preferences=vm.runInContext('normalizeTrainingPreferences(preferenceInput)',plannerCtx);
+assert.deepEqual(JSON.parse(JSON.stringify(preferences.modes)),['gym','home']);assert.deepEqual(JSON.parse(JSON.stringify(preferences.days)),[1,3]);assert.deepEqual(JSON.parse(JSON.stringify(preferences.focus)),['triceps']);assert.equal(preferences.minutes,45);
+plannerCtx.preferenceInput={};assert.equal(vm.runInContext('normalizeTrainingPreferences(preferenceInput).minutes',plannerCtx),30);
+for(const [name,primary] of [['Supino reto','chest'],['Supino fechado','triceps'],['Tríceps corda','triceps'],['Elevação lateral','shoulders'],['Agachamento livre','quads'],['Remada baixa','back'],['Movimento desconhecido','']]){
+ plannerCtx.exercise={name};assert.equal(vm.runInContext('exerciseMuscles(exercise).primary',plannerCtx),primary);
+}
+plannerCtx.exercise={name:'Supino reto',muscleMode:'manual',primaryMuscle:'triceps',secondaryMuscles:['chest','triceps','invalid']};
+const manual=vm.runInContext('exerciseMuscles(exercise)',plannerCtx);assert.equal(manual.primary,'triceps');assert.deepEqual(JSON.parse(JSON.stringify(manual.secondary)),['chest']);assert.equal(manual.suggested,false);
+plannerCtx.legacy.profile={name:'Existing',weight:72,trainingPreferences:preferences,bio:'Private',onboardingComplete:true,visibility:'public'};
+const preserved=vm.runInContext('normalizeDB(legacy)',plannerCtx);assert.equal(preserved.profile.name,'Existing');assert.equal(preserved.profile.weight,72);assert.equal(preserved.profile.visibility,'private');assert.equal(preserved.profile.onboardingComplete,true);assert.equal(preserved.routines[0].exercises[0].id,'old-ex');
+assert.ok(html.includes('personalizePanel'));assert.ok(sw.includes('./personalization.js'));assert.ok(sw.includes('./personalization.css'));
+console.log('PASS: profile normalization, mixed modalities, manual muscle override, unknown exercises and privacy defaults');
+const fakePanel={hidden:true,innerHTML:'',scrollTop:0};const fakeBody={classList:{add(){},remove(){}}};
+const fakeElements={personalizePanel:fakePanel,setupTitle:{focus(){}},setupName:{value:'New draft'},setupBio:{value:'Unsaved bio'},setupGoal:{value:'strength'},bottomNav:{inert:false}};
+const appNode={inert:false};let profileSaves=0;
+const profileCtx={window:{},document:{getElementById:k=>fakeElements[k],querySelector:()=>appNode,body:fakeBody,addEventListener(){}},requestAnimationFrame:fn=>fn(),state:{db:{profile:{name:'Existing user',bio:'Keep me',onboardingComplete:false,trainingPreferences:{modes:['gym']}}}},esc:s=>String(s),saveDB:()=>profileSaves++,switchTab(){},toast(){},WEEKDAYS:['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']};
+vm.createContext(profileCtx);vm.runInContext(personal,profileCtx);
+profileCtx.window.ProfileExperience.afterLogin();assert.equal(fakePanel.hidden,false);profileCtx.window.ProfileExperience.skip();assert.equal(profileCtx.state.db.profile.name,'Existing user');assert.equal(profileCtx.state.db.profile.bio,'Keep me');assert.equal(profileSaves,1);
+profileCtx.window.ProfileExperience.start(true);profileCtx.window.ProfileExperience.skip();assert.equal(profileSaves,1);assert.equal(profileCtx.state.db.profile.bio,'Keep me');
+profileCtx.window.ProfileExperience.start(true);profileCtx.window.ProfileExperience.reset();profileCtx.state.db.profile={name:'Second account',bio:'',onboardingComplete:false};profileCtx.window.ProfileExperience.afterLogin();assert.ok(fakePanel.innerHTML.includes('Second account'));assert.ok(!fakePanel.innerHTML.includes('Existing user'));assert.ok(!fakePanel.innerHTML.includes('Keep me'));
+console.log('PASS: skip/cancel preserve existing profile and resetting clears the previous account draft');
