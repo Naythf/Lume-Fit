@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v15-automatic-routines';
+const CACHE = 'lume-fit-static-v15-automatic-routines-final';
 const ASSETS = [
   './',
   './index.html',
