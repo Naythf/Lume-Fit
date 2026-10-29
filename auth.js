@@ -119,6 +119,7 @@
     if(!cloud && local) scheduleSync();
     state.selectedRoutineId=null;
     state.activeWorkout=null;
+    window.FrequencyExperience?.reset();
     document.body.classList.remove('auth-locked');
     authEl.hidden=true;
     state.currentTab='home';
@@ -129,6 +130,7 @@
     window.ProfileExperience?.afterLogin();
   }
   function showLogin(){
+    window.FrequencyExperience?.reset();
     window.AutoRoutine?.reset();
     window.ProfileExperience?.reset();
     document.body.classList.add('auth-locked');
