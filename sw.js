@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v14-personalization';
+const CACHE = 'lume-fit-static-v15-automatic-routines-final';
 const ASSETS = [
   './',
   './index.html',
@@ -8,6 +8,9 @@ const ASSETS = [
   './routines.js',
   './personalization.js',
   './personalization.css',
+  './exercise-catalog.js',
+  './automatic-routines.js',
+  './automatic-routines.css',
   './auth.js',
   './config.js',
   './manifest.webmanifest',

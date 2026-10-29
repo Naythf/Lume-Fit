@@ -129,6 +129,7 @@
     window.ProfileExperience?.afterLogin();
   }
   function showLogin(){
+    window.AutoRoutine?.reset();
     window.ProfileExperience?.reset();
     document.body.classList.add('auth-locked');
     authEl.hidden=false;
