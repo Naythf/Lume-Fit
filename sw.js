@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v25-rest-controls';
+const CACHE = 'lume-fit-static-v26-profile-privacy';
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,8 @@ const ASSETS = [
   './frequency.css',
   './controls.js',
   './controls.css',
+  './social-profile.js',
+  './social-profile.css',
   './guided-workout.js',
   './guided-workout.css',
   './updates.js',
