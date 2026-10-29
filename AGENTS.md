@@ -10,3 +10,5 @@
 - Rodar `node checks.cjs`. Validar fluxos no navegador quando disponível; registrar claramente o que não foi testado. Atualizar o cache do PWA quando alterar assets.
 
 - Seletores simples usam controls.js/css (LumeControls), preservando o select como fonte do formulário. Novos selects são melhorados automaticamente; manter rótulos, callbacks, navegação por teclado e compatibilidade de modais. Não substituir novamente pelos menus visuais nativos sem solicitação.
+
+- motion.js/css melhora details/summary dinamicamente: o conteúdo fica em .lume-disclosure-body; preservar rótulos, validação e movimento reduzido ao alterar expansões. Não depender de conteúdo como filho direto de details, exceto summary.

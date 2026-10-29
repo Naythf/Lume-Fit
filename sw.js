@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v18-lume-hub-glass';
+const CACHE = 'lume-fit-static-v19-interaction-motion-final';
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,8 @@ const ASSETS = [
   './frequency.css',
   './controls.js',
   './controls.css',
+  './motion.js',
+  './motion.css',
   './auth.js',
   './config.js',
   './manifest.webmanifest',
