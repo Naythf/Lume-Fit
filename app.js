@@ -370,9 +370,10 @@ function renderRegister(){
 function renderSettings(){
   const root = $('#screen-settings');
   const p = state.db.profile;
+  const expanded = [...root.querySelectorAll('details[open][data-setting]')].map(el=>el.dataset.setting);
   root.innerHTML = `
     <div class="page-head"><div><h2>Ajustes</h2></div></div>
-    <button class="secondary-btn" style="margin-bottom:20px" onclick="ProfileExperience.open()">Meu perfil e preferências</button>
+    <button class="secondary-btn" style="margin-bottom:20px" onclick="switchTab('profile')">Meu perfil</button>
     <div class="profile-card">
       <div class="avatar">${p.photo ? `<img class="profile-photo" src="${p.photo}" alt="Foto de perfil">` : userIcon()}</div>
       <div class="profile-meta">
@@ -388,14 +389,15 @@ function renderSettings(){
       <div><strong>Sincronização</strong><br><small id="cloudState">${esc(window.LumeAuth?.status() || 'Verificando...')}</small></div>
       <button onclick="LumeAuth.syncNow()">Sincronizar</button>
     </div>
-    ${motionPreferenceCard()}
-    <div class="menu-card">
-      <div class="menu-row" onclick="openPhotoPicker()"><div class="menu-ico">${userIcon()}</div><div><strong>Foto de perfil</strong><small>Escolher imagem do dispositivo</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openProfileSheet()"><div class="menu-ico">${userBadgeIcon()}</div><div><strong>Meus dados</strong><small>Nome, idade, peso e altura</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openRoutineSheet()"><div class="menu-ico">${miniRoutineIcon()}</div><div><strong>Meus treinos</strong><small>Criar ou ajustar rotinas</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openExerciseSheet()"><div class="menu-ico">${dumbbellSmallIcon()}</div><div><strong>Exercícios</strong><small>Adicionar novos exercícios</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="exportData()"><div class="menu-ico">${downloadIcon()}</div><div><strong>Backup e restaurar</strong><small>Exportar ou importar dados</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openImportFile()"><div class="menu-ico">${gearIcon()}</div><div><strong>Preferências</strong><small>Importar backup JSON</small></div><div class="push">›</div></div>
+    <div class="settings-groups">
+      <details class="settings-group" data-setting="preferences" ${expanded.includes('preferences')?'open':''}>
+        <summary><span class="settings-group-icon" aria-hidden="true">${gearIcon()}</span><span><strong>Preferências</strong><small>Animações e movimento do aplicativo</small></span></summary>
+        <div class="settings-group-content">${motionPreferenceCard()}</div>
+      </details>
+      <details class="settings-group" data-setting="backup" ${expanded.includes('backup')?'open':''}>
+        <summary><span class="settings-group-icon" aria-hidden="true">${downloadIcon()}</span><span><strong>Backup e restauração</strong><small>Salve uma cópia ou restaure seus dados</small></span></summary>
+        <div class="settings-group-content"><p class="hint">Guarde uma cópia dos seus treinos, histórico e perfil em um arquivo JSON.</p><div class="backup-actions"><button type="button" class="secondary-btn" onclick="exportData()">Exportar backup</button><button type="button" class="secondary-btn" onclick="openImportFile()">Restaurar backup</button></div><p class="hint">Ao restaurar, os dados atuais serão substituídos. Você poderá confirmar antes da importação.</p></div>
+      </details>
     </div>
     <input id="photoFile" class="hidden" type="file" accept="image/*" onchange="receivePhoto(this)">
     <input id="importFile" class="hidden" type="file" accept="application/json,.json" onchange="importData(this)">`;
@@ -525,10 +527,10 @@ function openProfileSheet(){
   openSheet(`
     <h3>Editar perfil</h3>
     <form class="form" onsubmit="saveProfile(event)">
-      <div class="field"><label>Nome</label><input name="name" value="${esc(p.name)}" required></div>
-      <div class="field"><label>Idade</label><input name="age" type="number" min="1" value="${p.age}"></div>
-      <div class="field"><label>Peso (kg)</label><input name="weight" type="number" min="1" step="0.1" value="${p.weight}"></div>
-      <div class="field"><label>Altura</label><input name="height" value="${esc(p.height)}"></div>
+      <div class="field"><label for="profileName">Nome</label><input id="profileName" name="name" value="${esc(p.name)}" required></div>
+      <div class="field"><label for="profileAge">Idade</label><input id="profileAge" name="age" type="number" min="1" value="${p.age}"></div>
+      <div class="field"><label for="profileWeight">Peso (kg)</label><input id="profileWeight" name="weight" type="number" min="1" step="0.1" value="${p.weight}"></div>
+      <div class="field"><label for="profileHeight">Altura</label><input id="profileHeight" name="height" value="${esc(p.height)}"></div>
       <div class="row-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">Salvar</button></div>
     </form>`);
 }
