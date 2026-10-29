@@ -251,6 +251,8 @@ function weeklyActivityCard(){
  return `<section class="week-card" aria-label="Atividade desta semana"><div class="week-heading"><h3>Seu ritmo nesta semana</h3><small>${count} ${count===1?'dia ativo':'dias ativos'}</small></div><div class="week-days">${days.map((d,i)=>`<div class="week-day ${hits.has(key(d))?'hit':''} ${key(d)===key(now)?'today':''}" aria-label="${['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i]}, dia ${d.getDate()}${hits.has(key(d))?', treino registrado':''}${key(d)===key(now)?', hoje':''}"><span>${['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]}</span><b>${d.getDate()}</b></div>`).join('')}</div><p class="week-note">${count?'Cada registro conta a sua história. Confira seus registros e evolução em Frequência.':'Sua semana começa com um registro. Organize suas rotinas e treine no seu ritmo.'} Dias de descanso também fazem parte do planejamento.</p></section>`;
 }
 
+function recentWorkoutVisual(session){const routine=state.db.routines.find(r=>r.id===session.routineId);return trainingVisual(routine||{name:session.name,icon:session.icon,iconImage:session.iconImage});}
+
 function renderHome(){
   const root = $('#screen-home');
   const profile = state.db.profile;
@@ -292,10 +294,10 @@ function renderHome(){
     <div class="mini-list">
       ${recent.length ? recent.map(s => `
         <div class="mini-item" onclick="switchTab('history')">
-          <div class="ico">${miniRoutineIcon()}</div>
+          <div class="ico recent-workout-icon" aria-hidden="true">${recentWorkoutVisual(s)}</div>
           <div>
             <strong>${esc(s.name)}</strong>
-            <small>${shortDate(s.date)} • ${(s.entries||[]).length} exercícios</small>
+            <small>${shortDate(s.date)} • ${(s.entries||[]).length} ${(s.entries||[]).length===1?'exercício':'exercícios'}</small>
           </div>
           <div class="push">›</div>
         </div>`).join('') : `<div class="empty">Sua evolução começa aqui.<br>Conclua seu primeiro treino para acompanhar os resultados.</div>`}

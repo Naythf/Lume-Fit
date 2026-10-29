@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v26-profile-privacy';
+const CACHE = 'lume-fit-static-v27-home-supabase';
 const ASSETS = [
   './',
   './index.html',
