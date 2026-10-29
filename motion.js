@@ -1,7 +1,7 @@
 /* Interaction-led motion; no timers for fake loading or persistence changes. */
 window.LumeMotion=(()=>{
  const records=new WeakMap(),running=new Set(),navAnimations=new WeakMap();
- const preference=window.matchMedia('(prefers-reduced-motion: reduce)');
+ const preference=window.LumeMotionPreference||window.matchMedia('(prefers-reduced-motion: reduce)');
  function finish(record,expanded){
   if(record.animation){const animation=record.animation;record.animation=null;animation.cancel();}
   record.expanded=expanded;record.details.open=expanded;record.body.inert=!expanded;record.details.removeAttribute('data-disclosure-state');record.details.classList.remove('lume-disclosure-animating');running.delete(record);

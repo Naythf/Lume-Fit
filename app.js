@@ -388,6 +388,7 @@ function renderSettings(){
       <div><strong>Sincronização</strong><br><small id="cloudState">${esc(window.LumeAuth?.status() || 'Verificando...')}</small></div>
       <button onclick="LumeAuth.syncNow()">Sincronizar</button>
     </div>
+    ${motionPreferenceCard()}
     <div class="menu-card">
       <div class="menu-row" onclick="openPhotoPicker()"><div class="menu-ico">${userIcon()}</div><div><strong>Foto de perfil</strong><small>Escolher imagem do dispositivo</small></div><div class="push">›</div></div>
       <div class="menu-row" onclick="openProfileSheet()"><div class="menu-ico">${userBadgeIcon()}</div><div><strong>Meus dados</strong><small>Nome, idade, peso e altura</small></div><div class="push">›</div></div>
@@ -830,7 +831,7 @@ function calculateMetrics(){
   <article class="metric-tile visual-metric"><div class="metric-top"><span>Diferença até o objetivo</span>${metricIllustration('goal')}</div><b>${targetValid?diff.toLocaleString('pt-BR',{maximumFractionDigits:1})+' <em>kg</em>':'—'}</b><small>${extra}</small>${targetValid?`<div class="weight-route"><span>Agora<strong>${weight.toLocaleString('pt-BR')} kg</strong></span><i aria-hidden="true">→</i><span>Objetivo<strong>${target.toLocaleString('pt-BR')} kg</strong></span></div><p>Distância ao valor informado, não progresso já realizado.</p>`:'<div class="metric-divider"></div><p>Escolha ganhar ou perder peso e informe um peso desejado coerente para visualizar a diferença.</p>'}</article>
  </div>
  <aside class="metric-context"><strong>Referências, não regras.</strong><p>${targetValid?'Projeção meramente matemática a uma taxa de 0,25–0,5% do peso por semana: '+weeks+'. Não é previsão individual.':'Os resultados usam os valores informados nesta calculadora.'}</p><p>Não definimos automaticamente déficit ou superávit calórico. Treino, alimentação e saúde precisam ser considerados com acompanhamento profissional.</p></aside></section>`;
- $('#metricResults').scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+ $('#metricResults').scrollIntoView({behavior:(window.LumeMotionPreference||window.matchMedia('(prefers-reduced-motion: reduce)')).matches?'auto':'smooth',block:'start'});
 }
 window.switchTab = switchTab;
 window.openRoutine = openRoutine;
@@ -865,5 +866,5 @@ window.setGoal = setGoal;
 
 render();
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{}));
 }

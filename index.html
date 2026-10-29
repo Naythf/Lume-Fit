@@ -272,7 +272,7 @@
     @keyframes progress-draw{to{stroke-dashoffset:0}}
     @keyframes progress-pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
     @media(max-width:480px){.chart-wrap{padding:10px 6px 12px}.progress-summary{padding:0 8px}.progress-summary strong{font-size:17px}}
-    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+    html[data-motion="reduced"] *,html[data-motion="reduced"] *:before,html[data-motion="reduced"] *:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   
     [hidden]{display:none!important}
     /* Acesso — mesma linguagem visual monocromática do Lume Fit */
@@ -309,7 +309,7 @@
     .session-card button{background:#212121;color:#eee;padding:11px 14px;border-radius:12px;border:1px solid #444;flex-shrink:0}
     @keyframes auth-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     @media(min-width:900px){.auth-card{padding:33px}.auth-screen{padding:45px}}
-    @media(prefers-reduced-motion:reduce){.auth-shell{animation:none}}
+    html[data-motion="reduced"] .auth-shell{animation:none}
 
   </style>
   <link rel="stylesheet" href="experience.css">
@@ -318,6 +318,7 @@
   <link rel="stylesheet" href="frequency.css">
   <link rel="stylesheet" href="controls.css">
   <link rel="stylesheet" href="motion.css">
+  <link rel="stylesheet" href="motion-preference.css">
 </head>
 <body class="auth-locked">
   <div class="ambient-aura" aria-hidden="true"></div>
@@ -391,6 +392,7 @@
   <dialog id="autoRoutineDialog" class="auto-dialog" aria-labelledby="autoTitle"></dialog>
   <section id="personalizePanel" class="personalize-panel" hidden role="dialog" aria-modal="true" aria-labelledby="setupTitle"></section>
   <dialog id="legalDialog" class="legal-dialog" aria-labelledby="legalTitle"><button class="ghost-btn" aria-label="Fechar informações">Fechar</button><h2 id="legalTitle"></h2><div id="legalBody"></div></dialog>
+  <script src="motion-preference.js" defer></script>
   <script src="experience.js" defer></script>
   <script src="config.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js" defer></script>

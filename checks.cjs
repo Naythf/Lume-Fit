@@ -2,7 +2,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','motion.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','motion.js','motion-preference.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
 const context={window:{},state:{db:{sessions:[]}}};vm.createContext(context);vm.runInContext(fs.readFileSync('frequency.js','utf8'),context);
@@ -144,5 +144,25 @@ controlContext.options=[{index:0,label:'Tríceps na polia',disabled:false},{inde
 assert.equal(vm.runInContext("lumeOptionSearch(options,'triceps polia')[0].index",controlContext),0);assert.equal(vm.runInContext("lumeOptionSearch(options,'superior remada')[0].index",controlContext),2);assert.equal(vm.runInContext("lumeOptionSearch(options,'oculta').length",controlContext),0);assert.equal(vm.runInContext("lumeOptionSearch(options,'não existe').length",controlContext),0);
 assert.equal(vm.runInContext('lumeOptionStep(options.slice(0,3),0,1)',controlContext),2);assert.equal(vm.runInContext('lumeOptionStep(options.slice(0,3),0,-1)',controlContext),2);assert.equal(vm.runInContext('lumeOptionStep([],0,1)',controlContext),-1);
 for(const file of ['controls.js','controls.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
-assert.ok(html.includes('class="ambient-aura" aria-hidden="true"'));assert.ok(fs.readFileSync('controls.css','utf8').includes('prefers-reduced-motion'));
+assert.ok(html.includes('class="ambient-aura" aria-hidden="true"'));assert.ok(fs.readFileSync('controls.css','utf8').includes('data-motion="reduced"'));
 console.log('PASS: combobox accent-insensitive multiword search, hidden/disabled options, keyboard wrapping, assets and reduced-motion aura');
+const preferenceCode=fs.readFileSync('motion-preference.js','utf8');
+function preferenceHarness(systemReduced,stored,blocked=false,legacy=false){
+ let systemListener;const events={};const storage=new Map(stored?[['lume_motion_preference',stored]]:[]),query={matches:systemReduced};query[legacy?'addListener':'addEventListener']=(...args)=>{systemListener=args.at(-1)};
+ const ctx={window:{matchMedia:()=>query,addEventListener:(name,listener)=>events[name]=listener},document:{documentElement:{dataset:{}}},localStorage:{getItem:key=>{if(blocked)throw Error('blocked');return storage.get(key)||null},setItem:(key,value)=>{if(blocked)throw Error('blocked');storage.set(key,value)}}};vm.createContext(ctx);vm.runInContext(preferenceCode,ctx);return {ctx,query,storage,events,policy:ctx.window.LumeMotionPreference,change(){systemListener()}};
+}
+const policy=preferenceHarness(true);assert.equal(policy.policy.choice,'system');assert.equal(policy.policy.matches,true);assert.equal(policy.ctx.document.documentElement.dataset.motion,'reduced');policy.policy.set('full');assert.equal(policy.policy.matches,false);assert.equal(policy.ctx.document.documentElement.dataset.motion,'full');policy.query.matches=false;policy.change();assert.equal(policy.policy.matches,false);policy.policy.set('reduced');assert.equal(policy.policy.matches,true);policy.policy.set('system');assert.equal(policy.policy.matches,false);policy.query.matches=true;policy.change();assert.equal(policy.policy.matches,true);
+policy.storage.set('lume_motion_preference','full');policy.events.storage({key:'lume_motion_preference'});assert.equal(policy.policy.matches,false);
+const blockedPolicy=preferenceHarness(true,null,true,true);assert.equal(blockedPolicy.policy.matches,true);blockedPolicy.policy.set('full');assert.equal(blockedPolicy.policy.matches,false);
+assert.ok(html.indexOf('motion-preference.js')<html.indexOf('src="app.js"'));assert.ok(sw.includes('motion-preference.js'));assert.ok(html.includes('motion-preference.css'));
+console.log('PASS: system/full/reduced policy, OS changes, cross-tab updates, blocked storage, legacy media listeners and load order');
+(async()=>{
+ const map=new Map(),swContext={URL,Request,Response,Set,Error,self:{location:{href:'https://example.test/Lume-Fit/sw.js'},addEventListener(){}},caches:{open:async()=>({put:async(key,value)=>map.set(key,value.clone()),match:async key=>map.get(key)?.clone()})},fetch:async()=>new Response('new-script',{headers:{'content-type':'text/javascript'}})};vm.createContext(swContext);vm.runInContext(sw,swContext);
+ const root='https://example.test/Lume-Fit/',script=root+'motion.js';
+ assert.equal(swContext.lumeAssetKey(script+'?v=20'),script);assert.equal(swContext.lumeAssetKey(root+'signin-with-chatgpt'),null);assert.equal(swContext.lumeAssetKey(root+'api/private'),null);assert.equal(swContext.lumeAssetKey('https://external.test/motion.js'),null);
+ map.set(script,new Response('old-script',{headers:{'content-type':'text/javascript'}}));let response=await swContext.lumeNetworkFirst(new Request(script),script);assert.equal(await response.text(),'new-script');assert.equal(await map.get(script).clone().text(),'new-script');
+ swContext.fetch=async()=>{throw Error('offline')};response=await swContext.lumeNetworkFirst(new Request(script),script);assert.equal(await response.text(),'new-script');response=await swContext.lumeNetworkFirst(new Request(root+'motion.css'),root+'motion.css');assert.equal(response.status,503);assert.match(response.headers.get('content-type'),/text\/plain/);
+ swContext.fetch=async()=>new Response('Sign in',{status:403,headers:{'content-type':'text/html'}});response=await swContext.lumeNetworkFirst(new Request(script),script);assert.equal(response.status,403);
+ assert.equal(await swContext.lumeCacheable(new Response('login gate',{headers:{'content-type':'text/html'}}),root),false);assert.equal(await swContext.lumeCacheable(new Response('<main id="mainContent"></main>',{headers:{'content-type':'text/html'}}),root),true);assert.equal(await swContext.lumeCacheable(new Response('<html>offline</html>',{headers:{'content-type':'text/html'}}),script),false);
+ console.log('PASS: network-first replaces stale script; offline uses correct cached asset; missing assets never receive index HTML; auth/API bypass and login-gate/MIME checks');
+})().catch(error=>{console.error(error);process.exitCode=1});
