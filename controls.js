@@ -21,8 +21,12 @@ window.LumeControls=(()=>{
  }
  function close(restore=true){
   const record=active;if(!record)return;active=null;
-  if(record.popup.hasAttribute('popover')&&typeof record.popup.hidePopover==='function'&&record.popup.matches(':popover-open'))record.popup.hidePopover();record.popup.hidden=true;
-  attr(record.button,'aria-expanded',false);record.button.removeAttribute('aria-activedescendant');
+  attr(record.button,'aria-expanded',false);record.button.removeAttribute('aria-activedescendant');record.popup.inert=true;record.popup.setAttribute('aria-hidden','true');
+  const hide=()=>{if(active===record)return;if(record.popup.hasAttribute('popover')&&typeof record.popup.hidePopover==='function'&&record.popup.matches(':popover-open'))record.popup.hidePopover();record.popup.hidden=true;};
+  if(record.popup.isConnected&&record.popup.animate&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+   const animation=record.popup.animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-3px)'}],{duration:140,easing:'ease-out',fill:'both'});record.exitAnimation=animation;
+   animation.onfinish=()=>{if(record.exitAnimation!==animation)return;record.exitAnimation=null;hide();animation.cancel();};
+  }else hide();
   if(restore&&record.button.isConnected&&!record.button.disabled)record.button.focus({preventScroll:true});
  }
  function position(record){
@@ -59,7 +63,7 @@ window.LumeControls=(()=>{
   focusOption(record,initial?.index??-1);
  }
  function open(record,edge){
-  if(record.select.disabled)return;if(active===record){close();return;}close(false);active=record;
+  if(record.select.disabled)return;if(active===record){close();return;}close(false);if(record.exitAnimation){record.exitAnimation.cancel();record.exitAnimation=null;}record.popup.inert=false;record.popup.removeAttribute('aria-hidden');active=record;
   sync(record);record.search.value='';record.search.hidden=record.select.options.length<8;record.popup.hidden=false;attr(record.button,'aria-expanded',true);
   record.popup.setAttribute('popover','manual');
   if(typeof record.popup.showPopover==='function'){try{record.popup.showPopover();}catch{record.popup.removeAttribute('popover');}}else record.popup.removeAttribute('popover');

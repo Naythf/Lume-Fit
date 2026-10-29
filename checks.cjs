@@ -2,7 +2,7 @@ const fs=require('node:fs');
 const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
-for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','motion.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
 const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
 const context={window:{},state:{db:{sessions:[]}}};vm.createContext(context);vm.runInContext(fs.readFileSync('frequency.js','utf8'),context);
