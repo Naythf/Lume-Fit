@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v22-settings-selection';
+const CACHE = 'lume-fit-static-v23-release-updates';
 const ASSETS = [
   './',
   './index.html',
@@ -15,6 +15,7 @@ const ASSETS = [
   './frequency.css',
   './controls.js',
   './controls.css',
+  './updates.js',
   './motion.js',
   './motion.css',
   './motion-preference.js',
@@ -28,6 +29,7 @@ const ASSETS = [
   './lume-symbol.png',
   './weights-bg.webp'
 ];
+const IS_PREVIEW=new URL(self.location.href).hostname.endsWith('.chatgpt.site');
 const APP_ROOT=new URL('./',self.location.href);
 const APP_ASSETS=new Set(ASSETS.map(path=>new URL(path,APP_ROOT).href));
 function lumeAssetKey(value){const url=new URL(value);url.search='';url.hash='';return APP_ASSETS.has(url.href)?url.href:null;}
@@ -55,16 +57,17 @@ async function lumeNetworkFirst(request,key){
 }
 self.addEventListener('install',event=>{
  event.waitUntil((async()=>{
+  if(IS_PREVIEW){await self.skipWaiting();return;}
   const cache=await caches.open(CACHE);
   await Promise.all([...APP_ASSETS].map(async key=>{const response=await fetch(new Request(key,{cache:'reload'}));if(!await lumeCacheable(response,key))throw new Error('Invalid app asset');await cache.put(key,response);}));
   await self.skipWaiting();
  })());
 });
 self.addEventListener('activate',event=>{
- event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('lume-fit-static-')&&key!==CACHE).map(key=>caches.delete(key)))).then(()=>self.clients.claim()));
+ event.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(key=>key.startsWith('lume-fit-static-')&&(IS_PREVIEW||key!==CACHE)).map(key=>caches.delete(key)))).then(()=>self.clients.claim()).then(()=>IS_PREVIEW?self.registration.unregister():undefined));
 });
 self.addEventListener('fetch',event=>{
- if(event.request.method!=='GET')return;
+ if(IS_PREVIEW||event.request.method!=='GET')return;
  const key=lumeAssetKey(event.request.url);if(!key)return;
  event.respondWith(lumeNetworkFirst(event.request,key));
 });
