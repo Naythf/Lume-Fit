@@ -24,24 +24,30 @@
  document.addEventListener('keydown',e=>{
   if((e.key==='Enter'||e.key===' ') && e.target.matches('div[role=button][onclick]')){e.preventDefault();e.target.click();}
  });
- let returnFocus=null;
- document.querySelectorAll('.sheet').forEach(sheet=>{
+ const sheetFocus=new WeakMap();
+ const sheets=[...document.querySelectorAll('.sheet')];
+ const topSheet=()=>sheets.find(el=>el.id==='dialogOverlay'&&el.classList.contains('active'))||sheets.find(el=>el.classList.contains('active'))||null;
+ const focusable=sheet=>[...sheet.querySelectorAll('button,input,select,textarea,a[href],[tabindex="0"]')].filter(x=>x.type!=='hidden'&&!x.disabled&&x.getClientRects().length);
+ function syncSheets(){
+  const top=topSheet(),blocked=!!top||document.body.classList.contains('personalizing');
+  sheets.forEach(el=>{el.inert=el!==top;});
+  document.querySelector('.app').inert=blocked;document.getElementById('bottomNav').inert=blocked;
+  return top;
+ }
+ sheets.forEach(sheet=>{
   new MutationObserver(()=>{
-   if(sheet.classList.contains('active')){
-    enhance();
-    returnFocus=document.activeElement;
-    document.querySelector('.app').inert=true; document.getElementById('bottomNav').inert=true;
-    requestAnimationFrame(()=>[...sheet.querySelectorAll('input,select,button,[tabindex]')].find(el=>el.type!=='hidden'&&!el.disabled&&el.getClientRects().length)?.focus());
-   }else if(!document.querySelector('.sheet.active')){
-    const blocked=document.body.classList.contains('personalizing'); // Native dialogs manage their own modal inertness.
-    document.querySelector('.app').inert=blocked;document.getElementById('bottomNav').inert=blocked;
-    if(returnFocus?.isConnected)returnFocus.focus();
-   }
+   const opened=sheet.classList.contains('active');
+   if(opened){sheetFocus.set(sheet,document.activeElement);enhance();}
+   syncSheets();
+   requestAnimationFrame(()=>{
+    const top=topSheet();
+    if(opened&&sheet===top){focusable(top)[0]?.focus();return;}
+    if(!opened){const back=sheetFocus.get(sheet);if(back?.isConnected&&!back.disabled&&!back.closest('[inert]'))back.focus();else if(top)focusable(top)[0]?.focus();}
+   });
   }).observe(sheet,{attributes:true,attributeFilter:['class']});
   sheet.addEventListener('keydown',e=>{
-   if(e.key!=='Tab')return;
-   const f=[...sheet.querySelectorAll('button,input,select,a[href],[tabindex="0"]')].filter(x=>!x.disabled&&x.getClientRects().length);
-   if(!f.length)return;
+   if(e.key!=='Tab'||sheet!==topSheet())return;
+   const f=focusable(sheet);if(!f.length)return;
    if(e.shiftKey&&document.activeElement===f[0]){e.preventDefault();f.at(-1).focus();}
    else if(!e.shiftKey&&document.activeElement===f.at(-1)){e.preventDefault();f[0].focus();}
   });
