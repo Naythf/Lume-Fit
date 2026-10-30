@@ -7,6 +7,7 @@ execFileSync(process.execPath,['guided-workout-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['social-profile-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['friends-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['exercise-progress-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['automatic-review-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['prepare-release.cjs','--check'],{stdio:'inherit'});
 for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','exercise-progress.js','controls.js','motion.js','motion-preference.js','guided-workout.js','social-profile.js','friends.js','updates.js','sw.js']) execFileSync(process.execPath,['--check',file]);
 const source=fs.readFileSync('app.js','utf8');
