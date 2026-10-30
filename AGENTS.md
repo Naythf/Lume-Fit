@@ -30,3 +30,5 @@
 - Evolução por exercício: exercise-progress.js/css deriva gráficos e melhores registros de sessões privadas. Não unir automaticamente IDs diferentes ou movimentos renomeados; legado usa nome+rotina. Não interpretar volume/reps como melhora com cargas ou séries diferentes, nem estimar peso corporal. Recalcular após edições/exclusões; recordes usam todo o histórico. Rodar exercise-progress-checks.cjs.
 
 - Histórico: os modos Simples/Detalhado são apenas apresentação em memória; não alterar séries ou salvar preferências na conta ao alternar. Preservar disclosures abertos, unidades e privacidade. Peso corporal não é estimado em volume. Dados pessoais do perfil usam unidades explícitas e estados opcionais sem criar medidas fictícias.
+
+- Rotina automática: mudar os dias e voltar às preferências deve preservar o rascunho. Regeneração com edições exige confirmação explícita no compositor; retomar restaura as preferências usadas no plano. Dia ocupado troca duas sessões, sem substituir exercícios. Inventário muscular conta séries apenas no principal e não representa ativação ou dose ideal. Rodar automatic-review-checks.cjs.

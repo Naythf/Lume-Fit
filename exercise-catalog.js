@@ -94,3 +94,16 @@ function automaticPlanWarnings(preferences,routines){
  if(p.goal==='conditioning')warnings.push('Este rascunho cobre fortalecimento. Atividades aeróbicas precisam ser planejadas separadamente.');
  return warnings;
 }
+
+/* Review metrics describe the draft, not muscle activation or a recommended dose. */
+function automaticReviewSummary(routines,goal){
+ const groups=new Map();let totalSets=0,exercises=0,valid=true;
+ const sessions=routines.map(r=>{for(const e of r.exercises){exercises++;const c=catalogExercise(e.catalogId),sets=Number(e.sets);if(!c||!Number.isInteger(sets)||sets<1||sets>12){valid=false;continue;}totalSets+=sets;const item=groups.get(c.primary)||{muscle:c.primary,sets:0,exercises:0};item.sets+=sets;item.exercises++;groups.set(c.primary,item);}return {weekday:r.weekday,minutes:plannedMinutes(r.exercises,goal),exercises:r.exercises.length};});
+ return {groups:[...groups.values()].sort((a,b)=>b.sets-a.sets||a.muscle.localeCompare(b.muscle)),totalSets,exercises,sessions,valid};
+}
+function automaticReschedule(routines,index,weekday){
+ if(!Number.isInteger(index)||!routines[index]||!Number.isInteger(weekday)||weekday<0||weekday>6)return null;
+ const result=routines.map(r=>({...r})),previous=result[index].weekday,other=result.findIndex((r,i)=>i!==index&&r.weekday===weekday);
+ result[index].weekday=weekday;if(other>=0)result[other].weekday=previous;
+ return {routines:result,swapped:other>=0};
+}

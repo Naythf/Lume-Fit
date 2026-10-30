@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v33-profile-records';
+const CACHE = 'lume-fit-static-v34-automatic-review';
 const ASSETS = [
   './',
   './index.html',
