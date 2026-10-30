@@ -28,3 +28,5 @@
 - Receber solicitações é configurado no editor de perfil e salvo com identidade/visibilidade pelo RPC invoker lume_save_profile_settings em uma transação. Não voltar a dois salvamentos independentes nem ativar descoberta automaticamente. Preservar o RPC anterior para clientes antigos. Ver PROFILE-REQUESTS.md.
 
 - Evolução por exercício: exercise-progress.js/css deriva gráficos e melhores registros de sessões privadas. Não unir automaticamente IDs diferentes ou movimentos renomeados; legado usa nome+rotina. Não interpretar volume/reps como melhora com cargas ou séries diferentes, nem estimar peso corporal. Recalcular após edições/exclusões; recordes usam todo o histórico. Rodar exercise-progress-checks.cjs.
+
+- Histórico: os modos Simples/Detalhado são apenas apresentação em memória; não alterar séries ou salvar preferências na conta ao alternar. Preservar disclosures abertos, unidades e privacidade. Peso corporal não é estimado em volume. Dados pessoais do perfil usam unidades explícitas e estados opcionais sem criar medidas fictícias.
