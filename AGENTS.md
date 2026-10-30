@@ -24,3 +24,5 @@
 - Amigos: friends.js/css usa somente RPC lume_friends e lume_get_profile, com estado em memória por sessão. Não cachear grafo em backups ou publicar dados de exemplo. RLS das tabelas privadas nega acesso direto; transições por par são serializadas no servidor. Bloqueio vale para busca, solicitações e projeção. Visibilidade friends exige amizade aceita, private continua privado. Novas regras exigem node friends-db-checks.cjs e node friends-checks.cjs.
 
 - Confirmações podem abrir sobre editores: dialogOverlay deve ficar acima do sheet; somente a camada superior aceita foco/interação. Não apresentar confirmação pendente como salvamento de rede. RPCs do perfil têm prazo e AbortSignal; falhas de transporte não permitem afirmar que o servidor não gravou. Preservar campos e exigir verificação em caso de timeout.
+
+- Receber solicitações é configurado no editor de perfil e salvo com identidade/visibilidade pelo RPC invoker lume_save_profile_settings em uma transação. Não voltar a dois salvamentos independentes nem ativar descoberta automaticamente. Preservar o RPC anterior para clientes antigos. Ver PROFILE-REQUESTS.md.
