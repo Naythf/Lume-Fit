@@ -31,3 +31,7 @@ PGlite executa PostgreSQL real em WASM com auth.uid() e roles simulados: migraç
 Testes JS: defaults privados, flags estritas, username, projeção por whitelist e dias em Brasília, rascunho sem reserva, conflito de nome, cancelamento, resposta atrasada após troca de conta e falha de persistência. Navegador local: editor, prévia seletiva, bio/frequências opt-in, rascunho salvo e reaberto com escolhas preservadas, sem publicação.
 
 Referências de segurança usadas: https://supabase.com/docs/guides/database/functions e https://supabase.com/docs/guides/database/postgres/row-level-security.
+
+## Amigos (Issue #38)
+
+A audiência friends e o bloqueio bilateral agora restringem a projeção compartilhada. Recebimento de pedidos é uma preferência independente, opt-in. Ver FRIENDS.md e a migração supabase/migrations/20261030000800_friends_and_private_sharing.sql.

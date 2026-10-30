@@ -94,6 +94,7 @@
     const u=session?.user;
     if(!u){ showLogin(); return; }
     const token=++currentUserToken;
+    window.Friends?.reset();
     user=u; demo=false; syncError=''; revision=0; savedRevision=0;
     const key=localKey(u.id);
     let local=null;
@@ -130,8 +131,10 @@
     setSyncLabel();
     window.ProfileExperience?.afterLogin();
     window.SocialProfile?.connect(profileConnection());
+    window.Friends?.connect(profileConnection());
   }
   function showLogin(){
+    window.Friends?.reset();
     window.SocialProfile?.reset();
     window.GuidedWorkout?.detach();
     window.FrequencyExperience?.reset();
@@ -153,6 +156,7 @@
     switchTab('home');
     window.ProfileExperience?.afterLogin();
     window.SocialProfile?.connect(profileConnection());
+    window.Friends?.connect(profileConnection());
     toast('Modo local: seus dados não estão na nuvem.');
   }
   function persist(db){
@@ -235,7 +239,7 @@
       else if(!data.session)showLogin();
     }catch(e){showLogin();notify(printError(e));}
   }
-  function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args)=>{const result=await client.rpc(name,args);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
+  function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args)=>{if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');const result=await client.rpc(name,args);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
   window.LumeAuth={profileConnection,showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
   window.addEventListener('online',()=>{if(user)syncNow();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden' && user && revision>savedRevision)syncNow();});

@@ -3,7 +3,7 @@
   "private": true,
   "scripts": {
     "test": "node checks.cjs",
-    "test:db": "node profile-db-checks.cjs"
+    "test:db": "node profile-db-checks.cjs && node friends-db-checks.cjs"
   },
   "devDependencies": {
     "@electric-sql/pglite": "0.5.13"

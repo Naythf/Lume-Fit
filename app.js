@@ -162,6 +162,7 @@ function switchTab(tab){
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === `screen-${tab}`));
   $$('#bottomNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   render();
+  if(tab==='friends')window.Friends?.refresh();
 }
 
 function currentRoutine(){
@@ -241,6 +242,7 @@ function render(){
   renderSettings();
   renderKnowledge();
   renderProfile();
+  window.Friends?.render();
 }
 
 function weeklyActivityCard(){
