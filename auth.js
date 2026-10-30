@@ -94,6 +94,7 @@
     const u=session?.user;
     if(!u){ showLogin(); return; }
     const token=++currentUserToken;
+    window.Friends?.reset();
     user=u; demo=false; syncError=''; revision=0; savedRevision=0;
     const key=localKey(u.id);
     let local=null;
@@ -119,6 +120,8 @@
     if(!cloud && local) scheduleSync();
     state.selectedRoutineId=null;
     state.activeWorkout=null;
+    window.GuidedWorkout?.attach(key);
+    window.FrequencyExperience?.reset();
     document.body.classList.remove('auth-locked');
     authEl.hidden=true;
     state.currentTab='home';
@@ -126,8 +129,17 @@
     document.querySelectorAll('#bottomNav button').forEach(b=>b.classList.toggle('active',b.dataset.tab==='home'));
     render();
     setSyncLabel();
+    window.ProfileExperience?.afterLogin();
+    window.SocialProfile?.connect(profileConnection());
+    window.Friends?.connect(profileConnection());
   }
   function showLogin(){
+    window.Friends?.reset();
+    window.SocialProfile?.reset();
+    window.GuidedWorkout?.detach();
+    window.FrequencyExperience?.reset();
+    window.AutoRoutine?.reset();
+    window.ProfileExperience?.reset();
     document.body.classList.add('auth-locked');
     authEl.hidden=false;
     user=null;demo=false;state.db=initialData();
@@ -139,12 +151,16 @@
     demo=true;
     try {state.db=normalizeDB(JSON.parse(localStorage.getItem('lumefit_v4_demo')||'null')||initialData());}
     catch {state.db=initialData();}
+    window.GuidedWorkout?.attach('demo');
     document.body.classList.remove('auth-locked');authEl.hidden=true;
     switchTab('home');
+    window.ProfileExperience?.afterLogin();
+    window.SocialProfile?.connect(profileConnection());
+    window.Friends?.connect(profileConnection());
     toast('Modo local: seus dados não estão na nuvem.');
   }
   function persist(db){
-    if(demo){try{localStorage.setItem('lumefit_v4_demo',JSON.stringify(db));}catch{toast('Armazenamento local cheio. Exporte um backup.');}return;}
+    if(demo){try{localStorage.setItem('lumefit_v4_demo',JSON.stringify(db));return true;}catch{toast('Armazenamento local cheio. Exporte um backup.');return false;}}
     if(!user)return;
     try{localStorage.setItem(localKey(user.id), JSON.stringify(db));}catch{syncError='Armazenamento local cheio';}
     revision++;
@@ -223,7 +239,8 @@
       else if(!data.session)showLogin();
     }catch(e){showLogin();notify(printError(e));}
   }
-  window.LumeAuth={showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
+  function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args)=>{if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');const result=await client.rpc(name,args);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
+  window.LumeAuth={profileConnection,showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
   window.addEventListener('online',()=>{if(user)syncNow();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden' && user && revision>savedRevision)syncNow();});
   init();

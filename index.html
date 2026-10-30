@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR">
+<html lang="pt-BR" data-release="3d939ab6a701">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
@@ -272,7 +272,7 @@
     @keyframes progress-draw{to{stroke-dashoffset:0}}
     @keyframes progress-pop{from{opacity:0;transform:scale(.5)}to{opacity:1;transform:scale(1)}}
     @media(max-width:480px){.chart-wrap{padding:10px 6px 12px}.progress-summary{padding:0 8px}.progress-summary strong{font-size:17px}}
-    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
+    html[data-motion="reduced"] *,html[data-motion="reduced"] *:before,html[data-motion="reduced"] *:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
   
     [hidden]{display:none!important}
     /* Acesso — mesma linguagem visual monocromática do Lume Fit */
@@ -309,11 +309,23 @@
     .session-card button{background:#212121;color:#eee;padding:11px 14px;border-radius:12px;border:1px solid #444;flex-shrink:0}
     @keyframes auth-rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
     @media(min-width:900px){.auth-card{padding:33px}.auth-screen{padding:45px}}
-    @media(prefers-reduced-motion:reduce){.auth-shell{animation:none}}
+    html[data-motion="reduced"] .auth-shell{animation:none}
 
   </style>
+  <link rel="stylesheet" href="experience.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="personalization.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="automatic-routines.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="frequency.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="controls.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="motion.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="motion-preference.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="guided-workout.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="social-profile.css?v=3d939ab6a701">
+  <link rel="stylesheet" href="friends.css?v=3d939ab6a701">
 </head>
 <body class="auth-locked">
+  <div class="ambient-aura" aria-hidden="true"></div>
+  <a class="skip-link" href="#mainContent">Pular para o conteúdo</a>
   <section id="authScreen" class="auth-screen" aria-label="Entrar no Lume Fit">
     <div class="auth-shell">
       <div class="auth-logo"><img src="lume-symbol.png" alt=""><span>Lume <em>Fit</em></span></div>
@@ -333,10 +345,10 @@
         <div id="authMessage" class="auth-msg" role="status"></div>
         <button id="authDemo" class="auth-secondary" type="button" onclick="LumeAuth.startDemo()">Testar sem conta (somente neste dispositivo)</button>
       </div>
-      <p class="auth-note">Sua conta é individual. Quando conectado, os dados ficam vinculados ao seu usuário no banco de dados.</p>
+      <div class="app-footer auth-links"><a href="#privacy" data-policy="privacy">Privacidade</a><a href="#storage" data-policy="storage">Armazenamento</a><a href="#terms" data-policy="terms">Sobre o uso</a></div><p class="auth-note">Sua conta é individual. Quando conectado, os dados ficam vinculados ao seu usuário no banco de dados.</p>
     </div>
   </section>
-  <div id="toast" class="toast"></div>
+  <div id="toast" role="status" aria-live="polite" class="toast"></div>
   <div class="app">
     
     <header class="header">
@@ -347,42 +359,60 @@
           <div class="brandname">Lume <span>Fit</span></div>
         </div>
       </div>
-      <div class="offline-pill">Lume Cloud</div>
+      <div class="header-account"><div class="offline-pill">Lume Cloud</div><button class="profile-trigger" id="profileAvatar" aria-label="Abrir meu perfil" onclick="ProfileExperience.open()"></button></div>
     </header>
 
-    <main>
+    <main id="mainContent" tabindex="-1">
       <section id="screen-home" class="screen active"></section>
       <section id="screen-workouts" class="screen"></section>
       <section id="screen-register" class="screen"></section>
-      <section id="screen-history" class="screen"></section>
       <section id="screen-frequency" class="screen"></section>
       <section id="screen-settings" class="screen"></section>
+      <section id="screen-friends" class="screen"></section>
+      <section id="screen-profile" class="screen"></section>
       <section id="screen-knowledge" class="screen"></section>
-    </main>
+    </main><footer class="app-footer"><span>LUME FIT · NO SEU RITMO</span><a href="#privacy" data-policy="privacy">Privacidade</a><a href="#storage" data-policy="storage">Armazenamento</a><a href="#terms" data-policy="terms">Sobre o uso</a></footer>
   </div>
 
-  <nav class="nav" id="bottomNav">
+  <nav aria-label="Lume Hub — navegação principal" class="nav" id="bottomNav">
+    <div class="hub-title">Lume Hub</div>
     <button data-tab="home" class="active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5v9a1 1 0 0 1-1 1h-5.5v-7h-5v7H4a1 1 0 0 1-1-1z"/></svg><span>Início</span></button>
-    <button data-tab="workouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9h3v6H4zM17 9h3v6h-3zM7 10.5h10M7 13.5h10M2 7h2v10H2zM20 7h2v10h-2z"/></svg><span>Treinos</span></button>
-    <button data-tab="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 5h12v14H4z"/><path d="M16 9h4v10h-12v-4"/><path d="M7 10h6M7 14h6"/></svg><span>Histórico</span></button>
+    <button data-tab="workouts"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><g transform="rotate(-35 12 12)"><path d="M7 12h10M1.5 10v4M22.5 10v4"/><rect x="3" y="6.5" width="4" height="11" rx="1.2"/><rect x="17" y="6.5" width="4" height="11" rx="1.2"/></g></svg><span>Treinos</span></button>
     <button data-tab="frequency"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18v15H3z"/><path d="M3 10h18M7 3v6M17 3v6"/></svg><span>Frequência</span></button>
+    <button data-tab="friends"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2M16 5a3 3 0 0 1 0 6m3 10v-2a6 6 0 0 0-3-5"/></svg><span>Amigos</span></button>
     <button data-tab="knowledge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5.5C7 4 9 4 12 6c3-2 5-2 8-.5v14c-3-1.5-5-1.5-8 .5-3-2-5-2-8-.5zM12 6v14"/></svg><span>Saber</span></button>
-    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 15.5 1.1-.64 1.27.34 1.08 1.26 1.84-1.06-.37-1.62.74-1.13 1.56-.41v-2.12l-1.56-.4-.74-1.14.37-1.61-1.84-1.06-1.08 1.26-1.27.34L12 3.5l-1.1.64-1.27-.34L8.55 2.54 6.7 3.6l.37 1.61-.74 1.14-1.56.4v2.12l1.56.41.74 1.13-.37 1.62 1.84 1.06 1.08-1.26 1.27-.34z"/><circle cx="12" cy="10.75" r="2.6"/></svg><span>Ajustes</span></button>
+    <button data-tab="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><polygon points="9.77,5.26 10.15,2.89 13.85,2.89 14.23,5.26 15.19,5.66 17.14,4.25 19.75,6.86 18.34,8.81 18.74,9.77 21.11,10.15 21.11,13.85 18.74,14.23 18.34,15.19 19.75,17.14 17.14,19.75 15.19,18.34 14.23,18.74 13.85,21.11 10.15,21.11 9.77,18.74 8.81,18.34 6.86,19.75 4.25,17.14 5.66,15.19 5.26,14.23 2.89,13.85 2.89,10.15 5.26,9.77 5.66,8.81 4.25,6.86 6.86,4.25 8.81,5.66"/><circle cx="12" cy="12" r="3.1"/></svg><span>Ajustes</span></button>
   </nav>
 
   <div id="dialogOverlay" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="dialogTitle">
     <div class="sheet-panel dialog-panel"><div class="sheet-handle"></div><div class="dialog-icon">✦</div><h3 id="dialogTitle"></h3><p id="dialogMessage"></p><div class="row-actions"><button class="ghost-btn" id="dialogCancel">Cancelar</button><button class="primary-btn" id="dialogConfirm">Confirmar</button></div></div>
   </div>
-  <div id="sheet" class="sheet" aria-hidden="true">
+  <div id="sheet" class="sheet" aria-hidden="true" role="dialog" aria-modal="true" aria-label="Editar informações">
     <div class="sheet-panel">
       <div class="sheet-handle"></div>
       <div id="sheetContent"></div>
     </div>
   </div>
 
-  <script src="config.js" defer></script>
+  <dialog id="autoRoutineDialog" class="auto-dialog" aria-labelledby="autoTitle"></dialog>
+  <section id="personalizePanel" class="personalize-panel" hidden role="dialog" aria-modal="true" aria-labelledby="setupTitle"></section>
+  <dialog id="legalDialog" class="legal-dialog" aria-labelledby="legalTitle"><button class="ghost-btn" aria-label="Fechar informações">Fechar</button><h2 id="legalTitle"></h2><div id="legalBody"></div></dialog>
+  <script src="motion-preference.js?v=3d939ab6a701" defer></script>
+  <script src="experience.js?v=3d939ab6a701" defer></script>
+  <script src="config.js?v=3d939ab6a701" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.76.1/dist/umd/supabase.min.js" defer></script>
-  <script src="app.js" defer></script>
-  <script src="auth.js" defer></script>
+  <script src="routines.js?v=3d939ab6a701" defer></script>
+  <script src="personalization.js?v=3d939ab6a701" defer></script>
+  <script src="exercise-catalog.js?v=3d939ab6a701" defer></script>
+  <script src="automatic-routines.js?v=3d939ab6a701" defer></script>
+  <script src="frequency.js?v=3d939ab6a701" defer></script>
+  <script src="guided-workout.js?v=3d939ab6a701" defer></script>
+  <script src="social-profile.js?v=3d939ab6a701" defer></script>
+  <script src="friends.js?v=3d939ab6a701" defer></script>
+  <script src="app.js?v=3d939ab6a701" defer></script>
+  <script src="auth.js?v=3d939ab6a701" defer></script>
+  <script src="controls.js?v=3d939ab6a701" defer></script>
+  <script src="motion.js?v=3d939ab6a701" defer></script>
+  <script src="updates.js?v=3d939ab6a701" defer></script>
 </body>
 </html>

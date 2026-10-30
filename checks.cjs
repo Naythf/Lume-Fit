@@ -1,0 +1,186 @@
+const fs=require('node:fs');
+const vm=require('node:vm');
+const assert=require('node:assert/strict');
+const {execFileSync}=require('node:child_process');
+execFileSync(process.execPath,['updates-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['guided-workout-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['social-profile-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['friends-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['prepare-release.cjs','--check'],{stdio:'inherit'});
+for(const file of ['app.js','auth.js','experience.js','routines.js','personalization.js','exercise-catalog.js','automatic-routines.js','frequency.js','controls.js','motion.js','motion-preference.js','guided-workout.js','social-profile.js','friends.js','updates.js','sw.js']) execFileSync(process.execPath,['--check',file]);
+const source=fs.readFileSync('app.js','utf8');
+const week=source.slice(source.indexOf('function weeklyActivityCard()'),source.indexOf('function renderHome()'));
+const context={window:{},state:{db:{sessions:[]}}};vm.createContext(context);vm.runInContext(fs.readFileSync('frequency.js','utf8'),context);
+vm.runInContext(week,context);
+const empty=vm.runInContext('weeklyActivityCard()',context);
+assert.match(empty,/0 dias ativos/);assert.equal((empty.match(/class="week-day /g)||[]).length,7);
+context.state.db.sessions=[{date:new Date().toISOString()},{date:new Date().toISOString()}];
+assert.match(vm.runInContext('weeklyActivityCard()',context),/1 dia ativo/);
+context.state.db.sessions=[{date:'2000-01-01T12:00:00Z'}];
+assert.match(vm.runInContext('weeklyActivityCard()',context),/0 dias ativos/);
+const html=fs.readFileSync('index.html','utf8');
+for(const file of ['experience.css','experience.js'])assert.ok(html.includes(file));
+assert.ok(html.includes('id="mainContent"'));assert.ok(html.includes('<dialog'));
+const sw=fs.readFileSync('sw.js','utf8');
+assert.ok(sw.includes('experience.css'));assert.ok(sw.includes('experience.js'));
+console.log('PASS: syntax, weekly aggregation (empty/duplicates/outside week), HTML and PWA assets');
+const knowledge=source.slice(source.indexOf('function metricIllustration('),source.indexOf('window.switchTab ='));
+const fields={kWeight:{value:'70'},kHeight:{value:'175'},kAge:{value:'25'},kSex:{value:'unspecified'},kActivity:{value:'moderate'},kGoal:{value:'maintain'},kTarget:{value:''},metricResults:{innerHTML:'',scrollIntoView(){}}};
+const sandbox={state:{db:{profile:{}}},$:(selector)=>fields[selector.slice(1)],knowledgeState:{},toast:()=>{},window:{matchMedia:()=>({matches:true})}};
+vm.createContext(sandbox);vm.runInContext(knowledge,sandbox);vm.runInContext('calculateMetrics()',sandbox);
+assert.match(fields.metricResults.innerHTML,/2,1–2,45/);assert.match(fields.metricResults.innerHTML,/22,9/);assert.match(fields.metricResults.innerHTML,/2\.337–2\.594/);assert.match(fields.metricResults.innerHTML,/Não é uma prescrição/);
+fields.kGoal.value='gain';fields.kTarget.value='75';vm.runInContext('calculateMetrics()',sandbox);assert.match(fields.metricResults.innerHTML,/5 <em>kg/);assert.match(fields.metricResults.innerHTML,/não progresso já realizado/);
+fields.kAge.value='17';const before=fields.metricResults.innerHTML;vm.runInContext('calculateMetrics()',sandbox);assert.equal(fields.metricResults.innerHTML,before);
+console.log('PASS: visual metrics preserve hydration/energy/BMI, target difference and adult validation');
+const planner=fs.readFileSync('routines.js','utf8');
+const plannerCtx={esc:s=>String(s),machineArt:()=>'<svg></svg>',clamp:(n,a,b)=>Math.max(a,Math.min(b,n)),uid:()=> 'new-id'};
+vm.createContext(plannerCtx);vm.runInContext(fs.readFileSync('social-profile.js','utf8').split('window.SocialProfile=')[0],plannerCtx);vm.runInContext(planner,plannerCtx);
+const personal=fs.readFileSync('personalization.js','utf8');
+vm.runInContext(personal.slice(0,personal.indexOf('window.ProfileExperience=')),plannerCtx);
+vm.runInContext(fs.readFileSync('exercise-catalog.js','utf8'),plannerCtx);
+plannerCtx.window={};vm.runInContext(fs.readFileSync('frequency.js','utf8'),plannerCtx);
+for(const [name,icon] of [['Supino reto','bench'],['Remada baixa','row'],['Elevação lateral','raise'],['Bíceps','curl'],['Leg press 45','legpress'],['Prancha','plank'],['Corrida','run'],['Exercício novo','dumbbell']])assert.equal(vm.runInContext(`suggestTrainingIcon(${JSON.stringify(name)})`,plannerCtx),icon);
+assert.equal(vm.runInContext("safeIconImage('javascript:alert(1)')",plannerCtx),'');
+assert.equal(vm.runInContext("safeIconImage('data:image/svg+xml;base64,PHN2Zz4=')",plannerCtx),'');
+const image='data:image/jpeg;base64,YWJj';plannerCtx.image=image;
+const normalize=source.slice(source.indexOf('function normalizeDB('),source.indexOf('function createSeedSessions('));
+plannerCtx.initialData=()=>({profile:{},routines:[],sessions:[]});
+vm.runInContext(normalize,plannerCtx);
+plannerCtx.backup={routines:[{id:'r1',name:'Pernas',icon:'squat',iconImage:image,exercises:[{id:'e1',name:'Supino',sets:3,minReps:8,maxReps:12,icon:'bench',iconImage:image}]}],sessions:[{id:'history1',entries:[]}]};
+const restored=vm.runInContext('normalizeDB(backup)',plannerCtx);assert.equal(restored.routines[0].iconImage,image);assert.equal(restored.routines[0].exercises[0].iconImage,image);assert.equal(restored.sessions[0].id,'history1');
+plannerCtx.legacy={routines:[{id:'old',name:'Costas',exercises:[{id:'old-ex',name:'Remada',icon:'pull',sets:4,minReps:10,maxReps:12}]}],sessions:[]};
+const old=vm.runInContext('normalizeDB(legacy)',plannerCtx);assert.equal(old.routines[0].exercises[0].icon,'pull');assert.equal(old.routines[0].exercises[0].iconImage,'');
+assert.ok(html.indexOf('routines.js')<html.indexOf('src="app.js'));assert.ok(sw.includes('./routines.js'));
+console.log('PASS: icon suggestions, unsafe images rejected, custom images restored, legacy icons/history preserved');
+const editor=source.slice(source.indexOf('function saveExercise('),source.indexOf('function exportData('));
+const editorState={db:JSON.parse(JSON.stringify(plannerCtx.backup)),selectedRoutineId:null};let saves=0;
+Object.assign(plannerCtx,{state:editorState,FormData:class{constructor(f){this.values=f.values}get(k){return this.values[k]??null}},saveDB:()=>saves++,closeSheet:()=>{},switchTab:()=>{},toast:()=>{}});
+vm.runInContext(editor,plannerCtx);vm.runInContext('resetTrainingDraft(state.db.routines[0].exercises[0])',plannerCtx);
+plannerCtx.ev={preventDefault(){},target:{elements:{routineId:{value:'r1'}},values:{exerciseId:'e1',name:'Supino editado',sets:'4',minReps:'6',maxReps:'10'}}};
+vm.runInContext('saveExercise(ev)',plannerCtx);assert.equal(saves,1);assert.equal(editorState.db.routines[0].exercises.length,1);assert.equal(editorState.db.routines[0].exercises[0].id,'e1');assert.equal(editorState.db.routines[0].exercises[0].iconImage,image);assert.equal(editorState.db.sessions[0].id,'history1');
+plannerCtx.ev.target.values.minReps='12';plannerCtx.ev.target.values.maxReps='8';vm.runInContext('saveExercise(ev)',plannerCtx);assert.equal(saves,1);
+console.log('PASS: editing preserves exercise IDs/custom icons/history and rejects inverted repetition ranges');
+plannerCtx.preferenceInput={modes:['gym','home','gym','invalid'],goal:'strength',focus:['triceps','bogus'],days:[1,3,1,9,'2'],minutes:45,equipment:['bodyweight','dumbbells','alien']};
+const preferences=vm.runInContext('normalizeTrainingPreferences(preferenceInput)',plannerCtx);
+assert.deepEqual(JSON.parse(JSON.stringify(preferences.modes)),['gym','home']);assert.deepEqual(JSON.parse(JSON.stringify(preferences.days)),[1,3]);assert.deepEqual(JSON.parse(JSON.stringify(preferences.focus)),['triceps']);assert.equal(preferences.minutes,45);
+plannerCtx.preferenceInput={};assert.equal(vm.runInContext('normalizeTrainingPreferences(preferenceInput).minutes',plannerCtx),30);
+for(const [name,primary] of [['Supino reto','chest'],['Supino fechado','triceps'],['Tríceps corda','triceps'],['Elevação lateral','shoulders'],['Agachamento livre','quads'],['Remada baixa','back'],['Movimento desconhecido','']]){
+ plannerCtx.exercise={name};assert.equal(vm.runInContext('exerciseMuscles(exercise).primary',plannerCtx),primary);
+}
+plannerCtx.exercise={name:'Supino reto',muscleMode:'manual',primaryMuscle:'triceps',secondaryMuscles:['chest','triceps','invalid']};
+const manual=vm.runInContext('exerciseMuscles(exercise)',plannerCtx);assert.equal(manual.primary,'triceps');assert.deepEqual(JSON.parse(JSON.stringify(manual.secondary)),['chest']);assert.equal(manual.suggested,false);
+plannerCtx.legacy.profile={name:'Existing',weight:72,trainingPreferences:preferences,bio:'Private',onboardingComplete:true,visibility:'public'};
+const preserved=vm.runInContext('normalizeDB(legacy)',plannerCtx);assert.equal(preserved.profile.name,'Existing');assert.equal(preserved.profile.weight,72);assert.equal(preserved.profile.visibility,'private');assert.equal(preserved.profile.onboardingComplete,true);assert.equal(preserved.routines[0].exercises[0].id,'old-ex');
+assert.ok(html.includes('personalizePanel'));assert.ok(sw.includes('./personalization.js'));assert.ok(sw.includes('./personalization.css'));
+console.log('PASS: profile normalization, mixed modalities, manual muscle override, unknown exercises and privacy defaults');
+const fakePanel={hidden:true,innerHTML:'',scrollTop:0};const fakeBody={classList:{add(){},remove(){}}};
+const fakeElements={personalizePanel:fakePanel,setupTitle:{focus(){}},setupName:{value:'New draft'},setupBio:{value:'Unsaved bio'},setupGoal:{value:'strength'},bottomNav:{inert:false}};
+const appNode={inert:false};let profileSaves=0;
+const profileCtx={window:{},document:{getElementById:k=>fakeElements[k],querySelector:()=>appNode,body:fakeBody,addEventListener(){}},requestAnimationFrame:fn=>fn(),state:{db:{profile:{name:'Existing user',bio:'Keep me',onboardingComplete:false,trainingPreferences:{modes:['gym']}}}},esc:s=>String(s),saveDB:()=>profileSaves++,switchTab(){},toast(){},WEEKDAYS:['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']};
+vm.createContext(profileCtx);vm.runInContext(personal,profileCtx);
+profileCtx.window.ProfileExperience.afterLogin();assert.equal(fakePanel.hidden,false);profileCtx.window.ProfileExperience.skip();assert.equal(profileCtx.state.db.profile.name,'Existing user');assert.equal(profileCtx.state.db.profile.bio,'Keep me');assert.equal(profileSaves,1);
+profileCtx.window.ProfileExperience.start(true);profileCtx.window.ProfileExperience.skip();assert.equal(profileSaves,1);assert.equal(profileCtx.state.db.profile.bio,'Keep me');
+profileCtx.window.ProfileExperience.start(true);profileCtx.window.ProfileExperience.reset();profileCtx.state.db.profile={name:'Second account',bio:'',onboardingComplete:false};profileCtx.window.ProfileExperience.afterLogin();assert.ok(fakePanel.innerHTML.includes('Second account'));assert.ok(!fakePanel.innerHTML.includes('Existing user'));assert.ok(!fakePanel.innerHTML.includes('Keep me'));
+console.log('PASS: skip/cancel preserve existing profile and resetting clears the previous account draft');
+// Planner properties across every day count, modality, duration and experience.
+const catalog=vm.runInContext('EXERCISE_CATALOG',plannerCtx);
+assert.equal(new Set(catalog.map(e=>e.id)).size,catalog.length);
+for(const e of catalog){assert.ok(e.primary);assert.ok(e.note);assert.equal(e.measurement,'reps');assert.ok(!e.secondary.includes(e.primary));}
+let combinations=0;
+for(const mode of ['gym','home','calisthenics'])for(const level of ['beginner','intermediate'])for(const minutes of [15,30,45,60,90])for(let dayCount=1;dayCount<=6;dayCount++){
+ plannerCtx.p={modes:[mode],goal:'consistency',focus:['triceps'],days:[1,3,5,0,2,4].slice(0,dayCount),minutes,equipment:mode==='gym'?['machines','dumbbells']:[]};plannerCtx.level=level;
+ const result=vm.runInContext('buildAutomaticPlan(p,level)',plannerCtx);assert.ok(!result.error);assert.equal(result.routines.length,dayCount);
+ for(const r of result.routines){assert.ok(r.exercises.length>=1&&r.exercises.length<=6);assert.equal(new Set(r.exercises.map(e=>e.catalogId)).size,r.exercises.length);assert.ok(vm.runInContext('plannedMinutes',plannerCtx)(r.exercises,'consistency')<=minutes);for(const e of r.exercises){const c=catalog.find(x=>x.id===e.catalogId);assert.ok(c.modes.includes(mode));assert.ok(c.equipment.every(k=>plannerCtx.p.equipment.includes(k)));assert.ok(c.level<=(level==='beginner'?0:1));}}
+ combinations++;
+}
+plannerCtx.p={modes:['home'],days:[1,3],focus:['biceps'],minutes:30,equipment:[]};
+assert.ok(vm.runInContext('buildAutomaticPlan(p).warnings',plannerCtx).some(w=>w.includes('Bíceps')));
+plannerCtx.p={modes:['gym'],days:[0,1],focus:['triceps'],minutes:45,equipment:['machines']};
+const focused=vm.runInContext('buildAutomaticPlan(p)',plannerCtx);assert.ok(focused.routines.every(r=>r.exercises.some(e=>catalog.find(c=>c.id===e.catalogId).primary==='triceps')));assert.ok(focused.warnings.some(w=>w.includes('consecutivos')));
+plannerCtx.p.days=[];assert.ok(vm.runInContext('buildAutomaticPlan(p).error',plannerCtx));plannerCtx.p.days=[0,1,2,3,4,5,6];assert.ok(vm.runInContext('buildAutomaticPlan(p).error',plannerCtx));plannerCtx.p.days=[1];plannerCtx.p.goal='mobility';assert.ok(vm.runInContext('buildAutomaticPlan(p).error',plannerCtx));
+plannerCtx.backup.routines[0].exercises[0].catalogId='db-floor';plannerCtx.backup.routines[0].exercises[0].name='Supino no chão com halteres';const metadata=vm.runInContext('normalizeDB(backup)',plannerCtx);assert.equal(metadata.routines[0].exercises[0].catalogId,'db-floor');assert.equal(metadata.sessions[0].id,'history1');
+for(const file of ['exercise-catalog.js','automatic-routines.js','automatic-routines.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
+console.log(`PASS: ${combinations} planner combinations, equipment/level filters, unique movements, time budgets, unavailable focus, recovery, unsupported goals and backup catalog metadata`);
+// Exercise the composer lifecycle against a private existing document.
+const autoDialog={open:false,innerHTML:'',scrollTop:0,showModal(){this.open=true},close(){this.open=false},querySelector(selector){if(selector==='#autoConfig')return {elements:{goal:{value:'consistency'},minutes:{value:'30'},level:{value:'beginner'}}};return {focus(){},textContent:''}},querySelectorAll(){return []}};
+const autoCtx={window:{},document:{getElementById:()=>autoDialog,activeElement:{isConnected:true,focus(){}},addEventListener(){}},requestAnimationFrame:fn=>fn(),state:{activeWorkout:null,db:{profile:{trainingPreferences:{modes:['home'],days:[1,3],focus:['quads'],minutes:30,equipment:[]}},routines:[{id:'keep-routine',exercises:[]}],sessions:[{id:'keep-history'}]}},esc:s=>String(s),closeSheet(){},switchTab(){},toast(){},uid:(()=>{let n=0;return()=>`auto-${++n}`})(),saveDB(){autoCtx.saved=(autoCtx.saved||0)+1}};
+vm.createContext(autoCtx);vm.runInContext(planner,autoCtx);vm.runInContext(personal.slice(0,personal.indexOf('window.ProfileExperience=')),autoCtx);vm.runInContext(fs.readFileSync('exercise-catalog.js','utf8'),autoCtx);vm.runInContext(fs.readFileSync('automatic-routines.js','utf8'),autoCtx);
+autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.close();assert.equal(autoCtx.state.db.routines.length,1);assert.equal(autoCtx.saved,undefined);
+autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.save();autoCtx.window.AutoRoutine.save();assert.equal(autoCtx.saved,1);assert.equal(autoCtx.state.db.routines.length,3);assert.equal(autoCtx.state.db.routines[0].id,'keep-routine');assert.equal(autoCtx.state.db.sessions[0].id,'keep-history');assert.equal(autoCtx.state.db.profile.trainingPreferences.days.length,2);
+const newIds=autoCtx.state.db.routines.slice(1).flatMap(r=>[r.id,...r.exercises.map(e=>e.id)]);assert.equal(new Set(newIds).size,newIds.length);assert.ok(autoCtx.state.db.routines[1].exercises.every(e=>e.muscleMode==='manual'&&e.catalogId));
+autoCtx.window.AutoRoutine.open();autoCtx.window.AutoRoutine.generate();autoCtx.window.AutoRoutine.reset();autoCtx.window.AutoRoutine.save();assert.equal(autoCtx.saved,1);assert.equal(autoDialog.open,false);
+console.log('PASS: composer cancel/reset never persist; save appends once with unique IDs and preserves routines/history/preferences');
+// Selection must leave the existing form in place instead of replaying its entrance.
+autoCtx.window.AutoRoutine.open();
+const stableMarkup=autoDialog.innerHTML, choiceButtons=[{dataset:{choice:'modes-gym'},setAttribute(k,v){this[k]=v}},{dataset:{choice:'days-2'},setAttribute(k,v){this[k]=v}}];
+autoDialog.scrollTop=240;autoDialog.querySelectorAll=()=>choiceButtons;
+autoCtx.window.AutoRoutine.toggle('modes','gym');assert.equal(choiceButtons[0]['aria-pressed'],'true');assert.equal(autoDialog.innerHTML,stableMarkup);assert.equal(autoDialog.scrollTop,240);
+autoCtx.window.AutoRoutine.toggle('modes','gym');assert.equal(choiceButtons[0]['aria-pressed'],'false');
+autoCtx.window.AutoRoutine.toggle('days',2);assert.equal(choiceButtons[1]['aria-pressed'],'true');assert.equal(autoDialog.innerHTML,stableMarkup);assert.equal(autoCtx.saved,1);autoCtx.window.AutoRoutine.close();
+console.log('PASS: plan selection preserves form, scroll and unsaved lifecycle');
+
+// Frequency uses local calendar dates, distinct active days and historical goal policies.
+const frequencyCode=fs.readFileSync('frequency.js','utf8');
+const fc={window:{},shortDate:v=>String(v),esc:s=>String(s)};vm.createContext(fc);vm.runInContext(frequencyCode,fc);
+const run=(code)=>vm.runInContext(code,fc);
+const json=v=>JSON.parse(JSON.stringify(v));
+assert.equal(run("activityKey('2026-10-29')"),'2026-10-29');assert.equal(run("activityKey('2026-02-30')"),'');assert.equal(run("activityKey('garbage')"),'');assert.equal(run("activityKey(activityMonday('2027-01-01'))"),'2026-12-28');
+fc.goals=[{week:'2026-10-05',days:2},{week:'2026-10-12',days:2},{week:'2026-10-19',days:3},{week:'2026-10-26',days:2},{week:'2026-10-27',days:1},{week:'2026-10-26',days:2},{week:'2026-11-02',days:1},{week:'invalid',days:2}];
+assert.equal(run('normalizeFrequencyGoals(goals).length'),5);
+fc.sessions=['2026-10-05','2026-10-07','2026-10-12','2026-10-14','2026-10-19','2026-10-21','2026-10-23','2026-10-26','2026-10-26','2026-11-04','invalid'].map((date,i)=>({id:'s'+i,date}));
+let score=run("weeklyConsistency(sessions,goals,activityDate('2026-10-29'))");assert.equal(score.current,3);assert.equal(score.best,3);assert.equal(score.count,1);assert.equal(score.target,2);assert.equal(score.met,false);
+fc.sessions.push({date:'2026-10-29'});score=run("weeklyConsistency(sessions,goals,activityDate('2026-10-29'))");assert.equal(score.current,4);assert.equal(score.count,2);assert.equal(score.best,4);
+score=run("weeklyConsistency(sessions,goals,activityDate('2026-11-10'))");assert.equal(score.current,5); // the Nov 4 record meets the archived target of 1
+fc.sessions=fc.sessions.filter(s=>s.date!=='2026-11-04');score=run("weeklyConsistency(sessions,goals,activityDate('2026-11-10'))");assert.equal(score.current,0);assert.equal(score.best,4);
+fc.sessions=[{date:'2026-10-05'},{date:'2026-10-06'}];fc.goals=[];
+assert.equal(run("weeklyConsistency(sessions,goals,activityDate('2026-10-29')).current"),0);
+const firstGoal=run("nextFrequencyGoal(goals,3,activityDate('2026-10-29'))");assert.deepEqual(json(firstGoal),[{week:'2026-10-26',days:3}]);fc.goals=firstGoal;
+const editedGoal=run("nextFrequencyGoal(goals,1,activityDate('2026-10-29'))");assert.deepEqual(json(editedGoal),[{week:'2026-10-26',days:3},{week:'2026-11-02',days:1}]);fc.goals=editedGoal;
+assert.equal(run("activityTarget(goals,activityDate('2026-10-29'))"),3);assert.equal(run("activityTarget(goals,activityDate('2026-11-04'))"),1);
+assert.deepEqual(json(run("nextFrequencyGoal(goals,3,activityDate('2026-10-29'))")),[{week:'2026-10-26',days:3}]);assert.equal(run('nextFrequencyGoal(goals,0)'),null);
+fc.sessions=[{date:'2026-02-28'},{date:'2026-03-29'},{date:'2026-03-29'},{date:'2026-03-30'},{date:'2026-03-31'}];
+const monthStats=run("activityMonthSummary(sessions,activityDate('2026-03-01'),activityDate('2026-03-29'))");assert.equal(monthStats.days,1);assert.equal(monthStats.sessions,2);assert.equal(monthStats.prior,1);assert.equal(monthStats.cutoff,28);
+assert.equal(run("activityKey(activityAddDays(activityDate('2024-02-28'),1))"),'2024-02-29');assert.equal(run("activityKey(activityAddDays(activityDate('2024-02-29'),1))"),'2024-03-01');
+fc.routines=[];fc.sessions=[{date:'2026-10-26',entries:[{exerciseId:'deleted-id',name:'Antigo',sets:[{kg:0,reps:10},{kg:5,reps:8},{kg:-2,reps:6},{kg:'',reps:10}]}]},{date:'2026-10-28',entries:[{exerciseId:'deleted-id',name:'Antigo',sets:[{kg:10,reps:8}]}]},{date:'2026-10-29',entries:[{name:'Sem ID',sets:[{kg:0,reps:5}]}]}];
+assert.equal(run('activityExerciseOptions(routines,sessions).length'),2);const points=run("activityExercisePoints(sessions,'id:deleted-id',activityDate('2026-10-29'))");assert.equal(points.length,2);assert.equal(points[0].load,5);assert.equal(points[0].reps,18);assert.equal(points[0].volume,40);assert.equal(points[1].volume,80);
+assert.equal(run("activityExercisePoints(sessions,'legacy:Sem ID',activityDate('2026-10-29'))[0].volume"),0);assert.match(run("activityLineChart(activityExercisePoints(sessions,'id:deleted-id'),'reps')"),/tabela abaixo/);
+plannerCtx.backup.profile={frequencyGoals:editedGoal};assert.equal(vm.runInContext('normalizeDB(backup)',plannerCtx).profile.frequencyGoals.length,2);assert.equal(plannerCtx.backup.sessions[0].id,'history1');
+assert.ok(!html.includes('data-tab="history"'));for(const file of ['frequency.js','frequency.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
+// Run the date and streak edge cases in time zones with negative offsets and DST.
+for(const zone of ['America/Sao_Paulo','America/New_York','UTC'])execFileSync(process.execPath,['-e',`const fs=require('fs'),vm=require('vm'),assert=require('assert/strict');const c={window:{}};vm.createContext(c);vm.runInContext(fs.readFileSync('frequency.js','utf8'),c);const run=s=>vm.runInContext(s,c);assert.equal(run("activityKey('2026-10-29')"),'2026-10-29');assert.equal(run("activityKey(activityAddDays(activityDate('2026-03-07'),2))"),'2026-03-09');assert.equal(run("activityKey(activityMonday('2026-03-08'))"),'2026-03-02');assert.equal(run("weeklyConsistency([{date:'2026-03-08'},{date:'2026-03-08'}],[{week:'2026-03-02',days:1}],activityDate('2026-03-08')).count"),1);`],{env:{...process.env,TZ:zone}});
+console.log('PASS: distinct active days, open/closed weeks, streak/best/reset, historical goals, no retroactive rewards, invalid/future dates, leap/month/year/DST boundaries, deleted exercises, zero-load metrics and 3 time zones');
+fc.sessions=[{date:'2026-10-29'},{date:'2026-10-29'},{date:'2026-10-28'},{date:'2026-11-02'}];
+assert.equal(run("activityFrequencySeries(sessions,'week',activityDate('2026-10-29')).at(-1).count"),2);assert.equal(run("activityFrequencySeries(sessions,'month',activityDate('2026-10-29')).at(-1).count"),2);assert.equal(run("activityFrequencySeries(sessions,'week',activityDate('2026-10-29')).length"),8);assert.equal(run("activityFrequencySeries(sessions,'month',activityDate('2026-10-29')).length"),6);
+console.log('PASS: retained 8-week/6-month frequency charts deduplicate days and ignore future records');
+// These helpers drive live filtering and keyboard navigation in the combobox.
+const controlContext={};vm.createContext(controlContext);const controlsCode=fs.readFileSync('controls.js','utf8');vm.runInContext(controlsCode.slice(0,controlsCode.indexOf('window.LumeControls=')),controlContext);
+controlContext.options=[{index:0,label:'Tríceps na polia',disabled:false},{index:1,label:'Rosca com halteres',disabled:true},{index:2,label:'Remada · Superior 1',disabled:false},{index:3,label:'Opção oculta',hidden:true,disabled:false}];
+assert.equal(vm.runInContext("lumeOptionSearch(options,'triceps polia')[0].index",controlContext),0);assert.equal(vm.runInContext("lumeOptionSearch(options,'superior remada')[0].index",controlContext),2);assert.equal(vm.runInContext("lumeOptionSearch(options,'oculta').length",controlContext),0);assert.equal(vm.runInContext("lumeOptionSearch(options,'não existe').length",controlContext),0);
+assert.equal(vm.runInContext('lumeOptionStep(options.slice(0,3),0,1)',controlContext),2);assert.equal(vm.runInContext('lumeOptionStep(options.slice(0,3),0,-1)',controlContext),2);assert.equal(vm.runInContext('lumeOptionStep([],0,1)',controlContext),-1);
+for(const file of ['controls.js','controls.css']){assert.ok(html.includes(file));assert.ok(sw.includes(file));}
+assert.ok(html.includes('class="ambient-aura" aria-hidden="true"'));assert.ok(fs.readFileSync('controls.css','utf8').includes('data-motion="reduced"'));
+console.log('PASS: combobox accent-insensitive multiword search, hidden/disabled options, keyboard wrapping, assets and reduced-motion aura');
+const preferenceCode=fs.readFileSync('motion-preference.js','utf8');
+function preferenceHarness(systemReduced,stored,blocked=false,legacy=false){
+ let systemListener;const events={};const storage=new Map(stored?[['lume_motion_preference',stored]]:[]),query={matches:systemReduced};query[legacy?'addListener':'addEventListener']=(...args)=>{systemListener=args.at(-1)};
+ const ctx={window:{matchMedia:()=>query,addEventListener:(name,listener)=>events[name]=listener},document:{documentElement:{dataset:{}}},localStorage:{getItem:key=>{if(blocked)throw Error('blocked');return storage.get(key)||null},setItem:(key,value)=>{if(blocked)throw Error('blocked');storage.set(key,value)}}};vm.createContext(ctx);vm.runInContext(preferenceCode,ctx);return {ctx,query,storage,events,policy:ctx.window.LumeMotionPreference,change(){systemListener()}};
+}
+const policy=preferenceHarness(true);assert.equal(policy.policy.choice,'full');assert.equal(policy.policy.matches,false);assert.equal(policy.ctx.document.documentElement.dataset.motion,'full');policy.policy.set('full');assert.equal(policy.policy.matches,false);assert.equal(policy.ctx.document.documentElement.dataset.motion,'full');policy.query.matches=false;policy.change();assert.equal(policy.policy.matches,false);policy.policy.set('reduced');assert.equal(policy.policy.matches,true);policy.policy.set('system');assert.equal(policy.policy.matches,false);policy.query.matches=true;policy.change();assert.equal(policy.policy.matches,true);
+policy.storage.set('lume_motion_preference','full');policy.events.storage({key:'lume_motion_preference'});assert.equal(policy.policy.matches,false);
+const blockedPolicy=preferenceHarness(true,null,true,true);assert.equal(blockedPolicy.policy.matches,false);blockedPolicy.policy.set('full');assert.equal(blockedPolicy.policy.matches,false);
+for(const osReduced of [true,false]){assert.equal(preferenceHarness(osReduced).policy.matches,false);assert.equal(preferenceHarness(osReduced,'invalid').policy.choice,'full');assert.equal(preferenceHarness(osReduced,'reduced').policy.matches,true);assert.equal(preferenceHarness(osReduced,'system').policy.matches,osReduced);}
+policy.storage.delete('lume_motion_preference');policy.events.storage({key:'lume_motion_preference'});assert.equal(policy.policy.choice,'full');assert.equal(policy.policy.matches,false);
+assert.ok(html.indexOf('motion-preference.js')<html.indexOf('src="app.js'));assert.ok(sw.includes('motion-preference.js'));assert.ok(html.includes('motion-preference.css'));
+console.log('PASS: system/full/reduced policy, OS changes, cross-tab updates, blocked storage, legacy media listeners and load order');
+(async()=>{
+ const map=new Map(),swContext={URL,Request,Response,Set,Error,self:{location:{href:'https://example.test/Lume-Fit/sw.js'},addEventListener(){}},caches:{open:async()=>({put:async(key,value)=>map.set(key,value.clone()),match:async key=>map.get(key)?.clone()})},fetch:async()=>new Response('new-script',{headers:{'content-type':'text/javascript'}})};vm.createContext(swContext);vm.runInContext(sw,swContext);
+ const root='https://example.test/Lume-Fit/',script=root+'motion.js';
+ assert.equal(swContext.lumeAssetKey(script+'?v=20'),script);assert.equal(swContext.lumeAssetKey(root+'signin-with-chatgpt'),null);assert.equal(swContext.lumeAssetKey(root+'api/private'),null);assert.equal(swContext.lumeAssetKey('https://external.test/motion.js'),null);
+ map.set(script,new Response('old-script',{headers:{'content-type':'text/javascript'}}));let response=await swContext.lumeNetworkFirst(new Request(script),script);assert.equal(await response.text(),'new-script');assert.equal(await map.get(script).clone().text(),'new-script');
+ swContext.fetch=async()=>{throw Error('offline')};response=await swContext.lumeNetworkFirst(new Request(script),script);assert.equal(await response.text(),'new-script');response=await swContext.lumeNetworkFirst(new Request(root+'motion.css'),root+'motion.css');assert.equal(response.status,503);assert.match(response.headers.get('content-type'),/text\/plain/);
+ swContext.fetch=async()=>new Response('Sign in',{status:403,headers:{'content-type':'text/html'}});response=await swContext.lumeNetworkFirst(new Request(script),script);assert.equal(response.status,403);
+ assert.equal(await swContext.lumeCacheable(new Response('login gate',{headers:{'content-type':'text/html'}}),root),false);assert.equal(await swContext.lumeCacheable(new Response('<main id="mainContent"></main>',{headers:{'content-type':'text/html'}}),root),true);assert.equal(await swContext.lumeCacheable(new Response('<html>offline</html>',{headers:{'content-type':'text/html'}}),script),false);
+ console.log('PASS: network-first replaces stale script; offline uses correct cached asset; missing assets never receive index HTML; auth/API bypass and login-gate/MIME checks');
+})().catch(error=>{console.error(error);process.exitCode=1});
+
+const recentContext={state:{db:{routines:[{id:'icon-test',name:'Custom',icon:'row',iconImage:'custom-image'}]}},trainingVisual:item=>item};vm.createContext(recentContext);vm.runInContext(source.slice(source.indexOf('function recentWorkoutVisual('),source.indexOf('function renderHome()')),recentContext);assert.equal(recentContext.recentWorkoutVisual({routineId:'icon-test',name:'Old'}).icon,'row');assert.equal(recentContext.recentWorkoutVisual({routineId:'icon-test'}).iconImage,'custom-image');assert.equal(recentContext.recentWorkoutVisual({routineId:'deleted',name:'Supino'}).name,'Supino');console.log('PASS: recent workout icon follows current routine/custom image and deleted routine fallback');

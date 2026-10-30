@@ -20,9 +20,7 @@ const state = {
   selectedRoutineId: null,
   editingExerciseId: null,
   registerMode: 'history',
-  historyExerciseFilter: 'all',
   calendarRef: new Date(),
-  frequencyView: 'week',
 };
 
 function initialData(){
@@ -61,9 +59,17 @@ function normalizeDB(db){
     routines: Array.isArray(db.routines) && db.routines.length ? db.routines : fresh.routines,
     sessions: Array.isArray(db.sessions) ? db.sessions : []
   };
+  out.profile.social=normalizeSocialProfile(out.profile.social);
+  out.profile.trainingPreferences=normalizeTrainingPreferences(out.profile.trainingPreferences);
+  out.profile.visibility='private';
+  out.profile.onboardingComplete=out.profile.onboardingComplete===true;
+  out.profile.bio=String(out.profile.bio||'').slice(0,160);
+  out.profile.frequencyGoals=normalizeFrequencyGoals(out.profile.frequencyGoals);
   out.routines = out.routines.map(r => ({
     id: r.id || uid(),
     name: r.name || 'Treino',
+    icon: r.icon || suggestTrainingIcon(r.name),
+    iconImage: safeIconImage(r.iconImage),
     weekday: Number.isInteger(r.weekday) && r.weekday>=0 && r.weekday<=6 ? r.weekday : null,
     exercises: Array.isArray(r.exercises) ? r.exercises.map(e => ({
       id: e.id || uid(),
@@ -71,7 +77,10 @@ function normalizeDB(db){
       sets: clamp(Number(e.sets)||3, 1, 12),
       minReps: clamp(Number(e.minReps)||8, 1, 99),
       maxReps: clamp(Number(e.maxReps)||12, 1, 99),
-      icon: e.icon || 'dumbbell'
+      icon: e.icon || suggestTrainingIcon(e.name),
+      iconImage: safeIconImage(e.iconImage),
+      ...normalizeMuscleFields(e),
+      ...catalogFields(e)
     })) : []
   }));
   return out;
@@ -134,8 +143,9 @@ function createSeedSessions(routines){
 }
 
 function saveDB(){
-  if (window.LumeAuth) window.LumeAuth.persist(state.db);
-  else localStorage.setItem(STORAGE_KEY, JSON.stringify(state.db));
+  if (window.LumeAuth) return window.LumeAuth.persist(state.db);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.db));
+  return true;
 }
 
 function toast(msg){
@@ -147,10 +157,12 @@ function toast(msg){
 }
 
 function switchTab(tab){
+  if(tab==='history'){window.FrequencyExperience.go('history');return;}
   state.currentTab = tab;
   $$('.screen').forEach(s => s.classList.toggle('active', s.id === `screen-${tab}`));
   $$('#bottomNav button').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
   render();
+  if(tab==='friends')window.Friends?.refresh();
 }
 
 function currentRoutine(){
@@ -166,18 +178,12 @@ function volumeOfSession(session){
 }
 
 function getMonthSessions(date){
-  return state.db.sessions.filter(s => {
-    const d = new Date(s.date);
-    return d.getMonth()===date.getMonth() && d.getFullYear()===date.getFullYear();
-  });
+  return activitySessions(state.db.sessions).filter(s=>{const d=activityDate(s.date);return d.getMonth()===date.getMonth()&&d.getFullYear()===date.getFullYear();});
 }
 
 function frequencyPct(){
-  const now = new Date();
-  const sessions = getMonthSessions(now);
-  const trainedDays = new Set(sessions.map(s => new Date(s.date).toDateString())).size;
-  const daysPassed = now.getDate();
-  return Math.min(100, Math.round((trainedDays / 20) * 100));
+  const stats=weeklyConsistency(state.db.sessions,state.db.profile.frequencyGoals);
+  return stats.target?Math.min(100,Math.round(stats.count/stats.target*100)):null;
 }
 
 function bestWeight(exerciseId){
@@ -232,11 +238,22 @@ function render(){
   renderHome();
   renderWorkouts();
   renderRegister();
-  renderHistory();
   renderFrequency();
   renderSettings();
   renderKnowledge();
+  renderProfile();
+  window.Friends?.render();
 }
+
+function weeklyActivityCard(){
+ const now=new Date(),monday=activityMonday(now),key=activityKey;
+ const hits=activityDays(state.db.sessions,monday,activityAddDays(monday,6),now);
+ const days=Array.from({length:7},(_,i)=>{const d=new Date(monday);d.setDate(d.getDate()+i);return d;});
+ const count=days.filter(d=>hits.has(key(d))).length;
+ return `<section class="week-card" aria-label="Atividade desta semana"><div class="week-heading"><h3>Seu ritmo nesta semana</h3><small>${count} ${count===1?'dia ativo':'dias ativos'}</small></div><div class="week-days">${days.map((d,i)=>`<div class="week-day ${hits.has(key(d))?'hit':''} ${key(d)===key(now)?'today':''}" aria-label="${['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'][i]}, dia ${d.getDate()}${hits.has(key(d))?', treino registrado':''}${key(d)===key(now)?', hoje':''}"><span>${['SEG','TER','QUA','QUI','SEX','SÁB','DOM'][i]}</span><b>${d.getDate()}</b></div>`).join('')}</div><p class="week-note">${count?'Cada registro conta a sua história. Confira seus registros e evolução em Frequência.':'Sua semana começa com um registro. Organize suas rotinas e treine no seu ritmo.'} Dias de descanso também fazem parte do planejamento.</p></section>`;
+}
+
+function recentWorkoutVisual(session){const routine=state.db.routines.find(r=>r.id===session.routineId);return trainingVisual(routine||{name:session.name,icon:session.icon,iconImage:session.iconImage});}
 
 function renderHome(){
   const root = $('#screen-home');
@@ -244,7 +261,7 @@ function renderHome(){
   const total = getMonthSessions(new Date()).length;
   const freq = frequencyPct();
   const vol = state.db.sessions.reduce((s, session) => s + volumeOfSession(session), 0);
-  const recent = state.db.sessions.slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,2);
+  const recent = activitySessions(state.db.sessions).slice().sort((a,b)=> new Date(b.date)-new Date(a.date)).slice(0,2);
   root.innerHTML = `
     <div class="page-head">
       <div>
@@ -253,6 +270,7 @@ function renderHome(){
       </div>
       <button class="icon-btn" onclick="switchTab('frequency')">${calendarIcon()}</button>
     </div>
+    ${GuidedWorkout.banner()}
     <div class="hero-card">
       ${nextWorkoutCard()}
     </div>
@@ -264,8 +282,8 @@ function renderHome(){
       </div>
       <div class="stat-card">
         <div class="stat-icon">${barsIcon()}</div>
-        <div class="stat-value">${freq}%</div>
-        <div class="stat-label">Meta mensal</div>
+        <div class="stat-value">${freq===null?'—':freq+'%'}</div>
+        <div class="stat-label">Meta da semana</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon">${boltIcon()}</div>
@@ -273,209 +291,46 @@ function renderHome(){
         <div class="stat-label">Volume total</div>
       </div>
     </div>
+    ${weeklyActivityCard()}
     <div class="section-title"><h3>Últimos treinos</h3><button class="link" onclick="switchTab('history')">Ver todos</button></div>
     <div class="mini-list">
       ${recent.length ? recent.map(s => `
         <div class="mini-item" onclick="switchTab('history')">
-          <div class="ico">${miniRoutineIcon()}</div>
+          <div class="ico recent-workout-icon" aria-hidden="true">${recentWorkoutVisual(s)}</div>
           <div>
             <strong>${esc(s.name)}</strong>
-            <small>${shortDate(s.date)} • ${(s.entries||[]).length} exercícios</small>
+            <small>${shortDate(s.date)} • ${(s.entries||[]).length} ${(s.entries||[]).length===1?'exercício':'exercícios'}</small>
           </div>
           <div class="push">›</div>
-        </div>`).join('') : `<div class="empty">Ainda não há treinos registrados.</div>`}
+        </div>`).join('') : `<div class="empty">Sua evolução começa aqui.<br>Conclua seu primeiro treino para acompanhar os resultados.</div>`}
     </div>`;
 }
 
 function renderWorkouts(){
-  const root = $('#screen-workouts');
-  const routine = currentRoutine();
-  if (!routine){
-    root.innerHTML = `<div class="page-head"><div><h2>Treinos</h2><p>Crie sua primeira rotina para começar.</p></div></div><button class="primary-btn" onclick="openRoutineSheet()">＋ Criar rotina</button>`;
-    return;
-  }
-  if (!state.selectedRoutineId){
-    root.innerHTML = `
-      <div class="page-head"><div><h2>Treinos</h2></div><button class="icon-btn" onclick="openRoutineSheet()">＋</button></div>
-      <div class="list-stack">
-        ${state.db.routines.map(r => `
-          <div class="card screen-card">
-            <div class="mini-item" style="padding:0;background:none;border:0">
-              <div class="ico" aria-hidden="true">${miniRoutineIcon()}</div>
-              <button type="button" onclick="openRoutine('${r.id}')" style="flex:1;min-width:0;text-align:left;background:transparent;border:0;color:inherit;padding:0">
-                <strong>${esc(r.name)}</strong>
-                <small>${r.exercises.length} exercícios · ${dayLabel(r)}</small>
-              </button>
-              <button type="button" class="ghost-btn" aria-label="Excluir rotina ${esc(r.name)}" title="Excluir rotina" style="padding:10px 12px" onclick="deleteRoutine('${r.id}')">Excluir</button>
-            </div>
-          </div>`).join('')}
-      </div>`;
-    return;
-  }
-  root.innerHTML = `
-    <div class="bar">
-      <button class="back" onclick="closeRoutine()">‹</button>
-      <div style="flex:1;text-align:center;font-weight:600;letter-spacing:-.02em">Treino</div>
-      <button class="back dot-menu" onclick="openEditRoutineSheet('${routine.id}')" aria-label="Editar dia do treino">✎</button>
-    </div>
-    <div class="page-head" style="margin-top:0">
-      <div>
-        <h2 style="font-size:22px">${esc(routine.name)}</h2>
-        <p>${routine.exercises.length} exercícios · ${dayLabel(routine)}</p>
-      </div>
-    </div>
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px">
-      <button class="ghost-btn" onclick="deleteRoutine('${routine.id}')">Excluir rotina</button>
-      <button class="ghost-btn" onclick="openExerciseSheet('${routine.id}')">＋ Exercício</button>
-    </div>
-    <div class="list-stack">
-      ${routine.exercises.map(exercise => `
-        <div class="exercise-card" onclick="startWorkout('${routine.id}','${exercise.id}')">
-          <div class="exercise-thumb">${exerciseIcon(exercise.icon)}</div>
-          <div>
-            <strong>${esc(exercise.name)}</strong>
-            <small>${exercise.sets} séries • ${exercise.minReps}-${exercise.maxReps} reps</small>
-          </div>
-          <div class="push">›</div>
-        </div>`).join('')}
-    </div>
-    <div class="bottom-cta">
-      <button class="primary-btn" onclick="startWorkout('${routine.id}')">▶ Iniciar treino</button>
-    </div>`;
+ const root=$('#screen-workouts');
+ const selected=state.db.routines.find(r=>r.id===state.selectedRoutineId);
+ if(!selected){
+  state.selectedRoutineId=null;
+  root.innerHTML=`<div class="page-head"><div><h2>Seus treinos</h2><p>Seu plano, organizado do seu jeito.</p></div><button class="primary-btn compact" onclick="openRoutineSheet()">＋ Nova rotina</button></div>
+  ${GuidedWorkout.banner()}
+  ${automaticRoutineEntry()}
+  ${!state.db.routines.length?`<section class="routine-empty"><div class="routine-empty-art">${trainingGraphic('dumbbell')}</div><h3>Comece pelo seu próximo treino.</h3><p>Dê um nome à rotina, escolha o dia e adicione seus exercícios. Os ícones ajudam a reconhecer cada movimento.</p><button class="primary-btn" onclick="openRoutineSheet()">Criar minha primeira rotina</button></section>`:`<div class="routine-summary"><span>${state.db.routines.length} ${state.db.routines.length===1?'rotina':'rotinas'}</span><span>${state.db.routines.reduce((n,r)=>n+r.exercises.length,0)} ${state.db.routines.reduce((n,r)=>n+r.exercises.length,0)===1?'exercício':'exercícios'} no seu plano</span></div><div class="routine-list">${state.db.routines.map(r=>`<article class="routine-plan ${r.weekday===new Date().getDay()?'scheduled-today':''}"><div class="routine-plan-head"><div class="routine-art">${trainingVisual(r)}</div><div class="routine-plan-title"><span class="routine-day">${r.weekday===new Date().getDay()?'Hoje · ':''}${dayLabel(r)}</span><h3>${esc(r.name)}</h3><p>${r.exercises.length} ${r.exercises.length===1?'exercício':'exercícios'}${r.exercises.length?' · '+r.exercises.reduce((n,e)=>n+e.sets,0)+' séries':''}</p></div><button class="icon-btn" aria-label="Editar rotina ${esc(r.name)}" onclick="openEditRoutineSheet('${r.id}')">${editTrainingIcon()}</button></div><div class="routine-preview">${r.exercises.length?r.exercises.slice(0,3).map(e=>`<span>${esc(e.name)}</span>`).join('')+(r.exercises.length>3?`<span>＋${r.exercises.length-3}</span>`:''):'<span>Adicione os movimentos que fazem parte do seu treino.</span>'}</div><div class="routine-plan-actions"><button class="secondary-btn" onclick="openRoutine('${r.id}')">${r.exercises.length?'Ver exercícios':'Adicionar exercícios'}</button><button class="primary-btn" ${r.exercises.length?'':'disabled'} onclick="startWorkout('${r.id}')">Iniciar treino</button></div></article>`).join('')}</div>`}`;
+  return;
+ }
+ const routine=selected;
+ root.innerHTML=`<div class="routine-toolbar"><button class="ghost-btn" onclick="closeRoutine()">‹ Todas as rotinas</button><button class="ghost-btn" onclick="openEditRoutineSheet('${routine.id}')">Editar rotina</button></div><div class="routine-detail-heading"><div class="routine-art">${trainingVisual(routine)}</div><div><span class="routine-day">${dayLabel(routine)}</span><h2>${esc(routine.name)}</h2><p>${routine.exercises.length} ${routine.exercises.length===1?'exercício':'exercícios'} · ${routine.exercises.reduce((n,e)=>n+e.sets,0)} séries planejadas</p></div></div><div class="section-title"><h3>Seus movimentos</h3><button class="ghost-btn" onclick="openExerciseSheet('${routine.id}')">＋ Adicionar</button></div><p class="hint">Toque em um exercício para começar por ele. Use o lápis para editar o nome, as séries ou o ícone.</p><div class="exercise-plan-list">${routine.exercises.length?routine.exercises.map((e,i)=>`<article class="exercise-plan"><span class="exercise-order">${i+1}</span><button class="exercise-open" onclick="startWorkout('${routine.id}','${e.id}')"><div class="exercise-thumb">${trainingVisual(e)}</div><div><strong>${esc(e.name)}</strong><small>${e.sets} séries · ${e.minReps}–${e.maxReps} repetições</small>${muscleBadges(e)}</div></button><button class="muscle-link" onclick="openMuscleDetails('${routine.id}','${e.id}')" aria-label="Ver músculos de ${esc(e.name)}">Músculos</button><button class="icon-btn" aria-label="Editar exercício ${esc(e.name)}" onclick="openExerciseSheet('${routine.id}','${e.id}')">${editTrainingIcon()}</button></article>`).join(''):`<div class="empty"><strong>A rotina está criada.</strong><p>Agora adicione seu primeiro exercício e escolha o ícone que combina com ele.</p><button class="secondary-btn" onclick="openExerciseSheet('${routine.id}')">＋ Adicionar exercício</button></div>`}</div><div class="routine-detail-actions"><button class="primary-btn" ${routine.exercises.length?'':'disabled'} onclick="startWorkout('${routine.id}')">Iniciar treino</button><button class="ghost-btn" onclick="deleteRoutine('${routine.id}')">Excluir rotina</button></div>`;
 }
+function editTrainingIcon(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="m14 5 5 5M4 20l5-1L21 7l-4-4L5 15Z"/></svg>';}
 
-function renderRegister(){
-  const root = $('#screen-register');
-  const active = state.activeWorkout;
-  if (!active){
-    root.innerHTML = `<div class="empty">Selecione um treino para registrar suas séries.</div>`;
-    return;
-  }
-  const routine = state.db.routines.find(r => r.id === active.routineId);
-  const current = active.entries[active.index];
-  const prev = lastEntry(current.exerciseId);
-  const best = bestWeight(current.exerciseId);
-  const detailsText = current.targetText;
-  root.innerHTML = `
-    <div class="bar">
-      <button class="back" onclick="cancelWorkout()">‹</button>
-      <div style="flex:1;text-align:center;font-weight:600;letter-spacing:-.02em">Registrar</div>
-      <button class="back dot-menu" onclick="switchRegisterMode()">⋯</button>
-    </div>
-    <div class="register-hero">
-      <div>
-        <h3>${esc(current.name)}</h3>
-        <small style="color:#bdbdbd">${esc(routine.name)}</small>
-      </div>
-      <div class="machine-art">${machineArt(current.icon)}</div>
-    </div>
-    <div class="segmented">
-      <button class="seg-btn ${state.registerMode==='history' ? 'active' : ''}" onclick="setRegisterMode('history')">Histórico</button>
-      <button class="seg-btn ${state.registerMode==='details' ? 'active' : ''}" onclick="setRegisterMode('details')">Detalhes</button>
-    </div>
-    ${state.registerMode==='history' ? `
-      <div class="register-stats">
-        <div class="mini-stat"><div class="k">Último treino</div><div class="v">${prev ? `${prev.sets[0]?.kg ?? '-'} kg` : '—'}</div><small style="color:#8e8e8e">${prev ? prev.sets.map(s => `${s.kg} x ${s.reps}`).join(' • ') : 'Sem registro'}</small></div>
-        <div class="mini-stat"><div class="k">Melhor carga</div><div class="v">${best ?? '—'} kg</div><small style="color:#8e8e8e">meta ${current.targetText}</small></div>
-      </div>` : `
-      <div class="card"><div class="section-title" style="margin:0 0 10px"><h3>Detalhes</h3></div><p style="margin:0;color:#cacaca">Faça ${current.sets.length} séries dentro da faixa alvo de ${detailsText}. Toque no círculo para marcar a série concluída.</p></div>`}
-    <div class="sets-table">
-      <div class="table-head"><div>Série</div><div>Carga (kg)</div><div>Repetições</div><div></div></div>
-      ${current.sets.map((set, i) => `
-        <div class="set-row">
-          <div style="text-align:center">${i+1}</div>
-          <div><input type="number" inputmode="decimal" min="0" step="0.5" value="${set.kg ?? ''}" onchange="updateSet(${i}, 'kg', this.value)"></div>
-          <div><input type="number" inputmode="numeric" min="0" step="1" value="${set.reps ?? ''}" onchange="updateSet(${i}, 'reps', this.value)"></div>
-          <button class="check-btn ${set.done ? 'done' : ''}" onclick="toggleSet(${i})">✓</button>
-        </div>`).join('')}
-    </div>
-    <div class="bottom-actions">
-      <button class="secondary-btn" onclick="addSetRow()">＋ Adicionar série</button>
-      <button class="primary-btn" onclick="completeExercise()">${active.index === active.entries.length-1 ? 'Concluir treino' : 'Concluir exercício'}</button><button class="ghost-btn" onclick="finishWorkout()" style="width:100%">Salvar séries concluídas e finalizar</button>
-      <div class="pager"><span>${active.index>0 ? '← Exercício anterior' : ''}</span><span>${active.index < active.entries.length-1 ? 'Próximo exercício →' : ''}</span></div>
-    </div>`;
-}
-
-function renderHistory(){
-  const root = $('#screen-history');
-  const exercises = allExercises();
-  if (!exercises.length && !state.db.sessions.length){ root.innerHTML = `<div class="page-head"><h2>Histórico</h2></div><div class="empty">Seu histórico aparecerá aqui após registrar um treino.</div>`; return; }
-  const selected = state.historyExerciseFilter === 'all' ? exercises.find(e => exerciseProgress(e.id).length) || exercises[0] : exercises.find(e => e.id===state.historyExerciseFilter) || exercises[0];
-  const progress = selected ? exerciseProgress(selected.id) : [];
-  root.innerHTML = `
-    <div class="page-head"><div><h2>Histórico</h2></div></div>
-    <div class="chart-card">
-      <div class="chart-top">
-        <div>
-          <div style="font-size:13px;color:#b8b8b8;margin-bottom:8px">Todos os exercícios</div>
-          <select class="select" onchange="changeHistoryExercise(this.value)" ${exercises.length ? '' : 'disabled'}>
-            <option value="all" ${state.historyExerciseFilter==='all'?'selected':''}>Auto</option>
-            ${exercises.map(e => `<option value="${e.id}" ${state.historyExerciseFilter===e.id ? 'selected' : ''}>${esc(e.name)}</option>`).join('')}
-          </select>
-        </div>
-        <button class="icon-btn" onclick="switchTab('frequency')">↗</button>
-      </div>
-      <div style="font-size:16px;font-weight:600;margin-bottom:8px">${esc(selected?.name || 'Supino reto')}</div>
-      <div class="chart-wrap">${lineChart(progress)}</div>
-      <div class="legend">Carga (kg)</div>
-    </div>
-    <div class="list-stack" style="margin-top:14px">
-      ${state.db.sessions.slice().sort((a,b)=>new Date(b.date)-new Date(a.date)).map(s => `
-        <div class="card screen-card">
-          <div class="section-title" style="margin:0 0 10px"><h3>${esc(s.name)}</h3><span style="color:#a3a3a3;font-size:14px">${shortDate(s.date)}</span></div>
-          ${(s.entries||[]).map(e => `<div style="padding:8px 0;color:#cecece"><strong style="font-size:15px">${esc(e.name)}</strong><br><small>${e.sets.map(x=>`${x.kg} kg × ${x.reps}`).join(' • ')}</small></div>`).join('')}
-          <div style="margin-top:8px"><button class="ghost-btn" onclick="deleteSession('${s.id}')">Excluir registro</button></div>
-        </div>`).join('')}
-    </div>`;
-}
-
-function renderFrequency(){
-  const root = $('#screen-frequency');
-  const ref = state.calendarRef;
-  const monthTitle = ref.toLocaleDateString('pt-BR', { month:'long', year:'numeric' });
-  root.innerHTML = `
-    <div class="page-head"><div><h2>Frequência</h2><p>Consistência, um dia de cada vez.</p></div></div>
-    <div class="switcher"><button class="${state.frequencyView==='week'?'active':''}" onclick="setFrequencyView('week')">Semanal</button><button class="${state.frequencyView==='month'?'active':''}" onclick="setFrequencyView('month')">Mensal</button></div>
-    <div class="chart-card">
-      <div class="section-title"><h3>${state.frequencyView==='week'?'Últimas 8 semanas':'Últimos 6 meses'}</h3><span class="hint">Treinos concluídos</span></div>
-      <div class="chart-wrap">${frequencyBars()}</div>
-      <p class="hint">Cada barra representa a quantidade de dias em que você registrou um treino.</p>
-    </div>
-    <div class="calendar-card">
-      <div class="calendar-head"><button class="month-nav" onclick="moveMonth(-1)">‹</button><div style="font-size:18px;font-weight:600">${capitalize(monthTitle)}</div><button class="month-nav" onclick="moveMonth(1)">›</button></div>
-      <div class="weekdays"><div>D</div><div>S</div><div>T</div><div>Q</div><div>Q</div><div>S</div><div>S</div></div>
-      <div class="days-grid" style="margin-top:12px">${calendarGrid(ref)}</div>
-      <p class="hint" style="margin-bottom:0">Dias claros representam treinos registrados. Dois treinos no mesmo dia contam como um dia de frequência.</p>
-    </div>`;
-}
-function setFrequencyView(view){state.frequencyView=view;renderFrequency()}
-function frequencyBars(){
-  const now=new Date();now.setHours(0,0,0,0);
-  const keys=new Set(state.db.sessions.map(s=>new Date(s.date).toDateString()));
-  let bars=[];
-  if(state.frequencyView==='week'){
-    const current=new Date(now);current.setDate(current.getDate()-((current.getDay()+6)%7));
-    for(let i=7;i>=0;i--){let st=new Date(current);st.setDate(st.getDate()-7*i);let count=0;
-      for(let k=0;k<7;k++){let d=new Date(st);d.setDate(d.getDate()+k);if(d<=now&&keys.has(d.toDateString()))count++}
-      bars.push({name:st.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}),value:count})}
-  }else{
-    for(let i=5;i>=0;i--){let d=new Date(now.getFullYear(),now.getMonth()-i,1);let count=new Set(getMonthSessions(d).map(s=>new Date(s.date).toDateString())).size;bars.push({name:d.toLocaleDateString('pt-BR',{month:'short'}).replace('.',''),value:count})}
-  }
-  const top=Math.max(1,...bars.map(b=>b.value));
-  const width=320,height=170,left=20,bottom=29,usable=height-bottom-12;
-  let svg=`<svg viewBox="0 0 ${width} ${height}" width="100%" height="100%" role="img" aria-label="Gráfico de frequência">`;
-  [0,1,2,3].forEach(n=>{let y=height-bottom-(n/3)*usable;svg+=`<line x1="${left}" y1="${y}" x2="${width-5}" y2="${y}" stroke="#303030" stroke-width=".7"/><text x="2" y="${y+4}" font-size="9" fill="#999">${Math.round((n/3)*top)}</text>`});
-  bars.forEach((bar,i)=>{let step=(width-left-9)/bars.length,w=Math.min(24,step*.6),x=left+i*step+(step-w)/2,bh=(bar.value/top)*usable,y=height-bottom-bh;
-    svg+=`<rect class="graph-bar" style="animation-delay:${i*65}ms" x="${x}" y="${y}" width="${w}" height="${Math.max(bh,1)}" rx="4" fill="${bar.value?'#eee':'#303030'}"/><text x="${x+w/2}" y="${height-10}" text-anchor="middle" font-size="9" fill="#bbb">${bar.name}</text>`;
-    if(bar.value)svg+=`<text x="${x+w/2}" y="${Math.max(10,y-5)}" text-anchor="middle" font-size="9" fill="#fff">${bar.value}</text>`;
-  });return svg+'</svg>';
-}
+function renderRegister(){ window.GuidedWorkout.render(); }
 
 function renderSettings(){
   const root = $('#screen-settings');
   const p = state.db.profile;
+  const expanded = [...root.querySelectorAll('details[open][data-setting]')].map(el=>el.dataset.setting);
   root.innerHTML = `
     <div class="page-head"><div><h2>Ajustes</h2></div></div>
+    <button class="secondary-btn" style="margin-bottom:20px" onclick="switchTab('profile')">Meu perfil</button>
     <div class="profile-card">
       <div class="avatar">${p.photo ? `<img class="profile-photo" src="${p.photo}" alt="Foto de perfil">` : userIcon()}</div>
       <div class="profile-meta">
@@ -491,13 +346,15 @@ function renderSettings(){
       <div><strong>Sincronização</strong><br><small id="cloudState">${esc(window.LumeAuth?.status() || 'Verificando...')}</small></div>
       <button onclick="LumeAuth.syncNow()">Sincronizar</button>
     </div>
-    <div class="menu-card">
-      <div class="menu-row" onclick="openPhotoPicker()"><div class="menu-ico">${userIcon()}</div><div><strong>Foto de perfil</strong><small>Escolher imagem do dispositivo</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openProfileSheet()"><div class="menu-ico">${userBadgeIcon()}</div><div><strong>Meus dados</strong><small>Nome, idade, peso e altura</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openRoutineSheet()"><div class="menu-ico">${miniRoutineIcon()}</div><div><strong>Meus treinos</strong><small>Criar ou ajustar rotinas</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openExerciseSheet()"><div class="menu-ico">${dumbbellSmallIcon()}</div><div><strong>Exercícios</strong><small>Adicionar novos exercícios</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="exportData()"><div class="menu-ico">${downloadIcon()}</div><div><strong>Backup e restaurar</strong><small>Exportar ou importar dados</small></div><div class="push">›</div></div>
-      <div class="menu-row" onclick="openImportFile()"><div class="menu-ico">${gearIcon()}</div><div><strong>Preferências</strong><small>Importar backup JSON</small></div><div class="push">›</div></div>
+    <div class="settings-groups">
+      <details class="settings-group" data-setting="preferences" ${expanded.includes('preferences')?'open':''}>
+        <summary><span class="settings-group-icon" aria-hidden="true">${preferencesIcon()}</span><span><strong>Preferências</strong><small>Animações e movimento do aplicativo</small></span></summary>
+        <div class="settings-group-content">${motionPreferenceCard()}</div>
+      </details>
+      <details class="settings-group" data-setting="backup" ${expanded.includes('backup')?'open':''}>
+        <summary><span class="settings-group-icon" aria-hidden="true">${downloadIcon()}</span><span><strong>Backup e restauração</strong><small>Salve uma cópia ou restaure seus dados</small></span></summary>
+        <div class="settings-group-content"><p class="hint">Guarde uma cópia dos seus treinos, histórico e perfil em um arquivo JSON.</p><div class="backup-actions"><button type="button" class="secondary-btn" onclick="exportData()">Exportar backup</button><button type="button" class="secondary-btn" onclick="openImportFile()">Restaurar backup</button></div><p class="hint">Ao restaurar, os dados atuais serão substituídos. Você poderá confirmar antes da importação.</p></div>
+      </details>
     </div>
     <input id="photoFile" class="hidden" type="file" accept="image/*" onchange="receivePhoto(this)">
     <input id="importFile" class="hidden" type="file" accept="application/json,.json" onchange="importData(this)">`;
@@ -509,91 +366,15 @@ function openRoutine(id){
 }
 function closeRoutine(){ state.selectedRoutineId = null; render(); }
 
-function startWorkout(routineId, exerciseId=null){
-  const routine = state.db.routines.find(r=>r.id===routineId);
-  if (!routine) return;
-  state.activeWorkout = {
-    routineId,
-    index: exerciseId ? Math.max(0, routine.exercises.findIndex(e=>e.id===exerciseId)) : 0,
-    entries: routine.exercises.map(exercise => ({
-      exerciseId: exercise.id,
-      name: exercise.name,
-      icon: exercise.icon,
-      targetText: `${exercise.minReps}-${exercise.maxReps} reps`,
-      sets: Array.from({length: exercise.sets}, () => ({kg:'', reps:'', done:false}))
-    }))
-  };
-  state.registerMode = 'history';
-  switchTab('register');
-}
-
-async function cancelWorkout(){
-  if (!state.activeWorkout) return;
-  if (await lumeConfirm('Descartar treino?', 'As séries ainda não salvas serão perdidas.')) {
-    state.activeWorkout = null;
-    switchTab('workouts');
-  }
-}
-
-function setRegisterMode(mode){ state.registerMode = mode; renderRegister(); }
-function switchRegisterMode(){ state.registerMode = state.registerMode === 'history' ? 'details' : 'history'; renderRegister(); }
-
-function updateSet(index, key, value){
-  const set = state.activeWorkout?.entries[state.activeWorkout.index]?.sets[index];
-  if (!set) return;
-  set[key] = value;
-}
-function toggleSet(index){
-  const set = state.activeWorkout?.entries[state.activeWorkout.index]?.sets[index];
-  if (!set) return;
-  set.done = !set.done;
-  renderRegister();
-}
-function addSetRow(){
-  const current = state.activeWorkout?.entries[state.activeWorkout.index];
-  if (!current) return;
-  current.sets.push({kg:'', reps:'', done:false});
-  renderRegister();
-}
-
-function completeExercise(){
-  const active = state.activeWorkout;
-  if (!active) return;
-  const current = active.entries[active.index];
-  const validSets = current.sets.filter(s => s.done && s.kg !== '' && s.reps !== '' && Number(s.kg) >= 0 && Number(s.reps) > 0);
-  if (!validSets.length){ toast('Preencha e marque pelo menos uma série.'); return; }
-  current.cleanedSets = validSets.map(s => ({kg:Number(s.kg), reps:Number(s.reps)}));
-  if (active.index < active.entries.length - 1){
-    active.index += 1;
-    state.registerMode = 'history';
-    renderRegister();
-    return;
-  }
-  finishWorkout();
-}
-
-function finishWorkout(){
-  const active = state.activeWorkout;
-  if (!active) return;
-  const routine = state.db.routines.find(r => r.id === active.routineId);
-  const entries = active.entries.map(entry => ({
-    exerciseId: entry.exerciseId,
-    name: entry.name,
-    sets: (entry.cleanedSets || entry.sets.filter(s => s.done && s.kg !== '' && s.reps !== '').map(s => ({kg:Number(s.kg), reps:Number(s.reps)})))
-  })).filter(e => e.sets.length);
-  if (!entries.length){ toast('Nenhuma série válida para salvar.'); return; }
-  state.db.sessions.push({
-    id: uid(),
-    date: new Date().toISOString(),
-    name: routine.name,
-    routineId: routine.id,
-    entries
-  });
-  saveDB();
-  state.activeWorkout = null;
-  toast('Treino salvo com sucesso!');
-  switchTab('history');
-}
+function startWorkout(routineId,exerciseId=null){ return GuidedWorkout.start(routineId,exerciseId); }
+function cancelWorkout(){ return GuidedWorkout.discard(); }
+function setRegisterMode(mode){state.registerMode=mode;renderRegister();}
+function switchRegisterMode(){state.registerMode=state.registerMode==='history'?'details':'history';renderRegister();}
+function updateSet(index,key,value){ GuidedWorkout.update(index,key,value); }
+function toggleSet(index){ GuidedWorkout.toggle(index); }
+function addSetRow(){ GuidedWorkout.add(); }
+function completeExercise(){ GuidedWorkout.next(); }
+function finishWorkout(){ return GuidedWorkout.finish(); }
 
 async function deleteRoutine(id){
   const routine = state.db.routines.find(r => r.id === id);
@@ -606,7 +387,7 @@ async function deleteRoutine(id){
   // Apenas a rotina é excluída. O histórico é mantido para não perder evolução.
   state.db.routines = state.db.routines.filter(r => r.id !== id);
   if (state.selectedRoutineId === id) state.selectedRoutineId = null;
-  if (state.activeWorkout?.routineId === id) state.activeWorkout = null;
+  // An active session owns a snapshot and may be finished after routine deletion.
   saveDB();
   render();
   toast('Rotina excluída.');
@@ -619,25 +400,15 @@ async function deleteSession(id){
   render();
 }
 
-function moveMonth(delta){
-  state.calendarRef = new Date(state.calendarRef.getFullYear(), state.calendarRef.getMonth()+delta, 1);
-  renderFrequency();
-}
-
-function changeHistoryExercise(id){
-  state.historyExerciseFilter = id;
-  renderHistory();
-}
-
 function openProfileSheet(){
   const p = state.db.profile;
   openSheet(`
     <h3>Editar perfil</h3>
     <form class="form" onsubmit="saveProfile(event)">
-      <div class="field"><label>Nome</label><input name="name" value="${esc(p.name)}" required></div>
-      <div class="field"><label>Idade</label><input name="age" type="number" min="1" value="${p.age}"></div>
-      <div class="field"><label>Peso (kg)</label><input name="weight" type="number" min="1" step="0.1" value="${p.weight}"></div>
-      <div class="field"><label>Altura</label><input name="height" value="${esc(p.height)}"></div>
+      <div class="field"><label for="profileName">Nome</label><input id="profileName" name="name" value="${esc(p.name)}" required></div>
+      <div class="field"><label for="profileAge">Idade</label><input id="profileAge" name="age" type="number" min="1" value="${p.age}"></div>
+      <div class="field"><label for="profileWeight">Peso (kg)</label><input id="profileWeight" name="weight" type="number" min="1" step="0.1" value="${p.weight}"></div>
+      <div class="field"><label for="profileHeight">Altura</label><input id="profileHeight" name="height" value="${esc(p.height)}"></div>
       <div class="row-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">Salvar</button></div>
     </form>`);
 }
@@ -646,6 +417,7 @@ function saveProfile(ev){
   ev.preventDefault();
   const f = new FormData(ev.target);
   state.db.profile = {
+    ...state.db.profile,
     name: String(f.get('name')).trim(),
     age: Number(f.get('age')),
     weight: Number(f.get('weight')),
@@ -659,11 +431,13 @@ function saveProfile(ev){
 }
 
 function openRoutineSheet(){
+  resetTrainingDraft(null);
   openSheet(`
-    <h3>Nova rotina</h3>
+    <h3>Monte sua rotina</h3><p class="editor-intro">Comece pelo nome e pelo dia. Depois, adicione os exercícios na ordem que você treina.</p>
     <form class="form" onsubmit="saveRoutine(event)">
-      <div class="field"><label>Nome da rotina</label><input name="name" placeholder="Ex.: Peito, ombro e tríceps" required></div>
-      ${dayField(null)}
+      <div class="field"><label>Nome da rotina</label><input name="name" maxlength="80" placeholder="Ex.: Peito, ombro e tríceps" oninput="updateTrainingPreview()" required></div>
+      ${dayPicker(null)}
+      ${iconPicker()}
       <div class="row-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">Criar rotina</button></div>
     </form>`);
 }
@@ -675,22 +449,25 @@ function saveRoutine(ev){
   if (!name) return;
   const rawDay = String(fields.get('weekday') ?? '');
   const weekday = rawDay === '' ? null : Number(rawDay);
-  const routine = { id: uid(), name, weekday, exercises: [] };
+  if(trainingDraft.busy)return;
+  const routine = { id: uid(), name, weekday, ...chosenTrainingFields(name), exercises: [] };
   state.db.routines.push(routine);
   saveDB();
   closeSheet();
   state.selectedRoutineId = routine.id;
-  render();
-  toast('Rotina criada.');
+  switchTab('workouts');
+  toast('Rotina criada. Adicione seu primeiro exercício.');
 }
 
 function openEditRoutineSheet(id){
   const routine=state.db.routines.find(r=>r.id===id);
   if(!routine) return;
+  resetTrainingDraft(routine);
   openSheet(`<h3>Editar rotina</h3>
     <form class="form" onsubmit="saveEditedRoutine(event,'${routine.id}')">
-      <div class="field"><label>Nome da rotina</label><input name="name" value="${esc(routine.name)}" required></div>
-      ${dayField(routine.weekday)}
+      <div class="field"><label>Nome da rotina</label><input name="name" maxlength="80" value="${esc(routine.name)}" oninput="updateTrainingPreview()" required></div>
+      ${dayPicker(routine.weekday)}
+      ${iconPicker()}
       <div class="row-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">Salvar mudanças</button></div>
     </form>`);
 }
@@ -701,48 +478,37 @@ function saveEditedRoutine(ev,id){
   const f=new FormData(ev.target);
   const name=String(f.get('name')||'').trim();
   if(!name)return toast('Digite um nome para o treino.');
+  if(trainingDraft.busy)return;
   routine.name=name;
+  Object.assign(routine,chosenTrainingFields(name));
   const rawDay=String(f.get('weekday')??'');
   routine.weekday=rawDay===''?null:Number(rawDay);
   saveDB();closeSheet();render();toast('Rotina atualizada.');
 }
 
-function openExerciseSheet(routineId = state.selectedRoutineId){
-  if(!state.db.routines.length){toast('Crie uma rotina primeiro.');openRoutineSheet();return}
-  const list = state.db.routines.map(r => `<option value="${r.id}" ${r.id===routineId ? 'selected':''}>${esc(r.name)}</option>`).join('');
-  openSheet(`
-    <h3>Novo exercício</h3>
-    <form class="form" onsubmit="saveExercise(event)">
-      <div class="field"><label>Rotina</label><select name="routineId">${list}</select></div>
-      <div class="field"><label>Nome</label><input name="name" placeholder="Ex.: Supino reto" required></div>
-      <div class="field"><label>Séries</label><input name="sets" type="number" min="1" max="12" value="3" required></div>
-      <div class="field"><label>Repetições mínimas</label><input name="minReps" type="number" min="1" max="99" value="8" required></div>
-      <div class="field"><label>Repetições máximas</label><input name="maxReps" type="number" min="1" max="99" value="12" required></div>
-      <div class="field"><label>Ícone</label><select name="icon"><option value="bench">Supino</option><option value="dumbbell">Halter</option><option value="press">Desenvolvimento</option><option value="raise">Elevação</option><option value="cable">Polia</option><option value="pull">Puxada</option><option value="curl">Rosca</option><option value="legs">Pernas</option></select></div>
-      <div class="row-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">Adicionar</button></div>
-    </form>`);
+function openExerciseSheet(routineId = state.selectedRoutineId,exerciseId=null){
+ if(!state.db.routines.length){toast('Crie uma rotina primeiro.');openRoutineSheet();return;}
+ const routine=state.db.routines.find(r=>r.id===routineId)||state.db.routines[0];
+ const item=exerciseId?routine.exercises.find(e=>e.id===exerciseId):null;
+ if(exerciseId&&!item)return;
+ resetTrainingDraft(item);
+ const list=state.db.routines.map(r=>`<option value="${r.id}" ${r.id===routine.id?'selected':''}>${esc(r.name)}</option>`).join('');
+ openSheet(`<h3>${item?'Editar exercício':'Adicione um movimento'}</h3><p class="editor-intro">Defina as séries e repetições planejadas. As cargas serão registradas durante o treino.</p><form class="form training-form" onsubmit="saveExercise(event)"><input type="hidden" name="exerciseId" value="${item?.id||''}"><div class="field"><label>Rotina</label><select name="routineId" ${item?'disabled':''}>${list}</select></div><div class="field"><label>Nome do exercício</label><input name="name" maxlength="100" placeholder="Ex.: Supino reto" oninput="updateTrainingPreview()" value="${esc(item?.name||'')}" required></div><div class="training-numbers"><div class="field"><label>Séries</label><input name="sets" type="number" min="1" max="12" value="${item?.sets||3}" required></div><div class="field"><label>Reps mín.</label><input name="minReps" type="number" min="1" max="99" value="${item?.minReps||8}" required></div><div class="field"><label>Reps máx.</label><input name="maxReps" type="number" min="1" max="99" value="${item?.maxReps||12}" required></div></div>${muscleEditor(item)}${iconPicker()}<div class="row-actions editor-actions"><button type="button" class="ghost-btn" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">${item?'Salvar mudanças':'Adicionar exercício'}</button></div></form>`);
+ updateTrainingPreview();
+ updateMuscleEditor();
 }
-
 function saveExercise(ev){
-  ev.preventDefault();
-  const f = new FormData(ev.target);
-  const routine = state.db.routines.find(r => r.id === f.get('routineId'));
-  if (!routine) return;
-  const minReps = Number(f.get('minReps'));
-  const maxReps = Number(f.get('maxReps'));
-  routine.exercises.push({
-    id: uid(),
-    name: String(f.get('name')).trim(),
-    sets: clamp(Number(f.get('sets')) || 3, 1, 12),
-    minReps: Math.min(minReps, maxReps),
-    maxReps: Math.max(minReps, maxReps),
-    icon: String(f.get('icon'))
-  });
-  saveDB();
-  closeSheet();
-  state.selectedRoutineId = routine.id;
-  render();
-  toast('Exercício adicionado.');
+ ev.preventDefault();if(trainingDraft.busy)return;
+ const form=ev.target,f=new FormData(form);
+ const routine=state.db.routines.find(r=>r.id===form.elements.routineId.value);if(!routine)return;
+ const name=String(f.get('name')||'').trim();if(!name)return toast('Digite o nome do exercício.');
+ const sets=Number(f.get('sets')),minReps=Number(f.get('minReps')),maxReps=Number(f.get('maxReps'));
+ if(!Number.isInteger(sets)||sets<1||sets>12||!Number.isInteger(minReps)||minReps<1||minReps>99||!Number.isInteger(maxReps)||maxReps<1||maxReps>99)return toast('Confira as séries e repetições.');
+ if(minReps>maxReps)return toast('As repetições mínimas não podem superar as máximas.');
+ const id=String(f.get('exerciseId')||'');const item=id?routine.exercises.find(e=>e.id===id):null;if(id&&!item)return;
+ const values={name,sets,minReps,maxReps,...chosenTrainingFields(name),...readMuscleEditor(form)};
+ if(item)Object.assign(item,values);else routine.exercises.push({id:uid(),...values});
+ saveDB();closeSheet();state.selectedRoutineId=routine.id;switchTab('workouts');toast(item?'Exercício atualizado.':'Exercício adicionado.');
 }
 
 function exportData(){
@@ -763,6 +529,7 @@ async function importData(input){
     const parsed = JSON.parse(await file.text());
     if (!Array.isArray(parsed.routines)||!Array.isArray(parsed.sessions))throw Error('Backup inválido');
     if (!await lumeConfirm('Importar backup?', 'Isso substituirá os treinos e os dados atuais deste aparelho.'))return;
+    GuidedWorkout.clearDraft();
     state.db = normalizeDB(parsed);
     saveDB();
     render();
@@ -775,6 +542,7 @@ async function importData(input){
 
 function openSheet(html){
   $('#sheetContent').innerHTML = html;
+  $('#sheet .sheet-panel').scrollTop=0;
   $('#sheet').classList.add('active');
   $('#sheet').setAttribute('aria-hidden', 'false');
 }
@@ -808,29 +576,6 @@ function lineChart(points){
   const dots=values.map((p,i)=>`<g><circle class="progress-point" style="animation-delay:${.2+i*.09}s" cx="${px(i)}" cy="${py(p.kg)}" r="5" fill="#f6f6f6" stroke="#101010" stroke-width="2"><title>${new Date(p.date).toLocaleDateString('pt-BR')}: ${p.kg} kg</title></circle></g>`).join('');
   const latest=values[values.length-1];
   return `<div class="progress-summary"><span>Melhor carga</span><strong>${rawMax.toLocaleString('pt-BR')} kg</strong><small>${values.length} ${values.length===1?'registro':'registros'} exibidos</small></div><svg class="progress-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Evolução de carga por data" xmlns="http://www.w3.org/2000/svg">${grid}${values.length>1?`<path class="progress-path" d="${d}" fill="none" stroke="#eeeeee" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" pathLength="1"/>`:''}${dots}${xLabels}</svg>`;
-}
-
-function calendarGrid(ref){
-  const sessions = new Set(getMonthSessions(ref).map(s => new Date(s.date).getDate()));
-  const year = ref.getFullYear(), month = ref.getMonth();
-  const first = new Date(year, month, 1);
-  const last = new Date(year, month + 1, 0);
-  const start = first.getDay();
-  const total = last.getDate();
-  const prevLast = new Date(year, month, 0).getDate();
-  let cells = '';
-  for (let i = 0; i < start; i++){
-    cells += `<div class="day-cell muted">${prevLast - start + i + 1}</div>`;
-  }
-  const now = new Date();
-  for (let day = 1; day <= total; day++){
-    const isToday = now.getFullYear()===year && now.getMonth()===month && now.getDate()===day;
-    cells += `<div class="day-cell ${sessions.has(day)?'hit':''} ${isToday?'today':''}">${day}</div>`;
-  }
-  const filled = start + total;
-  const rest = (7 - (filled % 7)) % 7;
-  for (let d = 1; d <= rest; d++) cells += `<div class="day-cell muted">${d}</div>`;
-  return cells;
 }
 
 function capitalize(str){ return str.charAt(0).toUpperCase() + str.slice(1); }
@@ -903,11 +648,22 @@ async function receivePhoto(input){
 }
 
 const knowledgeState={sex:'unspecified',activity:'moderate',goal:'maintain',target:''};
+function metricIllustration(kind){
+ const paths={water:'<path d="M48 12C39 27 27 38 27 51a21 21 0 0 0 42 0C69 38 57 27 48 12Z"/><path d="M35 53c0 8 5 13 12 13"/>',energy:'<path d="m53 13-25 39h19l-4 29 25-40H49Z"/>',body:'<path d="M24 69a31 31 0 1 1 48 0M48 48l16-17"/><circle cx="48" cy="48" r="4"/><path d="M25 78h46"/>',goal:'<circle cx="48" cy="48" r="29"/><circle cx="48" cy="48" r="16"/><path d="m48 48 29-29m-1 1v13m0-13H63"/>'};
+ return `<svg class="metric-illustration metric-${kind}" viewBox="0 0 96 96" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[kind]||paths.goal}</svg>`;
+}
+function knowledgeIntro(){
+ return `<section class="knowledge-intro"><div><div class="eyebrow">SABER · ENTENDER PARA EVOLUIR</div><h3>Conheça os números.<br>Respeite seu ritmo.</h3><p>Transforme suas informações em referências fáceis de entender. Sem metas automáticas, sem comparações.</p></div><div class="knowledge-art" aria-hidden="true">${metricIllustration('body')}<span>SEU CORPO, SEU CONTEXTO</span></div></section>`;
+}
+function knowledgeEmpty(){
+ return `<section class="metrics-preview" aria-label="Métricas disponíveis"><div class="section-title"><h3>Seu painel começa aqui</h3><span class="hint">Preencha e calcule</span></div><div class="metric-grid">${[['water','Hidratação','Referência de líquidos por dia'],['energy','Energia','Estimativa de manutenção'],['body','IMC','Um indicador, com limites'],['goal','Seu objetivo','Diferença até o peso informado']].map(([kind,title,note])=>`<div class="metric-preview">${metricIllustration(kind)}<div><strong>${title}</strong><p>${note}</p></div></div>`).join('')}</div></section>`;
+}
 function renderKnowledge(){
  const root=$('#screen-knowledge'),p=state.db.profile;
  root.innerHTML=`
-  <div class="page-head"><div><h2>Conhecimento</h2><p>Entenda suas métricas e planeje com consciência.</p></div></div>
-  <div class="card"><h3 style="margin-top:0">Calculadora pessoal</h3>
+  <div class="page-head"><div><h2>Saber</h2><p>Referências para compreender o seu corpo.</p></div></div>
+  ${knowledgeIntro()}
+  <div class="card knowledge-calculator"><div class="calculator-heading"><div><span class="step-label">01 / SEUS DADOS</span><h3>Vamos entender seu momento?</h3><p>Preencha abaixo para montar seu painel. Estes campos não alteram o perfil.</p></div></div>
    <div class="knowledge-form">
     <div class="field"><label>Peso (kg)</label><input id="kWeight" type="number" min="20" max="400" step=".1" placeholder="Ex.: 65" value="${p.weight||''}"></div>
     <div class="field"><label>Altura (cm)</label><input id="kHeight" type="number" min="100" max="250" placeholder="Ex.: 170" value="${parseHeight(p.height)||''}"></div>
@@ -920,12 +676,13 @@ function renderKnowledge(){
    <button class="primary-btn" style="margin-top:20px" onclick="calculateMetrics()">Calcular métricas</button>
    <p class="hint">As estimativas dependem de idade, altura, peso e nível de atividade. Não representam uma prescrição nutricional.</p>
   </div>
-  <div id="metricResults" aria-live="polite"></div>
-  <div class="card"><h3 style="margin-top:0">O que estes números significam?</h3>
-   <p class="hint"><b style="color:white">Hidratação:</b> referência geral de 30–35 mL de líquidos por kg por dia. Calor, exercícios, alimentação e condições de saúde podem alterar essa necessidade.</p>
-   <p class="hint"><b style="color:white">Calorias:</b> a manutenção é uma estimativa baseada na equação Mifflin-St Jeor para adultos e em um fator de atividade. Seu consumo real pode ser diferente.</p>
-   <p class="hint"><b style="color:white">Meta corporal:</b> mudanças sustentáveis variam de pessoa para pessoa; as projeções são apenas ilustrativas. Caso tenha menos de 18 anos, gestação ou condição clínica, procure orientação individualizada.</p>
-  </div>`;
+  <div id="metricResults" aria-live="polite" aria-atomic="true">${knowledgeEmpty()}</div>
+  <section class="knowledge-guide"><span class="step-label">LEIA ALÉM DOS NÚMEROS</span><h3>O contexto também importa.</h3>
+   <details><summary>${metricIllustration('water')}<span>Hidratação não é uma meta fixa</span></summary><p>Referência geral de 30–35 mL de líquidos por kg por dia. Calor, exercícios, alimentação e condições de saúde podem alterar essa necessidade. O desenho não representa consumo registrado.</p></details>
+   <details><summary>${metricIllustration('energy')}<span>Calorias são uma estimativa</span></summary><p>A manutenção usa a equação Mifflin-St Jeor para adultos e um fator de atividade. Não indica quanto você deve comer. Seu consumo real pode ser diferente.</p></details>
+   <details><summary>${metricIllustration('body')}<span>IMC não conta a história toda</span></summary><p>Relaciona peso e altura, mas não distingue massa muscular de gordura. Não é diagnóstico nem medida direta de desempenho.</p></details>
+   <details><summary>${metricIllustration('goal')}<span>Sua evolução tem seu próprio ritmo</span></summary><p>Diferença de peso e projeções são apenas ilustrativas, não uma previsão individual. Caso tenha menos de 18 anos, gestação ou condição clínica, procure orientação individualizada.</p></details>
+  </section>`;
 }
 function parseHeight(h){const n=Number(String(h||'').replace(',','.').replace(/[^0-9.]/g,''));if(!n)return '';return n<3?Math.round(n*100):Math.round(n)}
 function setGoal(goal){knowledgeState.goal=goal}
@@ -946,15 +703,16 @@ function calculateMetrics(){
  const weeks=targetValid ? `${Math.ceil(diff/(weight*.005))}–${Math.ceil(diff/(weight*.0025))} semanas` : '—';
  const energy=cal==null?`${fem.toLocaleString('pt-BR')}–${male.toLocaleString('pt-BR')}`:cal.toLocaleString('pt-BR');
  const extra=goal==='maintain'?'Manutenção':goal==='gain'?'Ganho de peso':'Perda de peso';
- $('#metricResults').innerHTML=`<div class="card"><div class="section-title"><h3>Seu painel de métricas</h3><span class="hint">Estimativas</span></div>
+ const marker=Math.max(0,Math.min(100,(Number(imc)-10)/35*100));
+ $('#metricResults').innerHTML=`<section class="metrics-dashboard"><div class="section-title"><div><span class="step-label">02 / SUAS REFERÊNCIAS</span><h3>Um olhar sobre você.</h3></div><span class="estimate-tag">Estimativas</span></div>
  <div class="metric-grid">
-  <div class="metric-tile"><span>Hidratação de referência</span><b>${hydration[0]}–${hydration[1]}</b><small>mL / dia</small></div>
-  <div class="metric-tile"><span>Calorias de manutenção</span><b>${energy}</b><small>kcal / dia</small></div>
-  <div class="metric-tile"><span>Índice de massa corporal</span><b>${imc}</b><small>IMC é um indicador limitado</small></div>
-  <div class="metric-tile"><span>Diferença até a meta</span><b>${targetValid?diff.toFixed(1)+' kg':'—'}</b><small>${extra}</small></div>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Hidratação</span>${metricIllustration('water')}</div><b>${(hydration[0]/1000).toLocaleString('pt-BR')}–${(hydration[1]/1000).toLocaleString('pt-BR')} <em>L</em></b><small>Referência diária de líquidos</small><div class="metric-divider"></div><p>${hydration[0].toLocaleString('pt-BR')}–${hydration[1].toLocaleString('pt-BR')} mL por dia. Ajustes dependem do seu contexto.</p></article>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Energia de manutenção</span>${metricIllustration('energy')}</div><b>${energy}</b><small>kcal / dia · estimativa</small><div class="metric-divider"></div><p>${sex==='unspecified'?'Intervalo entre as duas referências da equação.':'Referência da equação selecionada.'} Não é uma prescrição alimentar.</p></article>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Índice de massa corporal</span>${metricIllustration('body')}</div><b>${Number(imc).toLocaleString('pt-BR')}</b><small>Relação entre peso e altura</small><div class="imc-scale" aria-hidden="true"><i style="--marker:${marker}%"></i></div><div class="scale-labels" aria-hidden="true"><span>10</span><span>27,5</span><span>45</span></div><p>Escala visual de 10 a 45, com extremos limitados. Não distingue músculo de gordura.</p></article>
+  <article class="metric-tile visual-metric"><div class="metric-top"><span>Diferença até o objetivo</span>${metricIllustration('goal')}</div><b>${targetValid?diff.toLocaleString('pt-BR',{maximumFractionDigits:1})+' <em>kg</em>':'—'}</b><small>${extra}</small>${targetValid?`<div class="weight-route"><span>Agora<strong>${weight.toLocaleString('pt-BR')} kg</strong></span><i aria-hidden="true">→</i><span>Objetivo<strong>${target.toLocaleString('pt-BR')} kg</strong></span></div><p>Distância ao valor informado, não progresso já realizado.</p>`:'<div class="metric-divider"></div><p>Escolha ganhar ou perder peso e informe um peso desejado coerente para visualizar a diferença.</p>'}</article>
  </div>
- <p class="hint">${targetValid?'Projeção meramente matemática a uma taxa de 0,25–0,5% do peso por semana: '+weeks+'. Não é previsão individual.':'Informe um peso desejado coerente com o objetivo para ver uma projeção ilustrativa.'}</p>
- <p class="hint">Não definimos automaticamente um déficit ou superávit calórico: ajustes devem levar em conta treino, alimentação, saúde e acompanhamento profissional.</p></div>`;
+ <aside class="metric-context"><strong>Referências, não regras.</strong><p>${targetValid?'Projeção meramente matemática a uma taxa de 0,25–0,5% do peso por semana: '+weeks+'. Não é previsão individual.':'Os resultados usam os valores informados nesta calculadora.'}</p><p>Não definimos automaticamente déficit ou superávit calórico. Treino, alimentação e saúde precisam ser considerados com acompanhamento profissional.</p></aside></section>`;
+ $('#metricResults').scrollIntoView({behavior:(window.LumeMotionPreference||window.matchMedia('(prefers-reduced-motion: reduce)')).matches?'auto':'smooth',block:'start'});
 }
 window.switchTab = switchTab;
 window.openRoutine = openRoutine;
@@ -968,8 +726,6 @@ window.toggleSet = toggleSet;
 window.addSetRow = addSetRow;
 window.completeExercise = completeExercise;
 window.finishWorkout = finishWorkout;
-window.changeHistoryExercise = changeHistoryExercise;
-window.moveMonth = moveMonth;
 window.openProfileSheet = openProfileSheet;
 window.saveProfile = saveProfile;
 window.openRoutineSheet = openRoutineSheet;
@@ -984,13 +740,14 @@ window.exportData = exportData;
 window.openImportFile = openImportFile;
 window.importData = importData;
 window.closeSheet = closeSheet;
-window.setFrequencyView = setFrequencyView;
 window.openPhotoPicker = openPhotoPicker;
 window.receivePhoto = receivePhoto;
 window.calculateMetrics = calculateMetrics;
 window.setGoal = setGoal;
 
 render();
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+if ('serviceWorker' in navigator && !location.hostname.endsWith('.chatgpt.site')) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'}).then(registration=>registration.update()).catch(()=>{}));
 }
+
+function preferencesIcon(){return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h3m4 0h9M4 17h9m4 0h3"/><circle cx="9" cy="7" r="2"/><circle cx="15" cy="17" r="2"/></svg>`;}
