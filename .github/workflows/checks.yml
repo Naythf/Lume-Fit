@@ -12,3 +12,4 @@ jobs:
       - run: node prepare-release.cjs --check
       - run: node checks.cjs
       - run: node profile-db-checks.cjs
+      - run: node friends-db-checks.cjs
