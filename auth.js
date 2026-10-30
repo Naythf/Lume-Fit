@@ -239,7 +239,7 @@
       else if(!data.session)showLogin();
     }catch(e){showLogin();notify(printError(e));}
   }
-  function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args)=>{if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');const result=await client.rpc(name,args);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
+  function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args,options={})=>{if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');const request=client.rpc(name,args);const result=await (options.signal&&typeof request.abortSignal==='function'?request.abortSignal(options.signal):request);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
   window.LumeAuth={profileConnection,showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
   window.addEventListener('online',()=>{if(user)syncNow();});
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden' && user && revision>savedRevision)syncNow();});
