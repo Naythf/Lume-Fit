@@ -24,6 +24,7 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync('guided-workout.js','utf8'
  storage.set('lume_fit_workout_draft:demo',JSON.stringify(snapshot));g.detach();g.attach('demo');assert.equal(ctx.state.activeWorkout,null); // crash after saving before draft removal
  g.start('routine1');g.update(0,'kg','5');g.update(0,'reps','5');g.toggle(0);confirm=false;await g.finish();assert.ok(ctx.state.activeWorkout);assert.equal(ctx.state.db.sessions.length,1);await g.discard();assert.ok(ctx.state.activeWorkout);confirm=true;await g.discard();assert.equal(ctx.state.activeWorkout,null);assert.equal(ctx.state.db.sessions.length,1);
  const changed=json(saved);changed.id='new';changed.date=new Date(now+1000).toISOString();changed.entries[0].sets[0].kg=12;
+ const renamed=json(changed);renamed.entries[0].name='Outro movimento';assert.equal(ctx.guidedComparison(renamed,[saved]).comparable,false);
  let comparison=ctx.guidedComparison(changed,[saved]);assert.equal(comparison.comparable,true);assert.equal(comparison.delta,12);changed.entries[0].sets.push({kg:0,reps:5});assert.equal(ctx.guidedComparison(changed,[saved]).comparable,false);
  const expired=ctx.guidedDraft({...snapshot,rest:{seconds:60,status:'running',endsAt:now-1000,remaining:60}},now);assert.equal(expired.rest.status,'done');assert.equal(ctx.guidedRestRemaining(expired.rest,now),0);
  assert.equal(ctx.guidedDraft({...snapshot,version:7},now),null);assert.equal(ctx.guidedDraft({...snapshot,entries:[null]},now),null);assert.equal(ctx.guidedDraft({...snapshot,startedAt:now+100000},now),null);

@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v31-profile-requests';
+const CACHE = 'lume-fit-static-v32-exercise-progress';
 const ASSETS = [
   './',
   './index.html',
@@ -12,6 +12,8 @@ const ASSETS = [
   './automatic-routines.js',
   './automatic-routines.css',
   './frequency.js',
+  './exercise-progress.js',
+  './exercise-progress.css',
   './frequency.css',
   './controls.js',
   './controls.css',
