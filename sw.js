@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v30-profile-confirmation';
+const CACHE = 'lume-fit-static-v31-profile-requests';
 const ASSETS = [
   './',
   './index.html',

@@ -4,6 +4,7 @@ const {PGlite}=require(process.env.LUME_PGLITE_MODULE||'@electric-sql/pglite');
  const db=new PGlite();await db.exec(`create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;`);
  await db.exec(fs.readFileSync('supabase-schema.sql','utf8'));await db.exec(fs.readFileSync('migrations/20261029-profile-privacy.sql','utf8'));
  const migration=fs.readFileSync('supabase/migrations/20261030000800_friends_and_private_sharing.sql','utf8');await db.exec(migration);await db.exec(migration);
+ const settingsMigration=fs.readFileSync('supabase/migrations/20261030011358_profile_request_preferences.sql','utf8');await db.exec(settingsMigration);await db.exec(settingsMigration);
  const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002',c='00000000-0000-0000-0000-000000000003',d='00000000-0000-0000-0000-000000000004';
  await db.query('insert into auth.users values($1),($2),($3),($4)',[a,b,c,d]);
  const asUser=(id,fn,role='authenticated')=>db.transaction(async tx=>{await tx.query("select set_config('request.jwt.claim.sub',$1,true)",[id||'']);await tx.exec('set local role '+role);return fn(tx)});
@@ -38,5 +39,13 @@ const {PGlite}=require(process.env.LUME_PGLITE_MODULE||'@electric-sql/pglite');
  assert.equal((await asUser(a,tx=>tx.query('select * from public.user_data'))).rows.length,0);
  assert.equal((await asUser(a,tx=>tx.query('select * from public.lume_profiles'))).rows.length,1);
  await assert.rejects(asUser(null,tx=>tx.query("select public.lume_friends('state','')"),'anon'),e=>e.code==='42501');await reject(null,'state','','AUTH_REQUIRED');await reject(a,'request','alpha','UNAVAILABLE');
+ const saveSettings=(id,handle,audience,allow)=>asUser(id,tx=>tx.query('select public.lume_save_profile_settings($1,$2,$3,$4,$5,false,false,false,false,false,$6) as profile',[handle,'Settings name','','',audience,allow]));
+ await saveSettings(c,'charlie','private',true);assert.equal((await call(c,'state')).allowRequests,true);assert.equal((await call(a,'search','charlie')).username,'charlie');assert.equal(await view(a,'charlie'),null);
+ await save(c,'charlie','private');assert.equal((await call(c,'state')).allowRequests,true); // Legacy RPC preserves the preference.
+ await saveSettings(c,'charlie','private',false);assert.equal((await call(c,'state')).allowRequests,false);assert.equal(await call(a,'search','charlie'),null);
+ await assert.rejects(saveSettings(c,'alpha','members',true),e=>e.code==='23505');assert.equal((await call(c,'state')).allowRequests,false);assert.equal(await view(a,'charlie'),null); // A failed profile update cannot partially enable discovery.
+ await saveSettings(c,'charlie','friends',true);assert.equal((await call(c,'state')).allowRequests,true);assert.equal(await view(a,'charlie'),null);
+ await assert.rejects(saveSettings(d,'new_profile','private',null),e=>e.code==='23514');assert.equal((await db.query('select count(*) as n from public.lume_profiles where user_id=$1',[d])).rows[0].n,0);
+ await assert.rejects(asUser(null,tx=>tx.query("select public.lume_save_profile_settings('test_name','Name','','','private',false,false,false,false,false,true)"),'anon'),e=>e.code==='42501');
  assert.equal((await call(a,'state')).people.length,1);await db.close();console.log('PASS: friends migration twice; three-account isolation; opt-in; exact discovery; recipient-only acceptance; duplicates/crossed requests; removal/decline/cancel; cooldown/rate limit; bilateral block/revocation; private profiles; no raw data or graph table access; anon denied');
 })().catch(e=>{console.error(e);process.exitCode=1});

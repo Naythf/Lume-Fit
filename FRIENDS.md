@@ -40,3 +40,7 @@ Após a migração, advisor lista INFO de RLS sem políticas nas três tabelas l
 O aviso existente da tabela public.Tabela permanece: https://supabase.com/docs/guides/database/database-linter?lint=0008_rls_enabled_no_policy
 
 Proteção contra senhas vazadas continua desativada, configuração anterior e independente desta entrega: https://supabase.com/docs/guides/auth/password-security#password-strength-and-leaked-password-protection
+
+## Configuração centralizada (Issue #44)
+
+A preferência de receber solicitações passou ao editor de perfil e é salva atomicamente pelo RPC lume_save_profile_settings. Amigos mostra o estado e um atalho para o editor. Ver PROFILE-REQUESTS.md. As ações antigas requests_on/off continuam disponíveis para clientes anteriores, sem aparecer como controles duplicados na nova interface.
