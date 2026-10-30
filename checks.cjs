@@ -185,3 +185,10 @@ console.log('PASS: system/full/reduced policy, OS changes, cross-tab updates, bl
 })().catch(error=>{console.error(error);process.exitCode=1});
 
 const recentContext={state:{db:{routines:[{id:'icon-test',name:'Custom',icon:'row',iconImage:'custom-image'}]}},trainingVisual:item=>item};vm.createContext(recentContext);vm.runInContext(source.slice(source.indexOf('function recentWorkoutVisual('),source.indexOf('function renderHome()')),recentContext);assert.equal(recentContext.recentWorkoutVisual({routineId:'icon-test',name:'Old'}).icon,'row');assert.equal(recentContext.recentWorkoutVisual({routineId:'icon-test'}).iconImage,'custom-image');assert.equal(recentContext.recentWorkoutVisual({routineId:'deleted',name:'Supino'}).name,'Supino');console.log('PASS: recent workout icon follows current routine/custom image and deleted routine fallback');
+
+// Detailed records derive totals without mutating stored series.
+const recordCtx={window:{},esc:s=>String(s).replaceAll('<','&lt;')};vm.createContext(recordCtx);vm.runInContext(fs.readFileSync('frequency.js','utf8'),recordCtx);
+const record={name:'Rosca <teste>',sets:[{kg:24,reps:12},{kg:24,reps:10},{kg:20,reps:12},{kg:50,reps:8,done:false},{kg:null,reps:5},{kg:true,reps:3},{kg:10,reps:1.5}]};
+recordCtx.entry=record;const beforeRecord=JSON.stringify(record),detail=vm.runInContext('activityEntryDetail(entry)',recordCtx);assert.ok(detail.includes('768 kg × reps'));assert.ok(detail.includes('<strong>34</strong>'));assert.ok(detail.includes('scope="col"'));assert.ok(detail.includes('Rosca &lt;teste>'));assert.equal((detail.match(/scope="row"/g)||[]).length,3);assert.equal(JSON.stringify(record),beforeRecord);
+recordCtx.entry={name:'Flexão',sets:[{kg:0,reps:10}]};assert.ok(vm.runInContext('activityEntryDetail(entry)',recordCtx).includes('peso corporal não é estimado'));recordCtx.entry={sets:[]};assert.ok(vm.runInContext('activityEntryDetail(entry)',recordCtx).includes('Sem séries válidas'));
+console.log('PASS: detailed records preserve source, valid-set totals, escaping, empty and zero-load states');
