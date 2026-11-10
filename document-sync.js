@@ -4,7 +4,7 @@ function createLumeDocumentSync({owner,record,initial,storage,tabId,resumeId,onK
  const clone=value=>JSON.parse(JSON.stringify(value));
  try{const pending=JSON.parse(storage.getItem(prefix+(resumeId||tabId))||'null');if(pending?.owner===owner&&pending.db&&Number.isInteger(pending.revision)&&pending.revision>0){db=pending.db;base=pending.base;revision=pending.revision;saved=pending.saved||0;write=pending.write||null;conflict=base!==(record?.updated_at||null);}}catch{error='Não foi possível ler o rascunho local.';}
  function persist(){try{storage.setItem(key,JSON.stringify({owner,base,db,revision,saved,write,savedAt:Date.now()}));return true;}catch{error='Não foi possível guardar o rascunho neste dispositivo. Exporte um backup.';return false;}}
- function update(value){db=clone(value);revision++;const ok=persist();changed();return ok;}
+ function update(value){const previous=db,previousRevision=revision;db=clone(value);revision++;const ok=persist();if(!ok){db=previous;revision=previousRevision;}changed();return ok;}
  function drafts(){const result=[];try{for(let i=0;i<storage.length;i++){const candidate=storage.key(i);if(candidate?.startsWith(prefix)&&candidate!==key){const pending=JSON.parse(storage.getItem(candidate)||'null');if(pending?.owner===owner&&pending.db)result.push({key:candidate,savedAt:pending.savedAt});}}}catch{}return result.sort((a,b)=>b.savedAt-a.savedAt);}
  async function sync(){
   if(!active()||conflict)return;if(inFlight)return inFlight;if(revision<=saved)return;

@@ -95,10 +95,12 @@ function normalizeFoodDiary(value){
     const foods=String(raw.foods||'').trim().slice(0,2000);if(!foods)continue;
     const id=/^[a-zA-Z0-9_-]{1,80}$/.test(raw.id||'')?raw.id:uid();if(seen.has(id))continue;seen.add(id);
     const nutrients={};for(const key of ['energy','protein','carbs','fat']){const n=raw[key];nutrients[key]=n!==null&&n!==''&&n!==undefined&&Number.isFinite(Number(n))&&Number(n)>=0&&Number(n)<=100000?Number(n):null;}
-    meals.push({id,date:raw.date,time:/^([01]\d|2[0-3]):[0-5]\d$/.test(raw.time||'')?raw.time:'',kind:['breakfast','lunch','dinner','snack','other'].includes(raw.kind)?raw.kind:'other',foods,portion:String(raw.portion||'').trim().slice(0,160),notes:String(raw.notes||'').trim().slice(0,1000),...nutrients});
+    meals.push({id,date:raw.date,time:/^([01]\d|2[0-3]):[0-5]\d$/.test(raw.time||'')?raw.time:'',kind:['breakfast','lunch','dinner','snack','other'].includes(raw.kind)?raw.kind:'other',foods,photo:safeFoodPhoto(raw.photo),portion:String(raw.portion||'').trim().slice(0,160),notes:String(raw.notes||'').trim().slice(0,1000),...nutrients});
   }
   return {meals};
 }
+
+function safeFoodPhoto(value){return typeof value==='string'&&value.length<=160000&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+={0,2}$/.test(value)?value:'';}
 
 function createSeedSessions(routines){
   const byName = (rName, eName) => routines.find(r=>r.name===rName)?.exercises.find(e=>e.name===eName)?.id;
