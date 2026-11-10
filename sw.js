@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v38-meal-photo';
+const CACHE = 'lume-fit-static-v39-production-release';
 const ASSETS = [
   './',
   './index.html',

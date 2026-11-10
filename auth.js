@@ -207,10 +207,10 @@
     try{await syncNow();}catch{}
     if(documentSync?.pending){toast('Há alterações pendentes. Exporte seu backup e resolva a sincronização antes de sair.');return;}
     clearTimeout(timer);
-    ++currentUserToken;
+    const departing=user.id,departingToken=currentUserToken;
     const {error}=await client.auth.signOut();
     if(error){toast(printError(error));return;}
-    showLogin();
+    if(user?.id===departing&&currentUserToken===departingToken){++currentUserToken;showLogin();}
   }
   async function deleteAccount(password,confirmation){
     if(!user||demo||deletingAccount||confirmation!=='EXCLUIR')throw Error('Entre na conta e confirme a exclusão.');
