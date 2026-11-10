@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v36-safe-sync';
+const CACHE = 'lume-fit-static-v39-production-release';
 const ASSETS = [
   './',
   './index.html',
@@ -32,6 +32,7 @@ const ASSETS = [
   './motion-preference.css',
   './auth.js',
   './document-sync.js',
+  './account-deletion.js',
   './config.js',
   './manifest.webmanifest',
   './icon.svg',
