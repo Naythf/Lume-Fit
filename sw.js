@@ -1,4 +1,4 @@
-const CACHE = 'lume-fit-static-v35-food-diary';
+const CACHE = 'lume-fit-static-v39-production-release';
 const ASSETS = [
   './',
   './index.html',
@@ -31,6 +31,8 @@ const ASSETS = [
   './motion-preference.js',
   './motion-preference.css',
   './auth.js',
+  './document-sync.js',
+  './account-deletion.js',
   './config.js',
   './manifest.webmanifest',
   './icon.svg',
