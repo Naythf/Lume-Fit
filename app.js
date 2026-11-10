@@ -373,6 +373,7 @@ function renderSettings(){
         <div class="settings-group-content"><p class="hint">Guarde uma cópia dos seus treinos, refeições, histórico e perfil em um arquivo JSON.</p><div class="backup-actions"><button type="button" class="secondary-btn" onclick="exportData()">Exportar backup</button><button type="button" class="secondary-btn" onclick="openImportFile()">Restaurar backup</button></div><p class="hint">Ao restaurar, os dados atuais serão substituídos. Você poderá confirmar antes da importação.</p></div>
       </details>
     </div>
+    <section class="account-danger"><div><h3>Conta e dados</h3><p>Gerencie a exclusão definitiva da sua conta. Exporte um backup do que deseja guardar.</p></div><button type="button" class="ghost-btn" onclick="AccountDeletion.open()">Excluir minha conta</button></section>
     <input id="photoFile" class="hidden" type="file" accept="image/*" onchange="receivePhoto(this)">
     <input id="importFile" class="hidden" type="file" accept="application/json,.json" onchange="importData(this)">`;
 }
@@ -564,6 +565,7 @@ function openSheet(html){
   $('#sheet').setAttribute('aria-hidden', 'false');
 }
 function closeSheet(){
+  if(window.AccountDeletion?.busy){toast('A solicitação está em andamento. Aguarde a confirmação do servidor.');return;}
   $('#sheet').classList.remove('active');
   $('#sheet').setAttribute('aria-hidden', 'true');
 }

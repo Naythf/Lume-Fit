@@ -1,0 +1,24 @@
+const fs=require('fs'),assert=require('assert/strict'),{PGlite}=require('@electric-sql/pglite');
+(async()=>{
+ const db=new PGlite();await db.exec("create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create table auth.sessions(id uuid primary key,user_id uuid references auth.users on delete cascade,created_at timestamptz default now());create table auth.mfa_factors(user_id uuid references auth.users on delete cascade,status text);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;create function auth.jwt() returns jsonb language sql stable as $$select coalesce(nullif(current_setting('request.jwt.claims',true),''),'{}')::jsonb$$;grant usage on schema auth to authenticated,anon;grant execute on function auth.uid(),auth.jwt() to authenticated,anon;");
+ for(const file of ['supabase-schema.sql','migrations/20261029-profile-privacy.sql','supabase/migrations/20261030000800_friends_and_private_sharing.sql','supabase/migrations/20261030011358_profile_request_preferences.sql','supabase/migrations/20261110190254_safe_document_sync.sql','supabase/migrations/20261110190434_self_account_deletion.sql','supabase/migrations/20261110190434_self_account_deletion.sql'])await db.exec(fs.readFileSync(file,'utf8'));
+ const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002',sa='00000000-0000-0000-0000-000000000011',sb='00000000-0000-0000-0000-000000000012';await db.query('insert into auth.users values($1),($2)',[a,b]);await db.query('insert into auth.sessions(id,user_id) values($1,$2),($3,$4)',[sa,a,sb,b]);
+ const stamp=Math.floor(Date.now()/1000),claims={session_id:sa,amr:[{method:'password',timestamp:stamp}],aal:'aal1'};
+ const as=(id,jwt,fn,role='authenticated')=>db.transaction(async tx=>{await tx.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claims',$2,true)",[id||'',JSON.stringify(jwt)]);await tx.exec('set local role '+role);return fn(tx)});
+ const remove=(id,jwt=claims,confirmation='EXCLUIR',role)=>as(id,jwt,tx=>tx.query('select public.lume_delete_own_account($1) as result',[confirmation]),role);
+ for(const [id,handle] of [[a,'alpha'],[b,'bravo']]){await db.query('insert into public.user_data(user_id,data) values($1,$2)',[id,JSON.stringify({profile:{},routines:[],sessions:[],nutrition:{meals:[{foods:'Private'}]}})]);await as(id,{},tx=>tx.query("select public.lume_save_profile($1,'Name','','','private',false,false,false,false,false)",[handle]));}
+ await db.query("insert into lume_private.friendships(low_id,high_id,requester,status) values($1,$2,$1,'accepted')",[a,b]);await db.query('insert into lume_private.blocks(owner_id,target_id) values($1,$2)',[a,b]);
+ await assert.rejects(remove(a,claims,'wrong'),e=>e.message.includes('CONFIRMATION_REQUIRED'));
+ await assert.rejects(remove(a,{...claims,session_id:sb}),e=>e.message.includes('REAUTH_REQUIRED'));
+ await assert.rejects(remove(a,{...claims,amr:[{method:'password',timestamp:stamp-400}]}),e=>e.message.includes('REAUTH_REQUIRED'));
+ await assert.rejects(remove(a,{...claims,amr:[{method:'recovery',timestamp:stamp}]}),e=>e.message.includes('REAUTH_REQUIRED'));
+ await assert.rejects(remove(a,{...claims,amr:[{method:'password',timestamp:stamp+400}]}),e=>e.message.includes('REAUTH_REQUIRED'));
+ await assert.rejects(remove(a,{},'EXCLUIR','anon'),e=>e.code==='42501');await assert.rejects(remove(null),e=>e.code==='42501');
+ await db.query("insert into auth.mfa_factors values($1,'verified')",[a]);await assert.rejects(remove(a),e=>e.message.includes('MFA_REQUIRED'));
+ const result=await remove(a,{...claims,aal:'aal2'});assert.equal(result.rows[0].result.deleted,true);
+ for(const table of ['auth.users','auth.sessions','public.user_data','public.lume_profiles'])assert.equal((await db.query(`select count(*) as n from ${table}`)).rows[0].n,1);
+ for(const table of ['lume_private.friendships','lume_private.blocks'])assert.equal((await db.query(`select count(*) as n from ${table}`)).rows[0].n,0);
+ await assert.rejects(remove(a,{...claims,aal:'aal2'}),e=>e.message.includes('REAUTH_REQUIRED'));
+ await db.exec('create table restrictive_test(user_id uuid references auth.users)');await db.query('insert into restrictive_test values($1)',[b]);await assert.rejects(remove(b,{...claims,session_id:sb}),e=>e.code==='23503');assert.equal((await db.query('select count(*) as n from auth.sessions')).rows[0].n,1);assert.equal((await db.query('select count(*) as n from public.user_data')).rows[0].n,1);
+ await db.close();console.log('PASS: deletion migration twice; typed confirmation; session ownership/fresh password/MFA; anon denied; own account/data/social/session cascades; unrelated owner retained; stale token denied; transactional rollback');
+})().catch(e=>{console.error(e);process.exit(1)});

@@ -14,3 +14,4 @@ jobs:
       - run: node profile-db-checks.cjs
       - run: node friends-db-checks.cjs
       - run: node document-sync-db-checks.cjs
+      - run: node account-deletion-db-checks.cjs
