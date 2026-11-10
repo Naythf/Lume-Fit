@@ -1,0 +1,26 @@
+{
+  "expo": {
+    "name": "Lume Fit",
+    "slug": "lume-fit",
+    "version": "0.1.0",
+    "scheme": "lumefit",
+    "orientation": "default",
+    "icon": "./assets/lume-icon.png",
+    "userInterfaceStyle": "dark",
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      "expo-font"
+    ],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/lume-icon.png",
+      "output": "single"
+    }
+  }
+}
