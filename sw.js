@@ -1,8 +1,10 @@
-const CACHE = 'lume-fit-static-v34-automatic-review';
+const CACHE = 'lume-fit-static-v35-food-diary';
 const ASSETS = [
   './',
   './index.html',
   './app.js',
+  './food-diary.js',
+  './food-diary.css',
   './experience.css',
   './experience.js',
   './routines.js',

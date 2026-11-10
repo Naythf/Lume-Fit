@@ -91,6 +91,7 @@
     finally {setLoading(false);}
   }
   async function enterSession(session){
+    window.FoodDiary?.reset();
     const u=session?.user;
     if(!u){ showLogin(); return; }
     const token=++currentUserToken;
@@ -134,6 +135,7 @@
     window.Friends?.connect(profileConnection());
   }
   function showLogin(){
+    window.FoodDiary?.reset();
     window.Friends?.reset();
     window.SocialProfile?.reset();
     window.GuidedWorkout?.detach();

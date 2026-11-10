@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ctx={window:{},uid:()=> 'generated',document:{getElementById:()=>null}};vm.createContext(ctx);
+vm.runInContext(fs.readFileSync('frequency.js','utf8'),ctx);
+const app=fs.readFileSync('app.js','utf8');vm.runInContext(app.slice(app.indexOf('function normalizeFoodDiary('),app.indexOf('function createSeedSessions(')),ctx);
+vm.runInContext(fs.readFileSync('food-diary.js','utf8'),ctx);
+const run=code=>vm.runInContext(code,ctx);ctx.input={meals:[{id:'m1',date:'2026-11-10',foods:'Arroz e feijão',energy:0,protein:'12.5',carbs:null,fat:''},{id:'m1',date:'2026-11-10',foods:'Duplicado'},{id:'m2',date:'2026-02-30',foods:'Inválido'},{id:'m3',date:'2026-11-10',foods:'  '},{id:'m4',date:'2026-11-09',foods:'<script>',energy:-1,protein:'abc'}]};
+const diary=run('normalizeFoodDiary(input)');assert.equal(diary.meals.length,2);assert.equal(diary.meals[0].energy,0);assert.equal(diary.meals[0].protein,12.5);assert.equal(diary.meals[0].fat,null);assert.equal(diary.meals[1].energy,null);assert.equal(diary.meals[1].protein,null);assert.equal(diary.meals[1].foods,'<script>');
+assert.equal(run('normalizeFoodDiary(null).meals.length'),0);ctx.meals=diary.meals;
+const totals=run('foodDiaryTotals(meals)');assert.equal(totals.energy.value,0);assert.equal(totals.energy.count,1);assert.equal(totals.carbs.value,null);
+ctx.restored=JSON.parse(JSON.stringify(diary));assert.equal(run('normalizeFoodDiary(restored).meals[0].id'),'m1');
+const markup=fs.readFileSync('food-diary.js','utf8');assert.ok(markup.includes('esc(m.foods)'));assert.ok(markup.includes('owner!==state.db'));assert.ok(markup.includes('if(db!==state.db)return'));assert.ok(!fs.readFileSync('social-profile.js','utf8').includes('nutrition'));
+console.log('PASS: food diary dates, duplicate IDs, legacy/backup, optional/zero nutrients, partial totals, escaping and account guards');

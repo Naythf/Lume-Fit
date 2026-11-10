@@ -28,6 +28,7 @@ function initialData(){
     profile: { name: 'Atleta', age: '', weight: '', height: '', photo: '', activity: 'moderate', sex: 'unspecified', goal: 'maintain', goalKg: '' },
     routines: [],
     sessions: [],
+    nutrition: { meals: [] },
   };
 }
 
@@ -57,7 +58,8 @@ function normalizeDB(db){
   const out = {
     profile: { ...fresh.profile, ...(db.profile||{}) },
     routines: Array.isArray(db.routines) && db.routines.length ? db.routines : fresh.routines,
-    sessions: Array.isArray(db.sessions) ? db.sessions : []
+    sessions: Array.isArray(db.sessions) ? db.sessions : [],
+    nutrition: normalizeFoodDiary(db.nutrition)
   };
   out.profile.social=normalizeSocialProfile(out.profile.social);
   out.profile.trainingPreferences=normalizeTrainingPreferences(out.profile.trainingPreferences);
@@ -84,6 +86,18 @@ function normalizeDB(db){
     })) : []
   }));
   return out;
+}
+
+function normalizeFoodDiary(value){
+  const seen=new Set(),meals=[];
+  for(const raw of Array.isArray(value?.meals)?value.meals:[]){
+    if(!raw||typeof raw.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(raw.date)||activityKey(raw.date)!==raw.date)continue;
+    const foods=String(raw.foods||'').trim().slice(0,2000);if(!foods)continue;
+    const id=/^[a-zA-Z0-9_-]{1,80}$/.test(raw.id||'')?raw.id:uid();if(seen.has(id))continue;seen.add(id);
+    const nutrients={};for(const key of ['energy','protein','carbs','fat']){const n=raw[key];nutrients[key]=n!==null&&n!==''&&n!==undefined&&Number.isFinite(Number(n))&&Number(n)>=0&&Number(n)<=100000?Number(n):null;}
+    meals.push({id,date:raw.date,time:/^([01]\d|2[0-3]):[0-5]\d$/.test(raw.time||'')?raw.time:'',kind:['breakfast','lunch','dinner','snack','other'].includes(raw.kind)?raw.kind:'other',foods,portion:String(raw.portion||'').trim().slice(0,160),notes:String(raw.notes||'').trim().slice(0,1000),...nutrients});
+  }
+  return {meals};
 }
 
 function createSeedSessions(routines){
@@ -243,6 +257,7 @@ function render(){
   renderKnowledge();
   renderProfile();
   window.Friends?.render();
+  window.FoodDiary?.render();
 }
 
 function weeklyActivityCard(){
@@ -292,6 +307,7 @@ function renderHome(){
       </div>
     </div>
     ${weeklyActivityCard()}
+    <button class="food-home-link" onclick="switchTab('nutrition')"><span>${foodDiaryIcon()}</span><span><strong>Seu diário alimentar</strong><small>Registre suas refeições, no seu ritmo.</small></span><span aria-hidden="true">↗</span></button>
     <div class="section-title"><h3>Últimos treinos</h3><button class="link" onclick="switchTab('history')">Ver todos</button></div>
     <div class="mini-list">
       ${recent.length ? recent.map(s => `
@@ -353,7 +369,7 @@ function renderSettings(){
       </details>
       <details class="settings-group" data-setting="backup" ${expanded.includes('backup')?'open':''}>
         <summary><span class="settings-group-icon" aria-hidden="true">${downloadIcon()}</span><span><strong>Backup e restauração</strong><small>Salve uma cópia ou restaure seus dados</small></span></summary>
-        <div class="settings-group-content"><p class="hint">Guarde uma cópia dos seus treinos, histórico e perfil em um arquivo JSON.</p><div class="backup-actions"><button type="button" class="secondary-btn" onclick="exportData()">Exportar backup</button><button type="button" class="secondary-btn" onclick="openImportFile()">Restaurar backup</button></div><p class="hint">Ao restaurar, os dados atuais serão substituídos. Você poderá confirmar antes da importação.</p></div>
+        <div class="settings-group-content"><p class="hint">Guarde uma cópia dos seus treinos, refeições, histórico e perfil em um arquivo JSON.</p><div class="backup-actions"><button type="button" class="secondary-btn" onclick="exportData()">Exportar backup</button><button type="button" class="secondary-btn" onclick="openImportFile()">Restaurar backup</button></div><p class="hint">Ao restaurar, os dados atuais serão substituídos. Você poderá confirmar antes da importação.</p></div>
       </details>
     </div>
     <input id="photoFile" class="hidden" type="file" accept="image/*" onchange="receivePhoto(this)">

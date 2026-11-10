@@ -3,6 +3,7 @@ const vm=require('node:vm');
 const assert=require('node:assert/strict');
 const {execFileSync}=require('node:child_process');
 execFileSync(process.execPath,['updates-checks.cjs'],{stdio:'inherit'});
+execFileSync(process.execPath,['food-diary-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['guided-workout-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['social-profile-checks.cjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['friends-checks.cjs'],{stdio:'inherit'});
