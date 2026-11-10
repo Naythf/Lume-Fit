@@ -1,0 +1,27 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ctx={window:{},uid:()=> 'generated',document:{getElementById:()=>null}};vm.createContext(ctx);
+vm.runInContext(fs.readFileSync('frequency.js','utf8'),ctx);
+const app=fs.readFileSync('app.js','utf8');vm.runInContext(app.slice(app.indexOf('function normalizeFoodDiary('),app.indexOf('function createSeedSessions(')),ctx);
+vm.runInContext(fs.readFileSync('food-diary.js','utf8'),ctx);
+const run=code=>vm.runInContext(code,ctx);ctx.input={meals:[{id:'m1',date:'2026-11-10',foods:'Arroz e feijão',energy:0,protein:'12.5',carbs:null,fat:''},{id:'m1',date:'2026-11-10',foods:'Duplicado'},{id:'m2',date:'2026-02-30',foods:'Inválido'},{id:'m3',date:'2026-11-10',foods:'  '},{id:'m4',date:'2026-11-09',foods:'<script>',energy:-1,protein:'abc'}]};
+const diary=run('normalizeFoodDiary(input)');assert.equal(diary.meals.length,2);assert.equal(diary.meals[0].energy,0);assert.equal(diary.meals[0].protein,12.5);assert.equal(diary.meals[0].fat,null);assert.equal(diary.meals[1].energy,null);assert.equal(diary.meals[1].protein,null);assert.equal(diary.meals[1].foods,'<script>');
+assert.equal(run('normalizeFoodDiary(null).meals.length'),0);ctx.meals=diary.meals;
+const totals=run('foodDiaryTotals(meals)');assert.equal(totals.energy.value,0);assert.equal(totals.energy.count,1);assert.equal(totals.carbs.value,null);
+ctx.restored=JSON.parse(JSON.stringify(diary));assert.equal(run('normalizeFoodDiary(restored).meals[0].id'),'m1');
+const markup=fs.readFileSync('food-diary.js','utf8');assert.ok(markup.includes('esc(m.foods)'));assert.ok(markup.includes('owner!==state.db'));assert.ok(markup.includes('if(db!==state.db)return'));assert.ok(!fs.readFileSync('social-profile.js','utf8').includes('nutrition'));
+console.log('PASS: food diary dates, duplicate IDs, legacy/backup, optional/zero nutrients, partial totals, escaping and account guards');
+const photo='data:image/jpeg;base64,YWJj';ctx.photo=photo;
+assert.equal(run('safeFoodPhoto(photo)'),photo);assert.equal(run("safeFoodPhoto('https://example.test/meal.jpg')"),'');assert.equal(run("safeFoodPhoto('data:image/svg+xml;base64,YWJj')"),'');assert.equal(run("safeFoodPhoto('javascript:alert(1)')"),'');assert.equal(run("safeFoodPhoto('data:image/jpeg;base64,'+'a'.repeat(160000))"),'');
+ctx.withPhoto={meals:[{id:'photo1',date:'2026-11-10',foods:'Meal',photo}]};assert.equal(run('normalizeFoodDiary(JSON.parse(JSON.stringify(withPhoto))).meals[0].photo'),photo);assert.equal(diary.meals[0].photo,'');
+const nodes={foodForm:{},sheet:{classList:{contains:()=>true}},mealPhotoStatus:{textContent:''},mealSave:{disabled:false},mealPhotoPreview:{innerHTML:''},mealPhotoLabel:{textContent:''},mealPhotoRemove:{hidden:true}};
+let decode,drawn,closes=0,saves=0;ctx.state={db:{nutrition:{meals:[]}}};ctx.esc=String;ctx.openSheet=()=>{};ctx.closeSheet=()=>{};ctx.toast=()=>{};ctx.saveDB=()=>{saves++;return true};ctx.FormData=class{constructor(){return new Map([['date','2026-11-10'],['kind','lunch'],['foods','Private meal']]);}};
+ctx.document.getElementById=id=>nodes[id]||null;ctx.document.createElement=()=>({getContext:()=>({fillRect(){},drawImage(...args){drawn=args}}),toDataURL:()=>photo});ctx.createImageBitmap=()=>new Promise(resolve=>decode=resolve);
+(async()=>{
+ const mod=ctx.window.FoodDiary;mod.edit();const input={files:[{type:'image/png',size:1000}],value:'selected'};
+ const loading=mod.receivePhoto(input);assert.equal(nodes.mealSave.disabled,true);decode({width:960,height:640,close(){closes++}});await loading;assert.equal(nodes.mealSave.disabled,false);assert.match(nodes.mealPhotoPreview.innerHTML,/<img/);assert.equal(drawn[1],160);assert.equal(drawn[3],640);assert.equal(drawn[7],384);assert.equal(ctx.state.db.nutrition.meals.length,0);
+ mod.save({preventDefault(){},target:nodes.foodForm});assert.equal(ctx.state.db.nutrition.meals[0].photo,photo);assert.equal(saves,1);
+ mod.edit('generated');mod.removePhoto();mod.save({preventDefault(){},target:nodes.foodForm});assert.equal(ctx.state.db.nutrition.meals[0].photo,'');
+ mod.edit();const stale=mod.receivePhoto(input);const previous=nodes.mealPhotoPreview.innerHTML;ctx.state.db={nutrition:{meals:[]}};decode({width:100,height:100,close(){closes++}});await stale;assert.equal(nodes.mealPhotoPreview.innerHTML,previous);assert.equal(ctx.state.db.nutrition.meals.length,0);assert.equal(closes,2);
+ mod.edit();const oldUpload=mod.receivePhoto(input);const oldDecode=decode;await mod.receivePhoto({files:[{type:'image/svg+xml',size:1}],value:'bad'});assert.equal(nodes.mealSave.disabled,false);oldDecode({width:50,height:50,close(){closes++}});await oldUpload;assert.match(nodes.mealPhotoStatus.textContent,/JPG/);
+ console.log('PASS: optional photo backup, raster allowlist/size, compressed square crop, save/removal, late-account response and invalid replacement during decode');
+})().catch(e=>{console.error(e);process.exitCode=1});
