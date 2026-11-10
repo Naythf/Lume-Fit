@@ -4,7 +4,7 @@ This is an Expo/React Native mobile application. Prioritize mobile-first pattern
 
 - Follow the repository root AGENTS.md workflow (issue, dedicated branch, PR, proportional checks). Preserve the published web application.
 - Budget is zero. Design directly in code, preserve Lume identity, do not use Figma, paid services, trials, store enrollment or publishing. Local builds take precedence over generic EAS recommendations below.
-- This first stage is local-only and begins empty. Do not connect user accounts, import web backups or migrate backend data until compatibility, CAS and per-account isolation are implemented and tested.
+- User now requires the exact existing web interface and animations. The active app hosts the published HTTPS Lume page in WebView; see WEB-PARITY.md. Do not redesign native screens. Do not automatically migrate the previous local prototype or log in to user accounts. Native file handling and offline behavior require device validation.
 - Keep credentials out of AsyncStorage. Native JavaScript export is not proof of a working APK/IPA or a tested physical device. Document untested behavior accurately.
 
 ## Expo has changed — do not trust your training data
