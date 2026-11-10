@@ -13,17 +13,14 @@
   let mode = 'login';
   let demo = false;
   let loading = false;
-  let revision = 0;
-  let savedRevision = 0;
+  let documentSync = null;
+  let syncBusy = false;
   let timer = null;
-  let inFlight = null;
   let currentUserToken = 0;
-  let syncError = '';
 
   const el = id => document.getElementById(id);
   const notify = msg => { el('authMessage').textContent = msg; };
   const localKey = uid => `lume_fit_user_${uid}`;
-  const snapshot = db => JSON.parse(JSON.stringify(db));
   const printError = err => {
     const msg = String(err?.message || err || 'Ocorreu um erro.');
     if (/Invalid login credentials/i.test(msg)) return 'E-mail ou senha incorretos.';
@@ -96,15 +93,15 @@
     if(!u){ showLogin(); return; }
     const token=++currentUserToken;
     window.Friends?.reset();
-    user=u; demo=false; syncError=''; revision=0; savedRevision=0;
+    user=u; demo=false;
     const key=localKey(u.id);
     let local=null;
     try {const s=localStorage.getItem(key);if(s)local=JSON.parse(s);}catch{}
-    let cloud;
+    let cloud,cloudRecord;
     try {
-      const {data,error}=await client.from('user_data').select('data').eq('user_id',u.id).maybeSingle();
+      const {data,error}=await client.from('user_data').select('data,updated_at').eq('user_id',u.id).maybeSingle();
       if(error)throw error;
-      cloud=data?.data || null;
+      cloudRecord=data;cloud=data?.data || null;
     }catch(e){
       if(token!==currentUserToken)return;
       user=null;
@@ -115,10 +112,13 @@
     if(token!==currentUserToken)return;
     // Dados da nuvem têm prioridade. Nenhum dado de outro usuário é acessado.
     const result=cloud || local || initialData();
-    state.db=normalizeDB(result);
+    let tabId;try{tabId=sessionStorage.getItem('lume_sync_tab');if(!tabId){tabId=crypto.randomUUID();sessionStorage.setItem('lume_sync_tab',tabId);}}catch{tabId=crypto.randomUUID();}
+    documentSync=createLumeDocumentSync({owner:u.id,record:cloudRecord,initial:result,storage:localStorage,tabId,active:()=>token===currentUserToken&&user?.id===u.id,changed:setSyncLabel,rpc:async(args)=>{const controller=new AbortController(),deadline=setTimeout(()=>controller.abort(),15000);try{return await client.rpc('lume_sync_document',args).abortSignal(controller.signal);}finally{clearTimeout(deadline);}}});
+    state.db=normalizeDB(documentSync.db);
     if(!cloud && !local && u.user_metadata?.name) state.db.profile.name=u.user_metadata.name;
     try{localStorage.setItem(key,JSON.stringify(state.db));}catch{}
-    if(!cloud && local) scheduleSync();
+    if(!cloud && local&&!documentSync.pending)documentSync.update(state.db);
+    if(documentSync.pending&&!documentSync.conflict)scheduleSync();
     state.selectedRoutineId=null;
     state.activeWorkout=null;
     window.GuidedWorkout?.attach(key);
@@ -136,6 +136,8 @@
   }
   function showLogin(){
     window.FoodDiary?.reset();
+    documentSync=null;clearTimeout(timer);
+    closeSheet();
     window.Friends?.reset();
     window.SocialProfile?.reset();
     window.GuidedWorkout?.detach();
@@ -163,53 +165,44 @@
   }
   function persist(db){
     if(demo){try{localStorage.setItem('lumefit_v4_demo',JSON.stringify(db));return true;}catch{toast('Armazenamento local cheio. Exporte um backup.');return false;}}
-    if(!user)return;
-    try{localStorage.setItem(localKey(user.id), JSON.stringify(db));}catch{syncError='Armazenamento local cheio';}
-    revision++;
-    scheduleSync();
+    if(!user||!documentSync)return false;
+    const ok=documentSync.update(db);if(ok)scheduleSync();return ok;
   }
-  function scheduleSync(){
-    if(!user || !client)return;
-    clearTimeout(timer);
-    timer=setTimeout(()=>syncNow().catch(()=>{}),700);
-    setSyncLabel();
+  function scheduleSync(){if(!user||!client||!documentSync)return;clearTimeout(timer);timer=setTimeout(()=>syncNow().catch(()=>{}),700);setSyncLabel();}
+  async function syncNow(){if(demo){toast('Modo local: sem sincronização.');return;}if(!documentSync||!user)return;clearTimeout(timer);syncBusy=true;setSyncLabel();try{await documentSync.sync();}finally{syncBusy=false;setSyncLabel();}}
+  function syncPanel(){
+    const drafts=documentSync?.drafts()||[];
+    return '<p class="hint">'+(documentSync?.conflict?'Outra sessão mudou os dados da nuvem. Exporte seu rascunho antes de carregar a versão da nuvem. Ele também será mantido neste navegador.':'Cada aba preserva seu rascunho. Alterações concorrentes pedem revisão antes de substituir seus dados.')+'</p>'+
+      (documentSync?.conflict?'<div class="backup-actions"><button class="secondary-btn" onclick="exportData()">Exportar meu rascunho</button><button class="ghost-btn" onclick="LumeAuth.useCloud()">Carregar versão da nuvem</button></div>':'')+
+      (drafts.length?'<details><summary>Outros rascunhos neste dispositivo ('+drafts.length+')</summary>'+drafts.map((d,i)=>'<button class="ghost-btn" onclick="LumeAuth.restoreDraft('+i+')">Recuperar rascunho de '+esc(new Date(d.savedAt).toLocaleString('pt-BR'))+'</button>').join('')+'</details>':'');
   }
-  async function syncNow(){
-    if(demo){toast('Modo local: sem sincronização.');return;}
-    if(!user || !client)return;
-    clearTimeout(timer);
-    if(inFlight){await inFlight;if(savedRevision<revision)return syncNow();return;}
-    const id=user.id;
-    const token=currentUserToken;
-    const payload=snapshot(state.db);
-    const rev=revision;
-    setSyncLabel('Sincronizando...');
-    inFlight=(async()=>{
-      try {
-        const {error}=await client.from('user_data').upsert({user_id:id,data:payload,updated_at:new Date().toISOString()},{onConflict:'user_id'});
-        if(error)throw error;
-        if(token===currentUserToken && user?.id===id){savedRevision=Math.max(savedRevision,rev);syncError='';}
-      }catch(e){if(token===currentUserToken){syncError=printError(e);console.warn('Lume Fit: sincronização falhou',e);}}
-      finally{inFlight=null;setSyncLabel();}
-    })();
-    await inFlight;
-    if(user?.id===id && !syncError && savedRevision<revision)await syncNow();
+  async function useCloud(){
+    const engine=documentSync,owner=user?.id,token=currentUserToken;if(!engine||engine.busy)return;
+    if(state.activeWorkout||document.getElementById('sheet')?.classList.contains('active')){toast('Feche a edição e finalize ou pause seu treino antes de trocar os dados.');return;}
+    if(!await lumeConfirm('Carregar dados da nuvem?','Os dados abertos serão trocados pela versão da nuvem. Seu rascunho atual continuará disponível neste navegador. Exporte também um backup para guardá-lo fora deste dispositivo.'))return;
+    if(engine!==documentSync||token!==currentUserToken)return;
+    try{const {data,error}=await client.from('user_data').select('data,updated_at').eq('user_id',owner).maybeSingle();if(error)throw error;if(engine!==documentSync||token!==currentUserToken)return;const result=engine.useCloud(data);if(result===false)return;state.db=normalizeDB(result);window.FoodDiary?.reset();window.FrequencyExperience?.reset();render();toast('Versão da nuvem carregada.');}catch{toast('Não foi possível carregar. Seu rascunho foi mantido.');}
   }
+  async function restoreDraft(index){const engine=documentSync,draft=engine?.drafts()[index];if(!draft||engine.busy)return;if(!await lumeConfirm('Recuperar rascunho?','A versão aberta será preservada como outro rascunho local. O rascunho recuperado não será enviado automaticamente para a nuvem.'))return;if(engine!==documentSync)return;const result=engine.restore(draft.key);if(result!==false){state.db=normalizeDB(result);render();}}
   function setSyncLabel(text){
     const node=el('cloudState');
     if(node)node.textContent=text||status();
+    const panel=el('syncPanel');if(panel)panel.innerHTML=syncPanel();
+    const notice=el('syncNotice');if(notice){notice.hidden=!documentSync?.conflict;notice.innerHTML=documentSync?.conflict?`<span>Alterações de outra sessão detectadas. Seu rascunho está preservado.</span><button class="ghost-btn" onclick="switchTab('settings')">Revisar sincronização</button>`:'';}
   }
   function status(){
     if(demo)return 'Modo local — sem nuvem';
     if(!user)return 'Desconectado';
-    if(syncError)return 'Falha: '+syncError;
-    return revision>savedRevision?'Pendente de sincronização':'Dados na nuvem';
+    if(syncBusy)return 'Sincronizando...';
+    if(documentSync?.conflict)return 'Conflito — rascunho preservado';
+    if(documentSync?.error)return documentSync.error;
+    return documentSync?.pending?'Pendente de sincronização':'Dados na nuvem';
   }
   async function signOut(){
     if(demo){demo=false;showLogin();return;}
     if(!client || !user)return;
     try{await syncNow();}catch{}
-    if(syncError){toast('Erro ao sincronizar. Faça um backup antes de sair.');return;}
+    if(documentSync?.pending){toast('Há alterações pendentes. Exporte seu backup e resolva a sincronização antes de sair.');return;}
     clearTimeout(timer);
     ++currentUserToken;
     const {error}=await client.auth.signOut();
@@ -242,8 +235,8 @@
     }catch(e){showLogin();notify(printError(e));}
   }
   function profileConnection(){if(!user||demo||!client)return null;const owner=user.id,token=currentUserToken;return async(name,args,options={})=>{if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');const request=client.rpc(name,args);const result=await (options.signal&&typeof request.abortSignal==='function'?request.abortSignal(options.signal):request);if(token!==currentUserToken||user?.id!==owner)throw Error('ACCOUNT_CHANGED');return result;};}
-  window.LumeAuth={profileConnection,showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
+  window.LumeAuth={profileConnection,syncPanel,useCloud,restoreDraft,showMode,submit,startDemo,persist,signOut,syncNow,resetPassword,status,email:()=>user?.email||''};
   window.addEventListener('online',()=>{if(user)syncNow();});
-  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden' && user && revision>savedRevision)syncNow();});
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden' && user && documentSync?.pending)syncNow();});
   init();
 })();

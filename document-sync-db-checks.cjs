@@ -1,0 +1,15 @@
+const fs=require('fs'),assert=require('assert/strict'),{PGlite}=require('@electric-sql/pglite');
+(async()=>{
+ const db=new PGlite();await db.exec("create role anon;create role authenticated;create schema auth;create table auth.users(id uuid primary key);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to authenticated,anon;grant execute on function auth.uid() to authenticated,anon;");
+ await db.exec(fs.readFileSync('supabase-schema.sql','utf8'));await db.exec(fs.readFileSync('migrations/20261029-profile-privacy.sql','utf8'));const migration=fs.readFileSync('supabase/migrations/20261110190254_safe_document_sync.sql','utf8');await db.exec(migration);await db.exec(migration);
+ const a='00000000-0000-0000-0000-000000000001',b='00000000-0000-0000-0000-000000000002';await db.query('insert into auth.users values($1),($2)',[a,b]);
+ const as=(id,fn,role='authenticated')=>db.transaction(async tx=>{await tx.query("select set_config('request.jwt.claim.sub',$1,true)",[id||'']);await tx.exec('set local role '+role);return fn(tx)});
+ const payload={profile:{name:'Private'},routines:[],sessions:[],nutrition:{meals:[]}},other={...payload,profile:{name:'Updated'}};
+ const sync=async(id,base,data,mutation)=>((await as(id,tx=>tx.query('select public.lume_sync_document($1,$2,$3) as result',[base,JSON.stringify(data),mutation]))).rows[0].result);
+ const first=await sync(a,null,payload,'00000000-0000-0000-0000-000000000010');assert.ok(first.updated_at);assert.equal((await sync(a,null,other,'00000000-0000-0000-0000-000000000011')).conflict,true);
+ const next=await sync(a,first.updated_at,other,'00000000-0000-0000-0000-000000000012');assert.notEqual(first.updated_at,next.updated_at);const replay=await sync(a,first.updated_at,other,'00000000-0000-0000-0000-000000000012');assert.equal(replay.updated_at,next.updated_at);assert.equal(replay.replayed,true);
+ await assert.rejects(sync(a,next.updated_at,payload,'00000000-0000-0000-0000-000000000012'),e=>e.message.includes('MUTATION_REUSED'));
+ assert.equal((await as(a,tx=>tx.query('update public.user_data set data=$1 where user_id=$2 returning *',[JSON.stringify(payload),a]))).rows.length,0);assert.equal((await as(a,tx=>tx.query('delete from public.user_data where user_id=$1 returning *',[a]))).rows.length,0);
+ assert.equal((await as(b,tx=>tx.query('select * from public.user_data'))).rows.length,0);await sync(b,null,payload,'00000000-0000-0000-0000-000000000013');assert.equal((await db.query('select count(*) as n from public.user_data')).rows[0].n,2);
+ await assert.rejects(as(null,tx=>tx.query('select public.lume_sync_document(null,$1,$2)',[JSON.stringify(payload),'00000000-0000-0000-0000-000000000014']),'anon'),e=>e.code==='42501');await assert.rejects(sync(null,null,payload,'00000000-0000-0000-0000-000000000015'),e=>e.code==='42501');await db.close();console.log('PASS: sync migration twice, CAS conflicts, replay/mutation guards, protected legacy update/delete denied, owner isolation and anon denied');
+})().catch(e=>{console.error(e);process.exitCode=1});

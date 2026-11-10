@@ -1,0 +1,15 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),{webcrypto}=require('crypto');
+const ctx={crypto:webcrypto};vm.createContext(ctx);vm.runInContext(fs.readFileSync('document-sync.js','utf8'),ctx);
+const entries=new Map(),storage={get length(){return entries.size},key:i=>[...entries.keys()][i],getItem:k=>entries.get(k)||null,setItem:(k,v)=>entries.set(k,v),removeItem:k=>entries.delete(k)};
+let row={data:{value:1},updated_at:'v1'},sequence=1,failAfterWrite=false,calls=0;
+const rpc=async args=>{calls++;if(row.mutation===args.p_mutation)return {data:{updated_at:row.updated_at}};if(args.p_expected!==row.updated_at)return {data:{conflict:true}};row={data:args.p_data,updated_at:'v'+(++sequence),mutation:args.p_mutation};if(failAfterWrite){failAfterWrite=false;throw Error('Lost response');}return {data:{updated_at:row.updated_at}};};
+const make=(owner,tabId)=>ctx.createLumeDocumentSync({owner,tabId,record:row,initial:row.data,storage,rpc,active:()=>true,changed(){}});
+(async()=>{
+ const a=make('a','one'),b=make('a','two');a.update({value:2});b.update({value:3});await a.sync();await b.sync();assert.equal(a.pending,false);assert.equal(b.conflict,true);assert.equal(b.db.value,3);assert.equal(row.data.value,2);const before=calls;await b.sync();assert.equal(calls,before);
+ const reload=make('a','two');assert.equal(reload.db.value,3);assert.equal(reload.conflict,true);const cloud=reload.useCloud(row);assert.equal(cloud.value,2);assert.equal(reload.drafts().length,1);assert.equal(reload.restore(reload.drafts()[0].key).value,3);assert.equal(reload.conflict,true);assert.equal(make('b','two').db.value,2);
+ const c=make('a','three');c.update({value:4});failAfterWrite=true;await c.sync();assert.equal(c.pending,true);assert.ok(c.error);const stamp=row.updated_at;await c.sync();assert.equal(c.pending,false);assert.equal(row.updated_at,stamp);
+ let release;const d=ctx.createLumeDocumentSync({owner:'a',tabId:'four',record:row,initial:row.data,storage,rpc:async args=>{if(!release)await new Promise(resolve=>release=resolve);return rpc(args)},active:()=>true,changed(){}});d.update({value:5});const pending=d.sync();d.update({value:6});release();await pending;assert.equal(row.data.value,6);assert.equal(d.pending,false);
+ let live=true;const stale=ctx.createLumeDocumentSync({owner:'a',tabId:'five',record:row,initial:row.data,storage,rpc:async()=>{live=false;return {data:{updated_at:'fake'}}},active:()=>live,changed(){}});stale.update({value:7});await stale.sync();assert.equal(stale.pending,true);
+ const full=ctx.createLumeDocumentSync({owner:'a',tabId:'six',record:row,initial:row.data,storage:{getItem(){return null},setItem(){throw Error('full')}},rpc,active:()=>true,changed(){}});assert.equal(full.update({value:8}),false);assert.ok(full.error);
+ console.log('PASS: cross-tab conflicts, per-account drafts/reload, cloud recovery preserves drafts, idempotent lost-response retry, edits during sync, stale accounts and storage failure');
+})().catch(e=>{console.error(e);process.exitCode=1});

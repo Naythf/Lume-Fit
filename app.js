@@ -362,6 +362,7 @@ function renderSettings(){
       <div><strong>Sincronização</strong><br><small id="cloudState">${esc(window.LumeAuth?.status() || 'Verificando...')}</small></div>
       <button onclick="LumeAuth.syncNow()">Sincronizar</button>
     </div>
+    <section id="syncPanel" class="sync-panel" aria-label="Revisão da sincronização">${window.LumeAuth?.syncPanel?.()||''}</section>
     <div class="settings-groups">
       <details class="settings-group" data-setting="preferences" ${expanded.includes('preferences')?'open':''}>
         <summary><span class="settings-group-icon" aria-hidden="true">${preferencesIcon()}</span><span><strong>Preferências</strong><small>Animações e movimento do aplicativo</small></span></summary>
