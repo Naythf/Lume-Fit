@@ -1,5 +1,7 @@
 # Lume Fit mobile · primeira etapa
 
+**Atualização 0.1.1:** a interface ativa agora é empacotada e offline. Este texto histórico da primeira etapa não descreve a implementação atual; consultar `OFFLINE-PACKAGE.md`. Não usar a página hospedada como fonte de inicialização.
+
 Aplicativo React Native com Expo SDK 58 e TypeScript, desenvolvido diretamente em código. Sem Figma, sem assinatura adicional, sem EAS pago e sem publicação nas lojas. O site da raiz permanece independente.
 
 ## O que funciona
