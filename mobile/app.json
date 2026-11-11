@@ -17,7 +17,9 @@
       "supportsTablet": true
     },
     "android": {
-      "predictiveBackGestureEnabled": true
+      "predictiveBackGestureEnabled": true,
+      "package": "com.lumeproductions.lumefit",
+      "versionCode": 1
     },
     "web": {
       "favicon": "./assets/lume-icon.png",
