@@ -6,6 +6,9 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   apk:
     if: github.event.repository.private == false

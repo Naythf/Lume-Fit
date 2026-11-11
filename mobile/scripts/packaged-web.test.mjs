@@ -17,6 +17,7 @@ test('packaged scripts parse, SDK is present without CDN, hosted updater/SW are 
   assert.ok(scripts.length > 15);
   for (const code of scripts) assert.doesNotThrow(() => new vm.Script(code));
   assert.ok(sources.includes('vendor/supabase-2.76.1.min.js'));
+  assert.ok(html.includes('Permission is hereby granted, free of charge'));
   assert.doesNotMatch(html, /navigator\.serviceWorker\.register/); // no background hosted update path
   assert.ok(html.includes('Atualizações desta versão são instaladas por um novo APK.'));
 });

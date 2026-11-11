@@ -47,7 +47,8 @@ html = html.replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, source) 
   return `<script data-lume-source="${path.startsWith('https:') ? 'supabase-sdk' : path}">${inlineImages(code).replace(/<\/script/gi, '<\\/script')}</script>`;
 });
 html = inlineImages(html);
-html = html.replace('<head>', '<head><meta name="lume-packaged" content="LUME_PACKAGED_OFFLINE_V1"><script>window.LUME_PACKAGED=true;</script>');
+const sdkLicense = readFileSync(resolve(mobile, 'vendor/supabase-LICENSE'), 'utf8').replaceAll('--', '- -');
+html = html.replace('<head>', '<head><!-- Supabase JS 2.76.1: ' + sdkLicense + ' --><meta name="lume-packaged" content="LUME_PACKAGED_OFFLINE_V1"><script>window.LUME_PACKAGED=true;</script>');
 // No external render assets may escape this build. API calls are still allowed when the user uses online features.
 const markup = html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
 if (/<script\b[^>]*\bsrc=|<link\b[^>]*rel="stylesheet"|<img\b[^>]*src="(?!data:)/i.test(markup)) throw Error('Recurso de apresentação não incorporado.');
