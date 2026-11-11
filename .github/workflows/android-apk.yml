@@ -1,11 +1,14 @@
 name: Android test APK
 on:
   push:
-    branches: [feature/android-apk]
+    branches: [feature/android-apk, feature/offline-apk]
     paths: ['mobile/**', '.github/workflows/android-apk.yml']
   workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: android-apk-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   apk:
     if: github.event.repository.private == false
@@ -37,17 +40,22 @@ jobs:
       - name: Verify package and test signature
         run: |
           mkdir -p apk-output
-          cp android/app/build/outputs/apk/release/app-release.apk apk-output/Lume-Fit-0.1.0-teste.apk
+          cp android/app/build/outputs/apk/release/app-release.apk apk-output/Lume-Fit-0.1.1-offline.apk
           signer=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort -V | tail -1)
-          "$signer" verify --verbose --print-certs apk-output/Lume-Fit-0.1.0-teste.apk > apk-output/signature.txt
+          "$signer" verify --verbose --print-certs apk-output/Lume-Fit-0.1.1-offline.apk > apk-output/signature.txt
+          grep 'fac61745dc0903786fb9ede62a962b399f7348f0bb6f899b8332667591033b9c' apk-output/signature.txt
           analyzer=$(find "$ANDROID_HOME" -name aapt -type f | sort -V | tail -1)
-          "$analyzer" dump badging apk-output/Lume-Fit-0.1.0-teste.apk > apk-output/package.txt
+          "$analyzer" dump badging apk-output/Lume-Fit-0.1.1-offline.apk > apk-output/package.txt
           grep "package: name='com.lumeproductions.lumefit'" apk-output/package.txt
-          if "$analyzer" dump xmltree apk-output/Lume-Fit-0.1.0-teste.apk AndroidManifest.xml | grep -q 'android:debuggable.*0xffffffff'; then exit 1; fi
-          unzip -l apk-output/Lume-Fit-0.1.0-teste.apk | grep assets/index.android.bundle
+          "$analyzer" dump xmltree apk-output/Lume-Fit-0.1.1-offline.apk AndroidManifest.xml > apk-output/manifest.txt
+          if grep -q 'android:debuggable.*0xffffffff' apk-output/manifest.txt; then echo 'Unexpected debuggable APK'; exit 1; fi
+          if grep -q 'android.permission.SYSTEM_ALERT_WINDOW' apk-output/package.txt; then echo 'Unexpected overlay permission'; exit 1; fi
+          unzip -p apk-output/Lume-Fit-0.1.1-offline.apk assets/index.android.bundle > /tmp/lume-bundle
+          node -e "const fs=require('node:fs'); const b=fs.readFileSync('/tmp/lume-bundle'); const marker='LUME_PACKAGED_OFFLINE_V1'; if (!['utf8','utf16le'].some(e=>b.includes(Buffer.from(marker,e)))) throw new Error('Packaged HTML missing from Hermes bundle'); console.log('Packaged HTML present in compiled Hermes bundle');"
           cd apk-output
-          sha256sum Lume-Fit-0.1.0-teste.apk > SHA256SUMS.txt
+          sha256sum Lume-Fit-0.1.1-offline.apk > SHA256SUMS.txt
       - uses: actions/upload-artifact@v4
+        if: ${{ always() && hashFiles('mobile/apk-output/*.apk') != '' }}
         with:
           name: Lume-Fit-Android-APK
           path: mobile/apk-output/

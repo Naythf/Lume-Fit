@@ -1,6 +1,6 @@
 {
   "name": "lume-fit-mobile",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "expo-router/entry",
   "type": "module",
   "dependencies": {
@@ -33,13 +33,23 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "prepare": "node scripts/package-web.mjs",
+    "prestart": "node scripts/package-web.mjs",
+    "preweb": "node scripts/package-web.mjs",
+    "preandroid": "node scripts/package-web.mjs",
+    "preios": "node scripts/package-web.mjs",
+    "pretypecheck": "node scripts/package-web.mjs",
+    "preexport:web": "node scripts/package-web.mjs",
+    "package:web": "node scripts/package-web.mjs",
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
-    "test": "node --experimental-strip-types --test src/domain/workout.test.ts src/utils/web-host.test.ts",
+    "pretest": "node scripts/package-web.mjs",
+    "test": "node --experimental-strip-types --test src/domain/workout.test.ts src/utils/web-host.test.ts scripts/packaged-web.test.mjs",
+    "offline:qa": "node scripts/offline-qa.mjs",
     "export:web": "expo export --platform web",
     "preview": "node scripts/serve-preview.mjs"
   },

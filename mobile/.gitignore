@@ -8,6 +8,7 @@ node_modules/
 dist/
 web-build/
 native-bundles/
+src/generated/
 expo-env.d.ts
 
 # Native
