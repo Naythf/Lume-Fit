@@ -1,0 +1,470 @@
+{
+  "bench-press": {
+    "name": "Barbell Bench Press",
+    "frames": [
+      "bench-press-start.webp",
+      "bench-press-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "barbell"
+  },
+  "incline-bench-press": {
+    "name": "Incline Barbell Bench Press",
+    "frames": [
+      "incline-bench-press-start.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "barbell"
+  },
+  "db-bench-press": {
+    "name": "Dumbbell Bench Press",
+    "frames": [
+      "db-bench-press-start.webp",
+      "db-bench-press-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "dumbbell"
+  },
+  "dumbbell-floor-press": {
+    "name": "Dumbbell Floor Press",
+    "frames": [
+      "dumbbell-floor-press-start.webp",
+      "dumbbell-floor-press-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "dumbbell"
+  },
+  "push-up": {
+    "name": "Push-Up",
+    "frames": [
+      "push-up-start.webp",
+      "push-up-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major",
+      "triceps_brachii"
+    ],
+    "equipment": "bodyweight"
+  },
+  "knee-push-ups": {
+    "name": "Knee Push Ups",
+    "frames": [
+      "knee-push-ups-start.webp",
+      "knee-push-ups-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "bodyweight"
+  },
+  "wall-push-ups": {
+    "name": "Wall Push Ups",
+    "frames": [
+      "wall-push-ups-start.webp",
+      "wall-push-ups-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "bodyweight"
+  },
+  "close-grip-push-ups": {
+    "name": "Close Grip Push Ups",
+    "frames": [
+      "close-grip-push-ups-start.webp",
+      "close-grip-push-ups-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major",
+      "triceps_brachii"
+    ],
+    "equipment": "bodyweight"
+  },
+  "bodyweight-squat": {
+    "name": "Bodyweight Squat",
+    "frames": [
+      "bodyweight-squat-start.webp",
+      "bodyweight-squat-peak.webp"
+    ],
+    "primary": [
+      "gluteus_maximus",
+      "quadriceps"
+    ],
+    "equipment": "bodyweight"
+  },
+  "db-goblet-squat": {
+    "name": "Dumbbell Goblet Squat",
+    "frames": [
+      "db-goblet-squat-start.webp",
+      "db-goblet-squat-peak.webp"
+    ],
+    "primary": [
+      "gluteus_maximus",
+      "quadriceps"
+    ],
+    "equipment": "dumbbell"
+  },
+  "bodyweight-reverse-lunge": {
+    "name": "Bodyweight Reverse Lunge",
+    "frames": [
+      "bodyweight-reverse-lunge-start.webp",
+      "bodyweight-reverse-lunge-peak.webp"
+    ],
+    "primary": [
+      "gluteus_maximus",
+      "quadriceps"
+    ],
+    "equipment": "bodyweight"
+  },
+  "glute-bridge": {
+    "name": "Glute Bridge",
+    "frames": [
+      "glute-bridge-start.webp",
+      "glute-bridge-peak.webp"
+    ],
+    "primary": [
+      "gluteus_maximus"
+    ],
+    "equipment": "bodyweight"
+  },
+  "bodyweight-calf-raise": {
+    "name": "Bodyweight Calf Raise",
+    "frames": [
+      "bodyweight-calf-raise-start.webp",
+      "bodyweight-calf-raise-peak.webp"
+    ],
+    "primary": [
+      "gastrocnemius"
+    ],
+    "equipment": "bodyweight"
+  },
+  "dumbbell-calf-raise": {
+    "name": "Dumbbell Calf Raise",
+    "frames": [
+      "dumbbell-calf-raise-start.webp",
+      "dumbbell-calf-raise-peak.webp"
+    ],
+    "primary": [
+      "gastrocnemius",
+      "soleus"
+    ],
+    "equipment": "dumbbell"
+  },
+  "dead-bug": {
+    "name": "Dead Bug",
+    "frames": [
+      "dead-bug-start.webp",
+      "dead-bug-peak.webp"
+    ],
+    "primary": [
+      "rectus_abdominis",
+      "transverse_abdominis"
+    ],
+    "equipment": "bodyweight"
+  },
+  "bird-dog": {
+    "name": "Bird-Dog",
+    "frames": [
+      "bird-dog-start.webp",
+      "bird-dog-peak.webp"
+    ],
+    "primary": [
+      "erector_spinae",
+      "transverse_abdominis"
+    ],
+    "equipment": "bodyweight"
+  },
+  "crunches": {
+    "name": "Crunches",
+    "frames": [
+      "crunches-start.webp",
+      "crunches-peak.webp"
+    ],
+    "primary": [
+      "rectus_abdominis"
+    ],
+    "equipment": "bodyweight"
+  },
+  "bent-over-db-row": {
+    "name": "Bent-Over Dumbbell Row",
+    "frames": [
+      "bent-over-db-row-start.webp",
+      "bent-over-db-row-peak.webp"
+    ],
+    "primary": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "equipment": "dumbbell"
+  },
+  "barbell-row": {
+    "name": "Bent-Over Barbell Row",
+    "frames": [
+      "barbell-row-start.webp",
+      "barbell-row-peak.webp"
+    ],
+    "primary": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "equipment": "barbell"
+  },
+  "romanian-deadlift": {
+    "name": "Romanian Deadlift",
+    "frames": [
+      "romanian-deadlift-start.webp",
+      "romanian-deadlift-peak.webp"
+    ],
+    "primary": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "equipment": "barbell"
+  },
+  "dumbbell-romanian-deadlift": {
+    "name": "Dumbbell Romanian Deadlift",
+    "frames": [
+      "dumbbell-romanian-deadlift-start.webp",
+      "dumbbell-romanian-deadlift-peak.webp"
+    ],
+    "primary": [
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "equipment": "dumbbell"
+  },
+  "pull-up": {
+    "name": "Pull-Up",
+    "frames": [
+      "pull-up-start.webp",
+      "pull-up-peak.webp"
+    ],
+    "primary": [
+      "latissimus_dorsi"
+    ],
+    "equipment": "pull_up_bar"
+  },
+  "chin-ups": {
+    "name": "Chin-Ups",
+    "frames": [
+      "chin-ups-start.webp",
+      "chin-ups-peak.webp"
+    ],
+    "primary": [
+      "biceps_brachii",
+      "latissimus_dorsi"
+    ],
+    "equipment": "pull_up_bar"
+  },
+  "lat-pulldown": {
+    "name": "Lat Pulldown",
+    "frames": [
+      "lat-pulldown-start.webp",
+      "lat-pulldown-peak.webp"
+    ],
+    "primary": [
+      "latissimus_dorsi"
+    ],
+    "equipment": "cable"
+  },
+  "leg-press": {
+    "name": "Leg Press",
+    "frames": [
+      "leg-press-start.webp"
+    ],
+    "primary": [
+      "gluteus_maximus",
+      "quadriceps"
+    ],
+    "equipment": "leg_press"
+  },
+  "leg-curl": {
+    "name": "Lying Leg Curl",
+    "frames": [
+      "leg-curl-start.webp",
+      "leg-curl-peak.webp"
+    ],
+    "primary": [
+      "hamstrings"
+    ],
+    "equipment": "leg_curl"
+  },
+  "leg-extension": {
+    "name": "Leg Extension",
+    "frames": [
+      "leg-extension-start.webp",
+      "leg-extension-peak.webp"
+    ],
+    "primary": [
+      "quadriceps"
+    ],
+    "equipment": "leg_extension"
+  },
+  "lateral-raise": {
+    "name": "Dumbbell Lateral Raise",
+    "frames": [
+      "lateral-raise-start.webp",
+      "lateral-raise-peak.webp"
+    ],
+    "primary": [
+      "lateral_deltoid"
+    ],
+    "equipment": "dumbbell"
+  },
+  "arnold-press": {
+    "name": "Arnold Press",
+    "frames": [
+      "arnold-press-start.webp",
+      "arnold-press-peak.webp"
+    ],
+    "primary": [
+      "anterior_deltoid",
+      "lateral_deltoid"
+    ],
+    "equipment": "dumbbell"
+  },
+  "dumbbell-shoulder-press": {
+    "name": "Dumbbell Shoulder Press",
+    "frames": [
+      "dumbbell-shoulder-press-start.webp",
+      "dumbbell-shoulder-press-peak.webp"
+    ],
+    "primary": [
+      "anterior_deltoid",
+      "lateral_deltoid"
+    ],
+    "equipment": "dumbbell"
+  },
+  "bicep-curl": {
+    "name": "Dumbbell Bicep Curl",
+    "frames": [
+      "bicep-curl-start.webp",
+      "bicep-curl-peak.webp"
+    ],
+    "primary": [
+      "biceps_brachii"
+    ],
+    "equipment": "dumbbell"
+  },
+  "tricep-pushdown": {
+    "name": "Cable Tricep Pushdown",
+    "frames": [
+      "tricep-pushdown-start.webp",
+      "tricep-pushdown-peak.webp"
+    ],
+    "primary": [
+      "triceps_brachii"
+    ],
+    "equipment": "cable"
+  },
+  "dumbbell-tricep-extension": {
+    "name": "Dumbbell Tricep Extension",
+    "frames": [
+      "dumbbell-tricep-extension-start.webp",
+      "dumbbell-tricep-extension-peak.webp"
+    ],
+    "primary": [
+      "triceps_brachii"
+    ],
+    "equipment": "dumbbell"
+  },
+  "cable-curl": {
+    "name": "Cable Curl",
+    "frames": [
+      "cable-curl-start.webp",
+      "cable-curl-peak.webp"
+    ],
+    "primary": [
+      "biceps_brachii"
+    ],
+    "equipment": "cable"
+  },
+  "chest-supported-machine-row": {
+    "name": "Chest-Supported Machine Row",
+    "frames": [
+      "chest-supported-machine-row-start.webp",
+      "chest-supported-machine-row-peak.webp"
+    ],
+    "primary": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "equipment": "seated_row_machine"
+  },
+  "seated-cable-row": {
+    "name": "Seated Cable Row",
+    "frames": [
+      "seated-cable-row-start.webp",
+      "seated-cable-row-peak.webp"
+    ],
+    "primary": [
+      "latissimus_dorsi",
+      "rhomboids"
+    ],
+    "equipment": "cable"
+  },
+  "chest-press-machine": {
+    "name": "Machine Chest Press",
+    "frames": [
+      "chest-press-machine-start.webp",
+      "chest-press-machine-peak.webp"
+    ],
+    "primary": [
+      "pectoralis_major"
+    ],
+    "equipment": "chest_press_machine"
+  },
+  "plank": {
+    "name": "Plank",
+    "frames": [
+      "plank-main.webp"
+    ],
+    "primary": [
+      "rectus_abdominis",
+      "transverse_abdominis"
+    ],
+    "equipment": "bodyweight"
+  },
+  "running": {
+    "name": "Running",
+    "frames": [
+      "running-main.webp"
+    ],
+    "primary": [
+      "gastrocnemius",
+      "quadriceps"
+    ],
+    "equipment": "bodyweight"
+  },
+  "cycling": {
+    "name": "Cycling",
+    "frames": [
+      "cycling-main.webp"
+    ],
+    "primary": [
+      "quadriceps"
+    ],
+    "equipment": "bicycle"
+  },
+  "kettlebell-deadlift": {
+    "name": "Kettlebell Deadlift",
+    "frames": [
+      "kettlebell-deadlift-start.webp",
+      "kettlebell-deadlift-peak.webp"
+    ],
+    "primary": [
+      "erector_spinae",
+      "gluteus_maximus",
+      "hamstrings"
+    ],
+    "equipment": "kettlebell"
+  }
+}
