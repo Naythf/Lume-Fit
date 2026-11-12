@@ -2,7 +2,8 @@ import * as THREE from "../../../design-tools/node_modules/three/build/three.mod
 import { GLTFLoader } from "../../../design-tools/node_modules/three/examples/jsm/loaders/GLTFLoader.js";
 import { clone } from "../../../design-tools/node_modules/three/examples/jsm/utils/SkeletonUtils.js";
 import model from "./model-data.json";
-import {safeModelKind} from './model-kind.js';
+import { safeModelKind } from "./model-kind.js";
+import { muscleZone } from "./muscle-zones.js";
 let base, renderer;
 const cache = new Map();
 const loader = new GLTFLoader();
@@ -10,8 +11,8 @@ const bytes = Uint8Array.from(atob(model.glb), (c) => c.charCodeAt(0));
 const ready = loader.parseAsync(bytes.buffer, "").then((g) => {
   base = g.scene;
 });
-function image(kind = "body", back = false) {
-  const key = kind + back;
+function image(kind = "body", back = false, primary = [], secondary = []) {
+  const key = JSON.stringify([kind, back, primary, secondary]);
   if (cache.has(key)) return cache.get(key);
   renderer ??= new THREE.WebGLRenderer({
     alpha: true,
@@ -53,35 +54,39 @@ function image(kind = "body", back = false) {
     object.add(handle);
   }
   object.traverse((o) => {
-    if (o.isMesh)
-      o.material = new THREE.MeshStandardMaterial({
-        color: 0xbcc1c9,
-        metalness: 0.35,
-        roughness: 0.48,
-      });
+    if (!o.isMesh) return;
+    const colored = kind === "body" && o.name === "SuperHero_Male";
+    if (colored) {
+      o.geometry = o.geometry.clone();
+      const positions = o.geometry.attributes.position,
+        colors = new Float32Array(positions.count * 3);
+      o.geometry.computeBoundingBox();
+      const bounds = o.geometry.boundingBox,
+        h = bounds.max.y - bounds.min.y;
+      for (let i = 0; i < positions.count; i++) {
+        const zone = muscleZone(
+          positions.getX(i) / h,
+          (positions.getY(i) - bounds.min.y) / h,
+          positions.getZ(i),
+        );
+        const color = new THREE.Color(
+          primary.includes(zone)
+            ? 0xff202b
+            : secondary.includes(zone)
+              ? 0xff8b7c
+              : 0xa5abb4,
+        );
+        colors.set([color.r, color.g, color.b], i * 3);
+      }
+      o.geometry.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    }
+    o.material = new THREE.MeshStandardMaterial({
+      color: colored ? 0xffffff : 0xbcc1c9,
+      vertexColors: colored,
+      metalness: 0,
+      roughness: 0.78,
+    });
   });
-  // Poses are illustrative family thumbnails, never a substitute for an execution video.
-  const bone = (name, x = 0, y = 0, z = 0) => {
-    const b = object.getObjectByName(name);
-    if (b) {
-      b.rotation.x += x;
-      b.rotation.y += y;
-      b.rotation.z += z;
-    }
-  };
-  for (const side of ["l", "r"]) {
-    const sign = side === "l" ? 1 : -1;
-    if (kind !== "body" && kind !== "raise")
-      bone("upperarm_" + side, 0, 0, sign * 0.9);
-    if (["curl", "triceps", "press", "pull", "row"].includes(kind))
-      bone("lowerarm_" + side, 0, 0, sign * 0.85);
-    if (["squat", "legpress", "legs", "bike"].includes(kind)) {
-      bone("thigh_" + side, -0.55);
-      bone("calf_" + side, 0.8);
-    }
-    if (["deadlift", "row", "bridge"].includes(kind)) bone("spine_01", 0.35);
-    if (["run", "calf"].includes(kind)) bone("thigh_" + side, sign * 0.4);
-  }
   const box = new THREE.Box3().setFromObject(object),
     size = box.getSize(new THREE.Vector3()),
     center = box.getCenter(new THREE.Vector3());
@@ -89,7 +94,14 @@ function image(kind = "body", back = false) {
   object.rotation.y = back ? Math.PI : kind === "body" ? -0.28 : -0.6;
   scene.add(object);
   const camera = new THREE.PerspectiveCamera(31, 320 / 380, 0.01, 1000);
-  camera.position.set(0, size.y * 0.02, size.y * 2);
+  const distance =
+    Math.max(
+      size.y / (2 * Math.tan(THREE.MathUtils.degToRad(31 / 2))),
+      size.x / (2 * Math.tan(THREE.MathUtils.degToRad(31 / 2)) * camera.aspect),
+    ) *
+      1.17 +
+    size.z;
+  camera.position.set(0, size.y * 0.02, distance);
   camera.lookAt(0, 0, 0);
   scene.add(new THREE.HemisphereLight(0xffffff, 0x484c59, 2.6));
   const light = new THREE.DirectionalLight(0xffffff, 4);
@@ -101,14 +113,28 @@ function image(kind = "body", back = false) {
   renderer.render(scene, camera);
   const data = renderer.domElement.toDataURL("image/png");
   cache.set(key, data);
+  if (cache.size > 64) cache.delete(cache.keys().next().value);
   object.traverse((o) => {
-    if (o.isMesh) o.material.dispose();
+    if (o.isMesh) {
+      o.material.dispose();
+      if (kind === "body" && o.name === "SuperHero_Male") o.geometry.dispose();
+    }
   });
   return data;
 }
-function placeholder(kind = "body", back = false, thumb = false) {
+function placeholder(
+  kind = "body",
+  back = false,
+  thumb = false,
+  primary = [],
+  secondary = [],
+) {
   kind = safeModelKind(kind);
-  return `<img class="lume-model ${thumb ? "thumb" : ""}" data-model-kind="${kind}" data-model-back="${back}" alt="${back ? "Vista posterior" : "Modelo corporal 3D"}" width="320" height="380">`;
+  const allowed = (keys) =>
+    (Array.isArray(keys) ? keys : [keys])
+      .filter((k) => Object.hasOwn(MUSCLE_GROUPS, k))
+      .join(",");
+  return `<img class="lume-model ${thumb ? "thumb" : ""}" data-model-kind="${kind}" data-model-back="${back}" data-model-primary="${allowed(primary)}" data-model-secondary="${allowed(secondary)}" alt="${back ? "Vista posterior" : "Modelo corporal 3D"}" width="320" height="380">`;
 }
 const previousGraphic = window.trainingGraphic;
 // Function declarations in classic scripts are on window. Keep custom uploaded icons upstream.
@@ -121,7 +147,7 @@ window.muscleFigure = function (primary = [], secondary = []) {
       .filter((key) => Object.hasOwn(MUSCLE_GROUPS, key))
       .map((key) => MUSCLE_GROUPS[key])
       .join(", ");
-  return `<div class="model-pair"><figure>${placeholder()}<figcaption>Frente</figcaption></figure><figure>${placeholder("body", true)}<figcaption>Costas</figcaption></figure></div><p class="hint"><strong>Em foco: ${labels(primary) || "Geral"}.</strong>${labels(secondary) ? " Auxiliares: " + labels(secondary) + "." : ""} Modelo 3D ilustrativo; não representa ativação muscular.</p>`;
+  return `<div class="model-pair"><figure>${placeholder("body", false, false, primary, secondary)}<figcaption>Frente</figcaption></figure><figure>${placeholder("body", true, false, primary, secondary)}<figcaption>Costas</figcaption></figure></div><p class="model-focus-legend"><i></i><strong>${labels(primary) || "Selecione um grupo"}.</strong>${labels(secondary) ? " Auxiliares: " + labels(secondary) + "." : ""} Regiões esquemáticas; não medem ativação muscular.</p>`;
 };
 window.LumeModels = {
   enhance() {
@@ -135,6 +161,8 @@ window.LumeModels = {
               img.src = image(
                 img.dataset.modelKind,
                 img.dataset.modelBack === "true",
+                (img.dataset.modelPrimary || "").split(","),
+                (img.dataset.modelSecondary || "").split(","),
               );
               img.dataset.modelReady = "true";
             }
