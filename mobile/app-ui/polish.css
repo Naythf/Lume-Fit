@@ -2,6 +2,7 @@
   z-index: 300;
 }
 #bottomNav.nav { top: auto !important; height: auto !important; }
+#bottomNav button span { max-width: none !important; overflow: visible !important; text-overflow: clip !important; }
 #dialogOverlay {
   z-index: 500;
 }
