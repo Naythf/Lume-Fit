@@ -48,6 +48,10 @@ export default function WebApp() {
       onMessage={event => { void backup(event.nativeEvent.data); }}
       onNavigationStateChange={state => { currentUrl.current = state.url; canGoBack.current = state.canGoBack; }}
       onShouldStartLoadWithRequest={request => {
+        if (request.isTopFrame === false) {
+          try { const u = new URL(request.url); return u.protocol === 'https:' && ['www.youtube-nocookie.com', 'www.youtube.com', 'www.tiktok.com'].includes(u.hostname); }
+          catch { return false; }
+        }
         if (request.url === 'about:blank' || internalUrl(request.url)) return true;
         if (/^(https:|mailto:)/.test(request.url)) void Linking.openURL(request.url).catch(() => setNotice('Não foi possível abrir este link.'));
         return false;

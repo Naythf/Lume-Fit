@@ -9,6 +9,7 @@ dist/
 web-build/
 native-bundles/
 src/generated/
+app-ui/model-data.json
 expo-env.d.ts
 
 # Native
