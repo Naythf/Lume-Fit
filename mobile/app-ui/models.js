@@ -2,6 +2,7 @@ import * as THREE from "../../../design-tools/node_modules/three/build/three.mod
 import { GLTFLoader } from "../../../design-tools/node_modules/three/examples/jsm/loaders/GLTFLoader.js";
 import { clone } from "../../../design-tools/node_modules/three/examples/jsm/utils/SkeletonUtils.js";
 import model from "./model-data.json";
+import {safeModelKind} from './model-kind.js';
 let base, renderer;
 const cache = new Map();
 const loader = new GLTFLoader();
@@ -106,6 +107,7 @@ function image(kind = "body", back = false) {
   return data;
 }
 function placeholder(kind = "body", back = false, thumb = false) {
+  kind = safeModelKind(kind);
   return `<img class="lume-model ${thumb ? "thumb" : ""}" data-model-kind="${kind}" data-model-back="${back}" alt="${back ? "Vista posterior" : "Modelo corporal 3D"}" width="320" height="380">`;
 }
 const previousGraphic = window.trainingGraphic;
@@ -114,7 +116,12 @@ window.trainingGraphic = function (kind) {
   return placeholder(kind || "body", false, true);
 };
 window.muscleFigure = function (primary = [], secondary = []) {
-  return `<div class="model-pair"><figure>${placeholder()}<figcaption>Frente</figcaption></figure><figure>${placeholder("body", true)}<figcaption>Costas</figcaption></figure></div><p class="hint">Modelo 3D ilustrativo. Os grupos principais e auxiliares estão indicados em texto; não representa ativação muscular.</p>`;
+  const labels = (keys) =>
+    (Array.isArray(keys) ? keys : [keys])
+      .filter((key) => Object.hasOwn(MUSCLE_GROUPS, key))
+      .map((key) => MUSCLE_GROUPS[key])
+      .join(", ");
+  return `<div class="model-pair"><figure>${placeholder()}<figcaption>Frente</figcaption></figure><figure>${placeholder("body", true)}<figcaption>Costas</figcaption></figure></div><p class="hint"><strong>Em foco: ${labels(primary) || "Geral"}.</strong>${labels(secondary) ? " Auxiliares: " + labels(secondary) + "." : ""} Modelo 3D ilustrativo; não representa ativação muscular.</p>`;
 };
 window.LumeModels = {
   enhance() {

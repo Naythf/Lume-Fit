@@ -2,6 +2,11 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import {safeModelKind} from '../app-ui/model-kind.js';
+test('imported icon values cannot introduce attributes into model markup',()=>{
+  assert.equal(safeModelKind('squat'),'squat');
+  for(const value of ['\" onerror=alert(1) x=\"','<script>alert(1)</script>',null,{},'unknown'])assert.equal(safeModelKind(value),'body');
+});
 const source = readFileSync(
   new URL("../app-ui/experience.js", import.meta.url),
   "utf8",

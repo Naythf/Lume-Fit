@@ -190,6 +190,10 @@ openMuscleDetails = function (routineId, exerciseId) {
       "afterend",
       `<section class="lume-guide"><h4>Como executar</h4><p>${esc(g.description || g.suggestion || "Adicione sua descrição e um vídeo nas opções deste exercício.")}</p>${g.suggestion && !g.description ? '<p class="hint">Orientação do catálogo. Confira a variação e ajuste à sua execução.</p>' : ""}${g.video ? `<a href="${esc(g.video)}" target="_blank" rel="noopener noreferrer">Assistir ao vídeo de referência</a>` : ""}</section>`,
     );
+  if (g.suggestion)
+    document.querySelectorAll("#sheetContent > p.hint").forEach((note) => {
+      if (note.textContent === g.suggestion) note.remove();
+    });
 };
 function lumeMore() {
   openSheet(
@@ -320,6 +324,20 @@ new MutationObserver(() => {
   subtree: true,
 });
 const lumeOriginalSwitch = switchTab;
+// Onboarding and the automatic composer mount outside the main screen and sheet.
+new MutationObserver((records) => {
+  if (
+    records.some((record) =>
+      [...record.addedNodes].some(
+        (node) =>
+          node.nodeType === 1 &&
+          (node.matches("img[data-model-kind]") ||
+            node.querySelector("img[data-model-kind]")),
+      ),
+    )
+  )
+    window.LumeModels?.enhance();
+}).observe(document.body, { childList: true, subtree: true });
 switchTab = function (tab) {
   lumeOriginalSwitch(tab);
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -327,8 +345,9 @@ switchTab = function (tab) {
     document
       .querySelector("#bottomNav button:last-child")
       ?.classList.add("active");
-  document.querySelectorAll('#bottomNav button').forEach(button=>{
-    if(button.classList.contains('active'))button.setAttribute('aria-current','page');
-    else button.removeAttribute('aria-current');
+  document.querySelectorAll("#bottomNav button").forEach((button) => {
+    if (button.classList.contains("active"))
+      button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
   });
 };

@@ -30,6 +30,9 @@ html = html.replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, source) 
   } else {
     if (!/^[\w.-]+\.js$/.test(path)) throw Error('Script remoto/inesperado: ' + source);
     code = read(path); sources.push(path);
+    if (path === 'automatic-routines.js') {
+      code = code.replaceAll('O mapa destaca sua escolha.', 'Os grupos selecionados aparecem junto do modelo.').replaceAll('O mapa mostra os grupos principais incluídos no rascunho, sem medir ativação ou evolução.', 'Os nomes junto ao modelo mostram os grupos do rascunho, sem medir ativação ou evolução.');
+    }
     if (path === 'app.js') {
       const before = "if ('serviceWorker' in navigator && !location.hostname.endsWith('.chatgpt.site'))";
       if (!code.includes(before)) throw Error('Rever adaptação do service worker.');
