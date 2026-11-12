@@ -184,6 +184,7 @@ openMuscleDetails = function (routineId, exerciseId) {
     ?.exercises.find((e) => e.id === exerciseId);
   if (!e) return;
   const g = lumeGuide(e);
+  document.querySelector('#sheetContent h3')?.insertAdjacentHTML('beforebegin','<button type="button" class="icon-btn" style="float:right" aria-label="Fechar execução" onclick="closeSheet()">×</button>');
   document
     .querySelector("#sheetContent h3")
     ?.insertAdjacentHTML(
@@ -233,7 +234,7 @@ function lumeActiveGuide() {
   else {
     const g = lumeGuide({ id: e.exerciseId });
     openSheet(
-      `<h3>${esc(e.name)}</h3><section class="lume-guide"><h4>Como executar</h4><p>${esc(g.description || "A referência deste exercício não está disponível nesta rotina.")}</p>${g.video ? `<a href="${esc(g.video)}" target="_blank" rel="noopener noreferrer">Abrir vídeo original</a>` : ""}</section>`,
+      `<button type="button" class="icon-btn" style="float:right" aria-label="Fechar execução" onclick="closeSheet()">×</button><h3>${esc(e.name)}</h3><section class="lume-guide"><h4>Como executar</h4><p>${esc(g.description || "A referência deste exercício não está disponível nesta rotina.")}</p>${g.video ? `<a href="${esc(g.video)}" target="_blank" rel="noopener noreferrer">Abrir vídeo original</a>` : ""}</section>`,
     );
   }
 }
