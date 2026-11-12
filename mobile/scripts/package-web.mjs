@@ -47,7 +47,14 @@ html = html.replace(/<script\b[^>]*src="([^"]+)"[^>]*><\/script>/g, (_, source) 
   return `<script data-lume-source="${path.startsWith('https:') ? 'supabase-sdk' : path}">${inlineImages(code).replace(/<\/script/gi, '<\\/script')}</script>`;
 });
 html = inlineImages(html);
+const appCss = inlineImages(['glass.css','polish.css'].map(file=>readFileSync(resolve(mobile, 'app-ui',file), 'utf8')).join('\n'));
+const appExperience = readFileSync(resolve(mobile, 'app-ui/experience.js'), 'utf8');
+const appModels = readFileSync(resolve(mobile, 'app-ui/models.bundle.js'), 'utf8');
+html = html.replace('</head>', () => `<style data-lume-app="glass">${appCss}</style></head>`);
+html = html.replace('</body>', () => `<script>${appModels.replace(/<\/script/gi,'<\\/script')}</script><script>${appExperience.replace(/<\/script/gi,'<\\/script')}</script></body>`);
 const sdkLicense = readFileSync(resolve(mobile, 'vendor/supabase-LICENSE'), 'utf8').replaceAll('--', '- -');
+const visualLicenses = ['vendor/three-LICENSE','assets/models/License_Standard.txt'].map(file=>readFileSync(resolve(mobile,file),'utf8').replaceAll('--','- -')).join('\n');
+html = html.replace('<head>', () => '<head><!-- Visual assets and renderer licenses:\n'+visualLicenses+' -->');
 html = html.replace('<head>', '<head><!-- Supabase JS 2.76.1: ' + sdkLicense + ' --><meta name="lume-packaged" content="LUME_PACKAGED_OFFLINE_V1"><script>window.LUME_PACKAGED=true;</script>');
 // No external render assets may escape this build. API calls are still allowed when the user uses online features.
 const markup = html.replace(/<script\b[\s\S]*?<\/script>/gi, '');
