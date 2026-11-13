@@ -59,15 +59,16 @@ function studioHeroPages(db, active) {
 function studioHeroMarkup() {
   const pages = studioHeroPages(state.db, state.activeWorkout),
     p = pages[0];
-  return `<section class="studio-session studio-reveal" aria-label="Destaques do Lume Fit" aria-roledescription="carrossel" data-studio-hero><div class="studio-hero-photos" aria-hidden="true">${STUDIO_HERO_PHOTOS.map((src, i) => `<img class="studio-hero-frame ${i === 0 ? "is-active" : ""}" src="${src}" alt="" width="1200" height="800" decoding="async" draggable="false">`).join("")}</div><div class="studio-session-copy"><span class="studio-session-state" data-hero-copy="eyebrow">${esc(p.eyebrow)}</span><h2 data-hero-copy="title">${esc(p.title)}</h2><p data-hero-copy="description">${esc(p.description)}</p><button type="button" class="primary-btn" data-hero-destination="${p.destination}"><span data-hero-copy="action">${esc(p.action)}</span><span aria-hidden="true">${studioChevron("right")}</span></button></div><div class="studio-carousel-controls"><div class="studio-carousel-dots" role="group" aria-label="Escolher destaque e parar troca automática">${pages.map((page, i) => `<button type="button" data-hero-photo="${i}" aria-label="${esc(page.eyebrow)} — ${i + 1} de 5" ${i === 0 ? 'aria-current="true"' : ""}><i aria-hidden="true"></i></button>`).join("")}</div></div></section>`;
+  return `<section class="studio-session studio-reveal" aria-label="Destaques do Lume Fit" aria-roledescription="carrossel" data-studio-hero><div class="studio-hero-photos" aria-hidden="true">${STUDIO_HERO_PHOTOS.map((src, i) => `<img class="studio-hero-frame ${i === 0 ? "is-active" : ""}" src="${src}" alt="" width="1200" height="800" decoding="async" draggable="false">`).join("")}</div><div class="studio-session-copy"><span class="studio-session-state" data-hero-copy="eyebrow">${esc(p.eyebrow)}</span><h2 data-hero-copy="title">${esc(p.title)}</h2><p data-hero-copy="description">${esc(p.description)}</p><button type="button" class="primary-btn" data-hero-destination="${p.destination}"><span data-hero-copy="action">${esc(p.action)}</span><span aria-hidden="true">${studioChevron("right")}</span></button></div><div class="studio-carousel-controls"><div class="studio-carousel-dots" role="group" aria-label="Escolher destaque">${pages.map((page, i) => `<button type="button" data-hero-photo="${i}" aria-label="${esc(page.eyebrow)} — ${i + 1} de 5" ${i === 0 ? 'aria-current="true"' : ""}><i aria-hidden="true"></i></button>`).join("")}</div></div></section>`;
 }
 window.LumeHeroCarousel = (() => {
   let hero = null,
     timer = null,
     index = 0,
     drawn = -1,
-    paused = false,
-    hovered = false,
+    keyboardPaused = false,
+    pointerHeld = false,
+    pointerId = null,
     inView = false,
     touch = null,
     observer = null,
@@ -127,9 +128,11 @@ window.LumeHeroCarousel = (() => {
       hero.closest(".screen")?.classList.contains("active") &&
       !document.hidden &&
       inView &&
-      !paused &&
-      !hovered &&
-      !hero.contains(document.activeElement) &&
+      !keyboardPaused &&
+      !pointerHeld &&
+      !document.querySelector(
+        ".sheet.active,dialog[open],.personalize-panel:not([hidden])",
+      ) &&
       !LumeMotionPreference.matches
     );
   }
@@ -152,9 +155,21 @@ window.LumeHeroCarousel = (() => {
     draw();
     sync();
   }
-  function stop() {
-    paused = true;
-    clear();
+  function finishPointer(event, cancelled = false) {
+    if (!pointerHeld || (event && pointerId !== event.pointerId)) return;
+    pointerHeld = false;
+    pointerId = null;
+    const start = touch;
+    touch = null;
+    if (!cancelled && start && event) {
+      const dx = event.clientX - start.x,
+        dy = event.clientY - start.y;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        move(index + (dx < 0 ? 1 : -1));
+        return;
+      }
+    }
+    sync();
   }
   function enhance() {
     const next = document.querySelector("#screen-home [data-studio-hero]");
@@ -168,8 +183,9 @@ window.LumeHeroCarousel = (() => {
     hero = next;
     index = 0;
     drawn = -1;
-    hovered = false;
-    paused = false;
+    keyboardPaused = false;
+    pointerHeld = false;
+    pointerId = null;
     inView = false;
     touch = null;
     if (!hero) return;
@@ -177,10 +193,9 @@ window.LumeHeroCarousel = (() => {
       const dot = e.target.closest("[data-hero-photo]"),
         action = e.target.closest("[data-hero-destination]");
       if (dot) {
-        stop();
         move(Number(dot.dataset.heroPhoto));
       } else if (action) {
-        stop();
+        clear();
         const destination = action.dataset.heroDestination;
         if (
           ![
@@ -197,29 +212,29 @@ window.LumeHeroCarousel = (() => {
         switchTab(destination);
       }
     });
-    hero.addEventListener("focusin", stop);
-    hero.addEventListener("mouseenter", () => {
-      hovered = true;
+    hero.addEventListener("focusin", (event) => {
+      keyboardPaused = event.target.matches(":focus-visible");
       sync();
     });
-    hero.addEventListener("mouseleave", () => {
-      hovered = false;
-      sync();
-    });
+    hero.addEventListener("focusout", () =>
+      queueMicrotask(() => {
+        if (!hero?.contains(document.activeElement)) keyboardPaused = false;
+        sync();
+      }),
+    );
     hero.addEventListener("pointerdown", (e) => {
-      stop();
+      if (pointerHeld) return;
+      pointerHeld = true;
+      pointerId = e.pointerId;
+      keyboardPaused = false;
+      clear();
       if (e.pointerType !== "mouse" && !e.target.closest("button"))
         touch = { x: e.clientX, y: e.clientY };
     });
-    hero.addEventListener("pointercancel", () => (touch = null));
-    hero.addEventListener("pointerup", (e) => {
-      if (!touch) return;
-      const dx = e.clientX - touch.x,
-        dy = e.clientY - touch.y;
-      touch = null;
-      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2)
-        move(index + (dx < 0 ? 1 : -1));
-    });
+    hero.addEventListener("pointerup", (event) => finishPointer(event));
+    hero.addEventListener("pointercancel", (event) =>
+      finishPointer(event, true),
+    );
     if (typeof IntersectionObserver === "function") {
       observer = new IntersectionObserver(
         (entries) => {
@@ -233,10 +248,29 @@ window.LumeHeroCarousel = (() => {
     sync();
   }
   LumeMotionPreference.addEventListener("change", sync);
+  document.addEventListener("pointerup", (event) => finishPointer(event));
+  document.addEventListener("pointercancel", (event) =>
+    finishPointer(event, true),
+  );
+  window.addEventListener("blur", () => finishPointer(null, true));
   document.addEventListener("visibilitychange", sync);
   new MutationObserver(sync).observe(document.getElementById("screen-home"), {
     attributes: true,
     attributeFilter: ["class"],
   });
+  for (const id of [
+    "sheet",
+    "dialogOverlay",
+    "autoRoutineDialog",
+    "legalDialog",
+    "personalizePanel",
+  ]) {
+    const overlay = document.getElementById(id);
+    if (overlay)
+      new MutationObserver(sync).observe(overlay, {
+        attributes: true,
+        attributeFilter: ["class", "open", "hidden"],
+      });
+  }
   return { enhance };
 })();

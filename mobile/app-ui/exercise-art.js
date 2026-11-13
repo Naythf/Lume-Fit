@@ -1,6 +1,8 @@
 // Actual exercise illustrations, explicit catalog matches and user-controlled selection.
 // Exercise data by RepDB (repdb.co), Free Tier License. Assets incorporated into this app only.
 const studioCatalogArt = {
+  "db-bench": "db-bench-press",
+  "bar-bench": "bench-press",
   "wall-push": "wall-push-ups",
   "knee-push": "knee-push-ups",
   pushup: "push-up",

@@ -62,6 +62,9 @@ html = html.replace(
         throw Error("Script remoto/inesperado: " + source);
       code = read(path);
       sources.push(path);
+      if (path === "exercise-catalog.js")
+        code +=
+          "\n" + readFileSync(resolve(mobile, "app-ui/planner.js"), "utf8");
       if (path === "controls.js") {
         const openAnchor =
           "record.popup.hidden=false;attr(record.button,'aria-expanded',true);";
@@ -100,6 +103,23 @@ html = html.replace(
           );
       }
       if (path === "automatic-routines.js") {
+        const exerciseHead =
+          '<div><h3>${esc(c.name)}</h3>${muscleBadges(m)}<small>${esc(equipmentLabel(c))}</small></div></div><p class="auto-reason">';
+        if (!code.includes(exerciseHead))
+          throw Error("Rever composição do cartão de exercício.");
+        code = code
+          .replace(
+            exerciseHead,
+            '<div><h3>${esc(c.name)}</h3></div></div><div class="auto-exercise-meta">${muscleBadges(m)}<small>${esc(equipmentLabel(c))}</small></div><p class="auto-reason">',
+          )
+          .replace(
+            "${prefs.goal==='strength'?90:60} s de intervalo",
+            "${LumePlanner.restSeconds(prefs.goal)} s de intervalo",
+          )
+          .replace(
+            "O catálogo é limitado: confira abaixo o que foi incluído.",
+            "A escolha considera nível e apoios, evita variantes repetidas e usa o tempo como limite. Confira e ajuste o que foi incluído.",
+          );
         code = code
           .replaceAll(
             "O mapa destaca sua escolha.",
@@ -151,7 +171,13 @@ const font =
   "data:font/ttf;base64," +
   readFileSync(resolve(mobile, "assets/fonts/Manrope.ttf")).toString("base64");
 const appCss = inlineImages(
-  ["glass.css", "polish.css", "studio.css", "anatomy-panels.css"]
+  [
+    "glass.css",
+    "polish.css",
+    "studio.css",
+    "anatomy-panels.css",
+    "responsive.css",
+  ]
     .map((file) => readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .join("\n"),
 ).replaceAll("__MANROPE_FONT__", font);
@@ -183,6 +209,7 @@ const studioScripts = [
   "exercise-art.js",
   "studio.js",
   "panels.js",
+  "responsive.js",
 ].map((file) =>
   inlineImages(readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .replaceAll("__HERO_RACK__", heroPhoto("dumbbell-rack.webp"))

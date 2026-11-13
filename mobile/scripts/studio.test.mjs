@@ -135,7 +135,7 @@ test("hero photography is embedded offline and credit remains accessible from se
   assert.ok(app.includes("Sobre e créditos"));
   assert.ok(!app.includes("studioFooter.append"));
   assert.ok(!html.includes('data-hero-command="pause"'));
-  assert.ok(html.includes('Escolher destaque e parar troca automática'));
+  assert.ok(html.includes('Escolher destaque'));
 });
 
 test("home greeting uses the saved profile name as escaped text", () => {
