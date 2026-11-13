@@ -18,7 +18,12 @@ createServer((req, res) => {
     "Content-Security-Policy":
       "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; font-src data:; connect-src 'none'; form-action 'none'",
   });
-  res.end(html);
+  // QA-only legacy WebView fallback: exercise the same portal without Popover API.
+  res.end(
+    process.env.LUME_QA_LEGACY_SELECTS === "1"
+      ? html.replace("typeof record.popup.showPopover==='function'", "false")
+      : html,
+  );
 }).listen(port, "127.0.0.1", () =>
   console.log(`Prévia sem rede: http://127.0.0.1:${port} · connect-src none`),
 );

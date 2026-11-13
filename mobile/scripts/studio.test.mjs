@@ -2,7 +2,6 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import vm from "node:vm";
-import { muscleZone } from "../app-ui/muscle-zones.js";
 const read = (p) => fs.readFileSync(new URL(p, import.meta.url), "utf8");
 const art = JSON.parse(read("../assets/exercise-art/manifest.json"));
 const context = vm.createContext({ LUME_EXERCISE_ART: art });
@@ -65,15 +64,6 @@ test("all mapped illustrations are local licensed files with a visible in-app cr
   assert.ok(html.includes("Exercise data by RepDB (repdb.co)"));
   assert.ok(html.includes("data:font/ttf;base64,"));
   assert.ok(!html.includes("QA offline isolado"));
-});
-test("body surface separates anterior and posterior muscle regions", () => {
-  assert.equal(muscleZone(0.02, 0.72, 0.07), "chest");
-  assert.equal(muscleZone(0.02, 0.72, -0.07), "back");
-  assert.equal(muscleZone(0.27, 0.73, 0.04), "biceps");
-  assert.equal(muscleZone(0.27, 0.73, -0.04), "triceps");
-  assert.equal(muscleZone(0.05, 0.3, 0.02), "quads");
-  assert.equal(muscleZone(0.05, 0.3, -0.02), "hamstrings");
-  assert.equal(muscleZone(0, 0.95, 0), "");
 });
 
 test("custom dates commit through existing callbacks and respect min/max constraints", () => {
@@ -144,7 +134,8 @@ test("hero photography is embedded offline and credit remains accessible from se
   const app = read("../app-ui/studio.js");
   assert.ok(app.includes("Sobre e créditos"));
   assert.ok(!app.includes("studioFooter.append"));
-  assert.match(html, /Pausar troca automática de fotos/);
+  assert.ok(!html.includes('data-hero-command="pause"'));
+  assert.ok(html.includes('Escolher destaque e parar troca automática'));
 });
 
 test("home greeting uses the saved profile name as escaped text", () => {
@@ -167,6 +158,8 @@ test("home greeting uses the saved profile name as escaped text", () => {
     allExercises: () => [],
     studioHeroFrames: () => "",
     studioHeroControls: () => "",
+    studioHeroMarkup: () => "",
+    studioChevron: () => "",
     studioActionIcon: () => "",
     weeklyActivityCard: () => "",
     foodDiaryIcon: () => "",

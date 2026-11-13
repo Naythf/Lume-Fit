@@ -1,10 +1,6 @@
 /* Lume Studio: app-specific information architecture, never applied to the published site. */
 function studioHome() {
-  const now = new Date(),
-    routines = state.db.routines,
-    active = state.activeWorkout;
-  const routine =
-    routines.find((r) => r.weekday === now.getDay()) || routines[0];
+  const now = new Date();
   const recent = activitySessions(state.db.sessions)
     .slice()
     .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -18,11 +14,11 @@ function studioHome() {
   const name = String(state.db.profile.name || "").trim() || "Atleta";
   document.getElementById("screen-home").innerHTML =
     `<div class="studio-title"><h1>Olá, ${esc(name)}.</h1></div>
- <section class="studio-session studio-reveal" aria-label="Treino em destaque" data-studio-hero>${studioHeroFrames()}<div class="studio-session-copy"><span class="studio-session-state">${active ? "Em andamento" : routine ? "Pronto para começar" : "Seu próximo passo"}</span><h2>${esc(active?.name || routine?.name || "Um plano que cabe no seu dia.")}</h2><p>${active ? "Seu rascunho está salvo. Continue de onde parou." : routine ? `${routine.exercises.length} exercícios · ${routine.exercises.reduce((n, e) => n + e.sets, 0)} séries planejadas` : "Crie uma rotina ou monte um plano com os equipamentos que você tem."}</p><button class="primary-btn" data-studio-action="${active ? "resume" : routine?.exercises.length ? "start" : "create"}" data-id="${esc(routine?.id || "")}">${active ? "Continuar treino" : routine?.exercises.length ? "Começar treino" : "Organizar meu treino"}<span aria-hidden="true">${studioActionIcon()}</span></button>${routine && !active ? '<button class="studio-text-button" onclick="LumeStudio.routines()">Escolher outra rotina</button>' : ""}</div>${studioHeroControls()}</section>
+ ${studioHeroMarkup()}
  <section class="studio-week studio-reveal" aria-label="Sua semana">${weeklyActivityCard()}</section>
  <section class="studio-overview studio-reveal"><header><h2>Visão geral</h2><span>Seus registros</span></header><dl><div><dt>Treinos no mês</dt><dd>${month}</dd></div><div><dt>Meta da semana</dt><dd>${goal === null ? "—" : goal + "%"}</dd></div><div><dt>Exercícios no plano</dt><dd>${exercises}</dd></div></dl></section>
- <section class="studio-journal studio-reveal"><div>${foodDiaryIcon()}<div><h2>Diário alimentar</h2><p>${meals} ${meals === 1 ? "refeição registrada" : "refeições registradas"} hoje</p></div></div><button class="studio-text-button" onclick="switchTab('nutrition')">Abrir diário</button></section>
- <section class="studio-history studio-reveal"><header><h2>Últimos treinos</h2><button class="studio-text-button" onclick="switchTab('history')">Histórico</button></header>${recent.length ? recent.map((s) => `<article class="studio-history-row"><div class="studio-history-art" aria-hidden="true">${recentWorkoutVisual(s)}</div><div><h3>${esc(s.name)}</h3><p>${shortDate(s.date)} · ${(s.entries || []).length} ${(s.entries || []).length === 1 ? "exercício" : "exercícios"}</p></div></article>`).join("") : '<p class="studio-empty">Seus treinos concluídos aparecem aqui. Comece pelo seu primeiro registro.</p>'}</section>`;
+ <section class="studio-journal studio-reveal"><img class="studio-journal-photo" src="__HERO_FOOD__" alt="" width="240" height="240"><div class="studio-journal-copy"><div><h2>Diário alimentar</h2><p>${meals} ${meals === 1 ? "refeição registrada" : "refeições registradas"} hoje</p></div></div><button class="studio-route-button" onclick="switchTab('nutrition')">Abrir diário ${studioChevron("right")}</button></section>
+ <section class="studio-history studio-reveal"><header><h2>Últimos treinos</h2><button class="studio-route-button" onclick="switchTab('history')">Histórico ${studioChevron("right")}</button></header>${recent.length ? recent.map((s) => `<article class="studio-history-row"><div class="studio-history-art" aria-hidden="true">${recentWorkoutVisual(s)}</div><div><h3>${esc(s.name)}</h3><p>${shortDate(s.date)} · ${(s.entries || []).length} ${(s.entries || []).length === 1 ? "exercício" : "exercícios"}</p></div></article>`).join("") : '<p class="studio-empty">Seus treinos concluídos aparecem aqui. Comece pelo seu primeiro registro.</p>'}</section>`;
 }
 renderHome = studioHome;
 window.LumeStudio = {
@@ -33,7 +29,7 @@ window.LumeStudio = {
   },
   credits() {
     openSheet(
-      '<button class="icon-btn studio-close" aria-label="Fechar créditos" onclick="closeSheet()">×</button><h3>Sobre e créditos</h3><p><a href="https://repdb.co" target="_blank" rel="noopener noreferrer nofollow">Exercise data by RepDB (repdb.co)</a></p><p>Ilustrações com fundo processado sem IA generativa. Modelos corporais: Quaternius, CC0. Tipografia: Manrope, SIL Open Font License.</p><h4>Fotografia</h4><p>Fotos de equipamentos por Tima Miroshnichenko e Victor Freitas, via <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a>.</p>',
+      '<button class="icon-btn studio-close" aria-label="Fechar créditos" onclick="closeSheet()">×</button><h3>Sobre e créditos</h3><p><a href="https://repdb.co" target="_blank" rel="noopener noreferrer nofollow">Exercise data by RepDB (repdb.co)</a></p><p>Ilustrações com fundo processado sem IA generativa. Mapa anatômico: <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noopener noreferrer">react-native-body-highlighter</a>, ELABBASSI Hicham, MIT. Tipografia: Manrope, SIL Open Font License.</p><h4>Fotografia</h4><p>Fotos de equipamentos por Tima Miroshnichenko, Victor Freitas, furkanfdemir e hi room, via <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a>.</p>',
     );
   },
 };
@@ -292,7 +288,7 @@ lumeMore = function () {
   const items = [
     ["frequency", "Frequência", "Calendário e histórico", calendarIcon()],
     ["friends", "Amigos", "Conexões e perfil", friendsIcon()],
-    ["knowledge", "Saber", "Referências e ferramentas", boltIcon()],
+    ["knowledge", "Guias", "Referências e ferramentas", boltIcon()],
     ["settings", "Ajustes", "Dados e preferências", preferencesIcon()],
   ];
   openSheet(
@@ -351,3 +347,8 @@ document.addEventListener("visibilitychange", () => {
 if (document.getElementById("screen-home")?.classList.contains("active"))
   studioHome();
 studioEnhance();
+
+// App-only entry: full anatomy and options belong inside the composer.
+automaticRoutineEntry = function () {
+  return `<section class="auto-entry"><div><small>Rotina automática</small><h3>Um plano para sua semana.</h3><p>Foco, dias e equipamentos.<br>Um plano que você pode ajustar.</p><button class="primary-btn" onclick="AutoRoutine.open()">Montar minha rotina ${studioChevron("right")}</button></div></section>`;
+};
