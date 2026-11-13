@@ -4,7 +4,7 @@ Issue #72. The published site assets and server schema are unchanged. The app re
 
 ## Composition
 
-Home now has one workout decision, followed by the week, three inline metrics, a separated food journal row and two recent records. No greeting, duplicated planning shortcut or total-volume tile. History and full information remain in their existing destinations. The header preserves the original Lume mark and name; Manrope provides a consistent readable type scale.
+Home greets the person by their saved profile name and presents one workout decision, followed by the week, three inline metrics, a separated food journal row and two recent records. The header groups connection status, local weekday/date and morning/afternoon/night in a bordered surface. There is no duplicated planning shortcut or total-volume tile. History and full information remain in their existing destinations. The header preserves the original Lume mark and name; Manrope provides a consistent readable type scale.
 
 The bottom navigation retains four destinations. The Lume Hub sheet has four quiet rows: Frequency, Friends, Knowledge and Settings. Dark translucent surfaces use blur, soft borders and visible focus. Checkboxes, radio buttons, selects and date/time controls follow this surface language. The custom date/time overlay preserves the original form value and callbacks, blocks background interaction and restores focus. Escape and Tab stay within the active surface. Month navigation retains focus.
 
@@ -27,3 +27,13 @@ Workspace-local references in ../design-skills: Fitness and Gym (clawic/skills),
 ## Validation
 
 Automated coverage includes exact movement/equipment matching, unknown variants, local asset presence and credit, anterior/posterior muscle regions, bundled scripts, offline presentation, document preservation and existing workout behavior. Browser QA uses connect-src none, local-only test records and mobile/desktop widths. Physical Android installation, camera/gallery and airplane-mode behavior require device testing of the delivered APK.
+
+## Header and photograph refinements · Issue #74
+
+The avatar is a fixed 48 px frame with a centered 24 px SVG, or a full-frame photo, removing the prior padding/minimum-size mismatch. The routine return action uses a consistent chevron and label. Supporting type has a modest increase across home, forms, weekly notes and records.
+
+The highlight uses the original weight photo and two real Pexels equipment photos, prepackaged locally. Only the decorative photo layer changes; workout text and controls stay still. Dots, previous/next, pause/resume, keyboard focus and touch swipes are available. Automatic rotation pauses when the hero is offscreen, inactive, hidden, hovered or focused. Explicit resume restarts rotation. Reduced motion disables automatic rotation and transitions while preserving manual controls. No remote photo request is made at runtime. Source/license records are in assets/hero/LICENSE.md.
+
+RepDB attribution remains clearly visible in Settings → About and credits, as permitted by its free-tier license. The footer no longer repeats it.
+
+The QA server accepts LUME_QA_PORT. A clean preview on port 8085 isolates its local storage from older test records on 8084 without deleting or rewriting those records. No record-name filtering, replacement or test data is included in the application.
