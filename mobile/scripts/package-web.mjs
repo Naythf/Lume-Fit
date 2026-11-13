@@ -65,6 +65,20 @@ html = html.replace(
       if (path === "exercise-catalog.js")
         code +=
           "\n" + readFileSync(resolve(mobile, "app-ui/planner.js"), "utf8");
+      if (path === "app.js") {
+        const anchor =
+          "out.profile.social=normalizeSocialProfile(out.profile.social);";
+        if (!code.includes(anchor))
+          throw Error("Rever normalização privada do Meu guia.");
+        code =
+          readFileSync(resolve(mobile, "app-ui/guide-core.js"), "utf8") +
+          "\n" +
+          code.replace(
+            anchor,
+            "out.profile.meuGuia=LumeGuideCore.normalize(out.profile.meuGuia);\n" +
+              anchor,
+          );
+      }
       if (path === "controls.js") {
         const openAnchor =
           "record.popup.hidden=false;attr(record.button,'aria-expanded',true);";
@@ -177,6 +191,7 @@ const appCss = inlineImages(
     "studio.css",
     "anatomy-panels.css",
     "responsive.css",
+    "guide.css",
   ]
     .map((file) => readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .join("\n"),
@@ -210,6 +225,7 @@ const studioScripts = [
   "studio.js",
   "panels.js",
   "responsive.js",
+  "guide.js",
 ].map((file) =>
   inlineImages(readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .replaceAll("__HERO_RACK__", heroPhoto("dumbbell-rack.webp"))

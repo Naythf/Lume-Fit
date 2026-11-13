@@ -39,10 +39,10 @@ function studioHeroPages(db, active) {
     },
     {
       key: "knowledge",
-      eyebrow: "Guias e ferramentas",
+      eyebrow: "Meu guia",
       title: "Mais clareza em cada escolha.",
       description: "Consulte referências e ferramentas para o seu dia.",
-      action: "Explorar guias",
+      action: "Abrir meu guia",
       destination: "knowledge",
     },
     {

@@ -288,7 +288,7 @@ lumeMore = function () {
   const items = [
     ["frequency", "Frequência", "Calendário e histórico", calendarIcon()],
     ["friends", "Amigos", "Conexões e perfil", friendsIcon()],
-    ["knowledge", "Guias", "Referências e ferramentas", boltIcon()],
+    ["knowledge", "Meu guia", "Alimentação e evolução", boltIcon()],
     ["settings", "Ajustes", "Dados e preferências", preferencesIcon()],
   ];
   openSheet(
