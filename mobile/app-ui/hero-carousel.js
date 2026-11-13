@@ -68,6 +68,7 @@ window.LumeHeroCarousel = (() => {
     drawn = -1,
     keyboardPaused = false,
     pointerHeld = false,
+    pointerId = null,
     inView = false,
     touch = null,
     observer = null,
@@ -154,6 +155,22 @@ window.LumeHeroCarousel = (() => {
     draw();
     sync();
   }
+  function finishPointer(event, cancelled = false) {
+    if (!pointerHeld || (event && pointerId !== event.pointerId)) return;
+    pointerHeld = false;
+    pointerId = null;
+    const start = touch;
+    touch = null;
+    if (!cancelled && start && event) {
+      const dx = event.clientX - start.x,
+        dy = event.clientY - start.y;
+      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+        move(index + (dx < 0 ? 1 : -1));
+        return;
+      }
+    }
+    sync();
+  }
   function enhance() {
     const next = document.querySelector("#screen-home [data-studio-hero]");
     if (next === hero) {
@@ -168,6 +185,7 @@ window.LumeHeroCarousel = (() => {
     drawn = -1;
     keyboardPaused = false;
     pointerHeld = false;
+    pointerId = null;
     inView = false;
     touch = null;
     if (!hero) return;
@@ -205,30 +223,18 @@ window.LumeHeroCarousel = (() => {
       }),
     );
     hero.addEventListener("pointerdown", (e) => {
+      if (pointerHeld) return;
       pointerHeld = true;
+      pointerId = e.pointerId;
       keyboardPaused = false;
       clear();
       if (e.pointerType !== "mouse" && !e.target.closest("button"))
         touch = { x: e.clientX, y: e.clientY };
     });
-    hero.addEventListener("pointercancel", () => {
-      touch = null;
-      pointerHeld = false;
-      sync();
-    });
-    hero.addEventListener("pointerup", (e) => {
-      pointerHeld = false;
-      if (!touch) {
-        sync();
-        return;
-      }
-      const dx = e.clientX - touch.x,
-        dy = e.clientY - touch.y;
-      touch = null;
-      if (Math.abs(dx) > 45 && Math.abs(dx) > Math.abs(dy) * 1.2)
-        move(index + (dx < 0 ? 1 : -1));
-      else sync();
-    });
+    hero.addEventListener("pointerup", (event) => finishPointer(event));
+    hero.addEventListener("pointercancel", (event) =>
+      finishPointer(event, true),
+    );
     if (typeof IntersectionObserver === "function") {
       observer = new IntersectionObserver(
         (entries) => {
@@ -242,6 +248,11 @@ window.LumeHeroCarousel = (() => {
     sync();
   }
   LumeMotionPreference.addEventListener("change", sync);
+  document.addEventListener("pointerup", (event) => finishPointer(event));
+  document.addEventListener("pointercancel", (event) =>
+    finishPointer(event, true),
+  );
+  window.addEventListener("blur", () => finishPointer(null, true));
   document.addEventListener("visibilitychange", sync);
   new MutationObserver(sync).observe(document.getElementById("screen-home"), {
     attributes: true,

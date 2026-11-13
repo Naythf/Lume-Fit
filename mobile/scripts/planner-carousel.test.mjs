@@ -208,6 +208,7 @@ function carousel() {
   const timers = new Map(),
     events = {},
     motionEvents = {},
+    documentEvents = {},
     animations = [],
     observers = [];
   const frames = Array.from({ length: 5 }, () => ({
@@ -266,7 +267,9 @@ function carousel() {
     querySelector: (s) =>
       s.includes("data-studio-hero") ? hero : blocked ? {} : null,
     getElementById: () => ({}),
-    addEventListener() {},
+    addEventListener(name, fn) {
+      documentEvents[name] = fn;
+    },
   };
   const motion = {
     matches: false,
@@ -299,6 +302,7 @@ function carousel() {
     clearTimeout: (id) => timers.delete(id),
     queueMicrotask: (fn) => fn(),
     switchTab() {},
+    addEventListener() {},
   });
   vm.runInContext("window=globalThis", ctx);
   vm.runInContext(read("../app-ui/hero-carousel.js"), ctx);
@@ -318,6 +322,7 @@ function carousel() {
     hero,
     document,
     events,
+    documentEvents,
     motion,
     animations,
     frames,
@@ -395,4 +400,17 @@ test("keyboard focus, held gestures, reduced motion, overlays and hidden screens
   c.visible(true);
   c.advance(8000);
   assert.equal(c.hero.dataset.heroIndex, "4");
+});
+test("releasing a gesture outside the hero resumes automatic rotation", () => {
+  const c = carousel();
+  c.events.pointerdown({
+    pointerId: 4,
+    pointerType: "mouse",
+    target: { closest: () => null },
+  });
+  c.advance(16000);
+  assert.equal(c.hero.dataset.heroIndex, "0");
+  c.documentEvents.pointerup({ pointerId: 4, clientX: 900, clientY: 500 });
+  c.advance(8000);
+  assert.equal(c.hero.dataset.heroIndex, "1");
 });

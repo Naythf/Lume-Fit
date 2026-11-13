@@ -32,7 +32,7 @@ Não se conhece execução, tolerância, lesões ou capacidade individual apenas
 
 ## Evidência
 
-- 30 testes aprovados, incluindo 1.600 combinações do novo gerador: tempo, equipamento, experiência, grupos, famílias sem duplicação, independência de ilustrações e elegibilidade dos apoios. Casos de carrossel cobrem rotação após toque, texto/foto/ação sincronizados e retomada após pausas temporárias.
+- 31 testes aprovados, incluindo 1.600 combinações do novo gerador: tempo, equipamento, experiência, grupos, famílias sem duplicação, independência de ilustrações e elegibilidade dos apoios. Casos de carrossel cobrem rotação após toque, texto/foto/ação sincronizados, retomada após pausas temporárias e gesto solto fora do cartão.
 - `npm run typecheck`, `npm run lint` e `node checks.cjs` aprovados. Sem dependência nova ou mudança de API nativa.
 - Navegador Chromium/IAB, larguras reais de 320, 337, 375, 390, 558, 768 e 1280 px; retrato de 571/700/852 px. Guias, formulário alimentar, perfil, seletor de ícone, editor de exercício e cartões do compositor conferidos por renderização e dimensões DOM. Foi corrigido um caso adicional de overflow de “Desenvolvimento” na grade de ícones em 558/768 px.
 - Depois de um toque no destaque Alimentação (índice 1), em 25,7 s o navegador mostrou Amigos (índice 4), com imagem 4 e destino friends, sem outro clique. As capturas estáticas mostram estados, não comprovam taxa de quadros; não foi medido desempenho de compositor/60 fps.
