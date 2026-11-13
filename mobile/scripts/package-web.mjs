@@ -231,6 +231,7 @@ const studioScripts = [
   "nutrition-views.js",
   "guide.js",
   "food-routines.js",
+  "food-composer.js",
 ].map((file) =>
   inlineImages(readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .replaceAll("__HERO_RACK__", heroPhoto("dumbbell-rack.webp"))

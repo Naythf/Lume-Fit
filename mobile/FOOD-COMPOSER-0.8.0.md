@@ -1,0 +1,7 @@
+# Alimentação · 0.8.0 · Closes #86
+
+Corrige o editor indireto da entrega anterior. Nova rotina abre vazia; refeições, horários, ingredientes e gramagens são editados no próprio formulário. Editar reabre os dados da rotina, não outro rascunho. Cálculos usam os alimentos preparados TACO existentes, sem inventar dados nutricionais. Confirmação contém composição real antes de salvar. Até oito refeições, vinte ingredientes por refeição, cinquenta rotinas. Preferências vegetais e exclusões filtram ingredientes; escolhas antigas conflitantes precisam de revisão. Dados privados/backup preservam novas refeições e o legado baseado no catálogo. Nada é marcado consumido automaticamente.
+
+Pesquisa: Anvisa sobre derivados e contaminação cruzada, NIDDK sobre lactose e Swedish Food Agency sobre proteínas do leite/lactose (referências em FOOD-ROUTINES.md e https://www.livsmedelsverket.se/en/business-legislation-and-control/legislation-food-business/allergens/milk-proteins-and-lactose/). Reconhecimento offline aceita frases comuns, não linguagem ilimitada. Termos desconhecidos continuam explicitados e não tratados como garantia de segurança.
+
+QA: editor criado sem rascunho; 150g de arroz=192kcal; revisão mostra composição; salvar e editar recupera 150g. Testes numéricos, backup e rejeição de quantidades inválidas. Instalação física, galeria e modo avião permanecem validações no aparelho. APK offline 0.8.0/code10. Site e schema não alterados.

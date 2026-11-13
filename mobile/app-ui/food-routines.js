@@ -22,11 +22,11 @@ window.LumeFoodPlan = (() => {
     r.menu.length > 0 &&
     N.menuTotals(r.menu, data().setup).count === r.menu.length;
   const list = () =>
-    `<section class="food-plan"><header><h2>Suas rotinas alimentares</h2><button class="primary-btn" onclick="LumeFoodPlan.edit()">Salvar rascunho como rotina</button></header><p class="nv-footnote">Monte as refeições abaixo e salve uma combinação para repetir nos dias que escolher. Planejar não registra consumo.</p>${
+    `<section class="food-plan"><header><h2>Suas rotinas alimentares</h2><button class="primary-btn" onclick="LumeFoodPlan.edit()">Nova rotina alimentar</button></header><p class="nv-footnote">Monte as refeições abaixo e salve uma combinação para repetir nos dias que escolher. Planejar não registra consumo.</p>${
       data()
         .routines.map(
           (r) =>
-            `<article class="food-plan-card"><h3>${esc(r.name)}</h3><p>${r.days.map((d) => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][d]).join(" · ") || "Sem dia fixo"} · ${r.menu.length} ${r.menu.length === 1 ? "refeição" : "refeições"}</p><p>${compatible(r) ? Math.round(N.menuTotals(r.menu, data().setup).energy) + " kcal planejadas" : "Revisar: contém escolhas fora das preferências atuais"}</p><div class="row-actions"><button class="guide-button" onclick="LumeFoodPlan.load('${r.id}')">Abrir rotina</button><button class="guide-button" onclick="LumeFoodPlan.edit('${r.id}')">Editar</button><button class="guide-button" onclick="LumeFoodPlan.remove('${r.id}')">Excluir</button></div></article>`,
+            `<article class="food-plan-card"><h3>${esc(r.name)}</h3><p>${r.days.map((d) => ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"][d]).join(" · ") || "Sem dia fixo"} · ${r.meals?.length || r.menu.length} refeições</p><p>${window.FoodComposer ? FoodComposer.describe(r) : "Revisar rotina"}</p><div class="row-actions"><button class="guide-button" onclick="LumeFoodPlan.load('${r.id}')">Abrir rotina</button><button class="guide-button" onclick="LumeFoodPlan.edit('${r.id}')">Editar</button><button class="guide-button" onclick="LumeFoodPlan.remove('${r.id}')">Excluir</button></div></article>`,
         )
         .join("") ||
       "<p>Nenhuma rotina salva. Escolha suas refeições e salve a primeira combinação.</p>"
@@ -80,6 +80,10 @@ window.LumeFoodPlan = (() => {
     const db = state.db,
       r = data().routines.find((x) => x.id === id);
     if (!r) return;
+    if (r.meals?.length) {
+      window.FoodComposer.edit(id);
+      return;
+    }
     if (!compatible(r)) {
       toast("Atualize esta rotina conforme suas restrições antes de usar.");
       return;

@@ -1209,3 +1209,114 @@ html[data-motion="reduced"] .guide-disclosure-chevron {
   padding: 10px 5px;
   font-size: 13px;
 }
+
+.fc-meal {
+  border: 1px solid #ffffff25;
+  background: #ffffff04;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.fc-meal header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.fc-ingredient {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px 36px;
+  gap: 8px;
+  align-items: end;
+  margin: 16px 0;
+}
+.fc-ingredient .field {
+  min-width: 0;
+}
+.fc-ingredient .guide-button {
+  padding: 8px;
+  min-width: 0;
+}
+.fc-total {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  padding: 18px 0;
+}
+.food-composer .row-actions {
+  position: sticky;
+  bottom: 0;
+  background: #151618;
+  padding: 12px 0;
+  display: flex;
+  gap: 12px;
+}
+.food-composer input,
+.food-composer select {
+  min-width: 0;
+  width: 100%;
+}
+
+.food-composer p.nv-footnote {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+  margin: 10px 0 16px !important;
+}
+.food-composer .guide-avoids {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+  padding: 0;
+  border: 0;
+  margin: 16px 0;
+}
+.food-composer .guide-avoids legend {
+  grid-column: 1/-1;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+.food-composer .guide-avoids label {
+  position: relative;
+  display: grid !important;
+  place-items: center;
+  min-width: 0 !important;
+  min-height: 42px !important;
+  padding: 7px 2px !important;
+  margin: 0 !important;
+  font-size: 12px !important;
+  border: 1px solid #ffffff24;
+  border-radius: 10px;
+  background: #ffffff04;
+  cursor: pointer;
+}
+.food-composer .guide-avoids input {
+  position: absolute;
+  opacity: 0;
+  width: 1px !important;
+  height: 1px !important;
+}
+.food-composer .guide-avoids label:has(input:checked) {
+  background: #e0e4e8;
+  color: #101215;
+  border-color: #e0e4e8;
+}
+.food-composer .guide-avoids label:has(input:focus-visible) {
+  outline: 2px solid #ddd;
+  outline-offset: 2px;
+}
+.food-composer .row-actions {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.5fr);
+  gap: 10px !important;
+}
+.food-composer .row-actions button {
+  min-width: 0 !important;
+  width: 100%;
+  margin: 0 !important;
+  white-space: normal;
+  font-size: 14px !important;
+}
+.food-composer h2 {
+  font-size: 24px !important;
+  line-height: 1.25 !important;
+  margin: 12px 0 !important;
+}

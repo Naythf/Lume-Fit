@@ -171,6 +171,23 @@ globalThis.LumeGuideCore = (() => {
         .map((x) => ({
           id: x.id,
           name: text(x.name, 80) || "Minha rotina",
+          meals: (Array.isArray(x.meals) ? x.meals : [])
+            .slice(0, 8)
+            .map((m) => ({
+              kind: text(m.kind, 40),
+              time: /^([01]\d|2[0-3]):[0-5]\d$/.test(m.time || "")
+                ? m.time
+                : "",
+              parts: (Array.isArray(m.parts) ? m.parts : [])
+                .filter(
+                  (p) =>
+                    Array.isArray(p) &&
+                    /^[a-z-]{1,40}$/.test(p[0] || "") &&
+                    number(p[1], 1, 2000) !== null,
+                )
+                .slice(0, 20)
+                .map((p) => [p[0], number(p[1], 1, 2000)]),
+            })),
           days: [
             ...new Set(
               (Array.isArray(x.days) ? x.days : []).filter(

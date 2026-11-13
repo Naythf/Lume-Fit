@@ -341,3 +341,61 @@ test("explicit food text and separate lactose/milk exclusions constrain recipes 
   assert.equal(d.setup.avoidText, "banana");
   assert.equal(d.routines[0].menu[0].scale, 1);
 });
+
+test("independent routine ingredient weights survive backups and totals scale without a global menu", () => {
+  box.window = {};
+  box.LumeFoodPlan = {};
+  vm.runInContext(
+    readFileSync(
+      new URL("../app-ui/food-composer.js", import.meta.url),
+      "utf8",
+    ),
+    box,
+  );
+  const f = box.window.FoodComposer;
+  assert.equal(f.total([{ parts: [["rice", 150]] }]).energy, 192);
+  assert.equal(f.total([{ parts: [["rice", 300]] }]).energy, 384);
+  const d = C.normalize({
+    routines: [
+      {
+        id: "independent",
+        name: "Semana",
+        meals: [
+          {
+            kind: "Almoço",
+            time: "12:30",
+            parts: [
+              ["rice", 150],
+              ["egg", 100],
+            ],
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(d.routines[0].meals[0].time, "12:30");
+  assert.equal(d.routines[0].meals[0].parts[0][1], 150);
+  assert.equal(
+    C.normalize(JSON.parse(JSON.stringify(d))).routines[0].meals[0].parts
+      .length,
+    2,
+  );
+  assert.equal(
+    C.normalize({
+      routines: [
+        {
+          id: "x",
+          meals: [
+            {
+              parts: [
+                ["rice", -5],
+                ["egg", 999999],
+              ],
+            },
+          ],
+        },
+      ],
+    }).routines[0].meals[0].parts.length,
+    0,
+  );
+});
