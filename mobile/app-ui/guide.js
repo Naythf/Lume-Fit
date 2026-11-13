@@ -61,7 +61,7 @@ window.LumeGuide = (() => {
       "--water-from",
       String(Number.isFinite(options.waterFrom) ? options.waterFrom : 0),
     );
-    root().innerHTML = `<header class="guide-page-head"><div><h1>Meu guia</h1></div><span class="guide-private">Privado</span></header>${draft ? wizard() : !data.setup.complete && !explore ? welcome() : dashboard(data)}`;
+    root().innerHTML = `<header class="guide-page-head"><div><h1>Alimentação</h1></div><span class="guide-private">Privado</span></header>${draft ? wizard() : !data.setup.complete && !explore ? welcome() : dashboard(data)}`;
   }
   function welcome() {
     return `<section class="guide-welcome"><div class="guide-welcome-visual" aria-hidden="true">${metricIllustration("body")}</div><h2>Um ponto de partida<br>para cuidar de você.</h2><p>Primeiro, seu contexto. Depois, referências que fazem sentido para o seu dia.</p>${button("Montar meu guia", "LumeGuide.start()", true)}${button("Explorar primeiro", "LumeGuide.explore()")}<ol class="guide-welcome-list"><li><strong>Responda no seu ritmo</strong><span>Intenção, rotina e preferências. Medidas são opcionais.</span></li><li><strong>Entenda antes de mudar</strong><span>Alimentação explicada, com ideias para suas refeições.</span></li><li><strong>Acompanhe sua história</strong><span>Peso, observações e fotos que só você escolhe registrar.</span></li></ol><p class="guide-small">Conteúdo educativo. As estimativas não definem uma dieta e não substituem acompanhamento profissional.</p></section>`;
@@ -113,7 +113,7 @@ window.LumeGuide = (() => {
         )
         .join(
           "",
-        )}</fieldset><div class="field"><label for="guide-notes">Preferências e lembretes · opcional</label><textarea id="guide-notes" name="notes" rows="2" maxlength="300" placeholder="Algo que você quer lembrar ao escolher suas refeições">${esc(draft.notes)}</textarea></div><p class="guide-small">Lembretes são anotações, não filtros automáticos. Para outra alergia ou restrição não listada, marque “Outra restrição”: as sugestões ficam pausadas.</p>`,
+        )}</fieldset>${LumeFoodRestrictions.field(draft)}<div class="field"><label for="guide-notes">Preferências e lembretes · opcional</label><textarea id="guide-notes" name="notes" rows="2" maxlength="300" placeholder="Algo que você quer lembrar ao escolher suas refeições">${esc(draft.notes)}</textarea></div><p class="guide-small">Escreva os alimentos no campo de exclusões. Mostraremos o que foi reconhecido antes de salvar. Lembretes continuam sendo anotações.</p>`,
     ];
     return `<section class="guide-setup"><div class="guide-step-meta"><span>Etapa ${step + 1} de 4</span><button type="button" class="guide-button" onclick="LumeGuide.cancel()">${guide().setup.complete ? "Cancelar edição" : "Sair sem salvar"}</button></div><div class="guide-progress" aria-hidden="true">${[0, 1, 2, 3].map((i) => `<i class="${i <= step ? "done" : ""}"></i>`).join("")}</div><form id="guideSetup" onsubmit="LumeGuide.next(event)">${pages[step]}<p id="guideSetupStatus" role="status"></p><footer class="guide-form-actions">${step ? '<button type="button" class="guide-button" onclick="LumeGuide.back()">Voltar</button>' : "<span></span>"}<button type="submit" class="primary-btn">${step === 3 ? "Concluir meu guia" : "Continuar"}${arrow()}</button></footer><p class="guide-small">Salvo ao concluir. Suas respostas ficam privadas e entram no backup.</p></form></section>`;
   }
@@ -136,7 +136,7 @@ window.LumeGuide = (() => {
       ?.focus({ preventScroll: true });
     root().scrollIntoView({ block: "start", behavior: "instant" });
   }
-  function next(event) {
+  async function next(event) {
     event.preventDefault();
     if (!capture()) return;
     if (step < 3) {
@@ -149,6 +149,8 @@ window.LumeGuide = (() => {
         "Marque pelo menos uma restrição ou escolha outra opção.";
       return;
     }
+    if (!(await LumeFoodRestrictions.review(draft))) return;
+    if (owner !== state.db) return;
     const previous = state.db.profile.meuGuia;
     state.db.profile.meuGuia = {
       ...guide(),
@@ -168,8 +170,9 @@ window.LumeGuide = (() => {
   }
   function dashboard(data) {
     return `<nav class="guide-tabs" aria-label="Seções do meu guia">${[
-      ["summary", "Resumo"],
-      ["food", "Alimentação"],
+      ["diary", "Diário"],
+      ["food", "Rotinas"],
+      ["summary", "Guia"],
       ["weight", "Evolução"],
     ]
       .map(
@@ -480,11 +483,11 @@ window.LumeGuide = (() => {
             ([v, label]) =>
               `<label><input type="checkbox" name="avoids" value="${v}" ${s.avoids.includes(v) ? "checked" : ""}><span>${label}</span></label>`,
           )
-          .join("")}</fieldset>`,
+          .join("")}</fieldset>${LumeFoodRestrictions.field(s)}`,
       )}<p id="guideQuickStatus" role="status"></p><footer class="guide-form-actions"><button type="button" class="guide-button" onclick="closeSheet()">Cancelar</button><button type="submit" class="primary-btn">Atualizar referências</button></footer></form></div>`,
     );
   }
-  function saveQuick(event) {
+  async function saveQuick(event) {
     event.preventDefault();
     if (quickOwner !== state.db) return;
     const values = new FormData(event.target),
@@ -499,6 +502,8 @@ window.LumeGuide = (() => {
         "Marque os alimentos a evitar ou escolha outra opção.";
       return;
     }
+    if (!(await LumeFoodRestrictions.review(s))) return;
+    if (quickOwner !== state.db) return;
     if (mutateGuide((data) => (data.setup = s))) {
       closeSheet();
       toast("Referências atualizadas.");
@@ -660,6 +665,10 @@ window.LumeGuide = (() => {
       render();
     },
     go(value) {
+      if (value === "diary") {
+        switchTab("nutrition");
+        return;
+      }
       if (!["summary", "food", "weight"].includes(value)) return;
       syncOwner();
       tab = value;

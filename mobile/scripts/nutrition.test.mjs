@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import vm from "node:vm";
 import { readFileSync } from "node:fs";
 const box = vm.createContext({});
-for (const file of ["guide-core.js", "nutrition.js"])
+for (const file of ["guide-core.js", "food-restrictions.js", "nutrition.js"])
   vm.runInContext(
     readFileSync(new URL("../app-ui/" + file, import.meta.url), "utf8"),
     box,
@@ -301,4 +301,43 @@ test("water and meal changes are private, reversible, bounded and atomic when st
   mod.addMenu("lunch-chicken", 1);
   assert.equal(writes, count);
   assert.equal(state.db.profile.meuGuia, undefined);
+});
+
+test("explicit food text and separate lactose/milk exclusions constrain recipes without guessing unknowns", () => {
+  const R = box.LumeFoodRestrictions;
+  assert.deepEqual(
+    Array.from(R.analyze("não posso ingerir leite; FRANGO; banana").keys),
+    ["milk", "chicken", "banana"],
+  );
+  assert.equal(
+    N.library({ ...base, avoidText: "não posso ingerir frango" }).some((r) =>
+      r.parts.some((p) => p[0] === "chicken"),
+    ),
+    false,
+  );
+  assert.equal(
+    N.library({ ...base, avoidText: "lactose" }).some((r) =>
+      r.parts.some((p) => p[0] === "yogurt"),
+    ),
+    false,
+  );
+  assert.equal(
+    N.options({ ...base, avoidText: "ingrediente desconhecido" }).length,
+    0,
+  );
+  assert.ok(R.analyze("posso consumir leite").unknown.length);
+  const d = C.normalize({
+    setup: { ...base, avoidText: "banana" },
+    routines: [
+      {
+        id: "plan1",
+        name: "Semana",
+        days: [1, 1, 8],
+        menu: [{ id: "lunch-chicken", scale: 1 }],
+      },
+    ],
+  });
+  assert.deepEqual(Array.from(d.routines[0].days), [1]);
+  assert.equal(d.setup.avoidText, "banana");
+  assert.equal(d.routines[0].menu[0].scale, 1);
 });

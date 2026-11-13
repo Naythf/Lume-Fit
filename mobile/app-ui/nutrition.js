@@ -331,6 +331,7 @@ globalThis.LumeNutrition = (() => {
         (!s.avoids.length || s.avoids.includes("other")))
     )
       return [];
+    if (LumeFoodRestrictions.analyze(s.avoidText).unknown.length) return [];
     return library(s);
   }
   function library(value) {
@@ -340,6 +341,7 @@ globalThis.LumeNutrition = (() => {
         (s.pattern === "omni" ||
           r.pattern === "vegan" ||
           (s.pattern === "vegetarian" && r.pattern === "vegetarian")) &&
+        LumeFoodRestrictions.compatible(r, s) &&
         (s.allergy !== "selected" ||
           !r.tags.some((t) => s.avoids.includes(t))) &&
         r.minutes <= Number(s.time),

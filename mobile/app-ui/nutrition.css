@@ -1150,3 +1150,62 @@ html[data-motion="reduced"] .guide-disclosure-chevron {
 .nv-pair > section > small {
   line-height: 1.4;
 }
+
+.food-plan {
+  padding: 20px 0;
+  margin-bottom: 28px;
+  border-bottom: 1px solid #ffffff20;
+}
+.food-plan header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+.food-plan-card {
+  padding: 20px;
+  border: 1px solid #ffffff22;
+  border-radius: 18px;
+  margin: 14px 0;
+  background: #ffffff04;
+}
+.food-plan-card .row-actions {
+  flex-wrap: wrap;
+}
+.food-unified {
+  margin: 18px 0;
+}
+.food-unified button {
+  min-width: 0;
+  flex: 1;
+}
+
+.guide-screen .guide-tabs,
+.food-unified {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 5px;
+}
+.guide-screen .guide-tabs button,
+.food-unified button {
+  min-width: 0;
+  padding: 10px 3px;
+  font-size: 13px;
+  white-space: normal;
+}
+.food-plan-card p {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+.food-plan-card .row-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.food-plan-card .guide-button {
+  min-width: 0;
+  padding: 10px 5px;
+  font-size: 13px;
+}

@@ -87,10 +87,15 @@ test("estimates require adult general context and stated equation; latest check-
     -7,
   );
 });
-test("meal suggestions respect every allergen combination, dietary pattern and preparation time; unknown restrictions pause", () => {
+test("meal suggestions respect single and pairwise exclusions, dietary pattern and preparation time; unknown restrictions pause", () => {
   const keys = Object.keys(C.choices.allergens).filter((x) => x !== "other");
-  for (let mask = 0; mask < 2 ** keys.length; mask++) {
-    const avoids = keys.filter((_, i) => mask & (2 ** i));
+  const combinations = [
+    [],
+    keys,
+    ...keys.map((k) => [k]),
+    ...keys.flatMap((k, i) => keys.slice(i + 1).map((j) => [k, j])),
+  ];
+  for (const avoids of combinations) {
     for (const pattern of ["omni", "vegetarian", "vegan"]) {
       const options = C.mealOptions({
         ...base,

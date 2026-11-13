@@ -32,7 +32,14 @@ globalThis.LumeGuideCore = (() => {
       selected: "Quero indicar alimentos a evitar",
     },
     allergens: {
-      milk: "Leite",
+      milk: "Proteínas do leite",
+      lactose: "Lactose",
+      wheat: "Trigo",
+      oats: "Aveia",
+      corn: "Milho",
+      mustard: "Mostarda",
+      celery: "Aipo / salsão",
+      sulfites: "Sulfitos",
       eggs: "Ovos",
       fish: "Peixes",
       shellfish: "Crustáceos e moluscos",
@@ -41,6 +48,16 @@ globalThis.LumeGuideCore = (() => {
       soy: "Soja",
       gluten: "Glúten",
       sesame: "Gergelim",
+      rice: "Arroz",
+      beans: "Feijão",
+      lentils: "Lentilha",
+      chicken: "Frango",
+      banana: "Banana",
+      pumpkin: "Abóbora",
+      zucchini: "Abobrinha",
+      broccoli: "Brócolis",
+      carrot: "Cenoura",
+      leaves: "Alface",
       other: "Outra restrição / alergia",
     },
     activity: {
@@ -117,6 +134,7 @@ globalThis.LumeGuideCore = (() => {
         ),
       ],
       time: choice("time", v.time, "30"),
+      avoidText: text(v.avoidText, 500),
       notes: text(v.notes, 300),
     };
   }
@@ -147,6 +165,29 @@ globalThis.LumeGuideCore = (() => {
     }
     return {
       version: 1,
+      routines: (Array.isArray(v?.routines) ? v.routines : [])
+        .filter((x) => x && /^[a-zA-Z0-9_-]{1,80}$/.test(x.id || ""))
+        .slice(0, 50)
+        .map((x) => ({
+          id: x.id,
+          name: text(x.name, 80) || "Minha rotina",
+          days: [
+            ...new Set(
+              (Array.isArray(x.days) ? x.days : []).filter(
+                (d) => Number.isInteger(d) && d >= 0 && d <= 6,
+              ),
+            ),
+          ],
+          menu: (Array.isArray(x.menu) ? x.menu : [])
+            .filter(
+              (m) =>
+                m &&
+                /^[a-z0-9-]{1,60}$/.test(m.id || "") &&
+                number(m.scale, 0.5, 2) !== null,
+            )
+            .slice(0, 8)
+            .map((m) => ({ id: m.id, scale: number(m.scale, 0.5, 2) })),
+        })),
       setup: setup(v?.setup),
       water: (Array.isArray(v?.water) ? v.water : [])
         .filter((x) => x && date(x.date) && number(x.ml, 0, 10000) !== null)
