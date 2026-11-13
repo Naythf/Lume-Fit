@@ -151,8 +151,18 @@ for (const entry of Object.values(art))
         "base64",
       ),
   );
-const studioScripts = ["exercise-art.js", "studio.js"].map((file) =>
-  readFileSync(resolve(mobile, "app-ui", file), "utf8"),
+const heroPhoto = (file) =>
+  "data:image/webp;base64," +
+  readFileSync(resolve(mobile, "assets/hero", file)).toString("base64");
+const studioScripts = [
+  "studio-context.js",
+  "hero-carousel.js",
+  "exercise-art.js",
+  "studio.js",
+].map((file) =>
+  inlineImages(readFileSync(resolve(mobile, "app-ui", file), "utf8"))
+    .replaceAll("__HERO_RACK__", heroPhoto("dumbbell-rack.webp"))
+    .replaceAll("__HERO_BARBELL__", heroPhoto("barbell-floor.webp")),
 );
 const appScripts = [
   appModels,
@@ -184,6 +194,7 @@ const visualLicenses = [
   "assets/exercise-art/LICENSE-DATA.md",
   "assets/exercise-art/ATTRIBUTION.md",
   "assets/fonts/OFL.txt",
+  "assets/hero/LICENSE.md",
 ]
   .map((file) =>
     readFileSync(resolve(mobile, file), "utf8").replaceAll("--", "- -"),

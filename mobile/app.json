@@ -2,7 +2,7 @@
   "expo": {
     "name": "Lume Fit",
     "slug": "lume-fit",
-    "version": "0.3.0",
+    "version": "0.3.1",
     "scheme": "lumefit",
     "orientation": "default",
     "icon": "./assets/lume-icon.png",
@@ -19,7 +19,7 @@
     "android": {
       "predictiveBackGestureEnabled": true,
       "package": "com.lumeproductions.lumefit",
-      "versionCode": 4,
+      "versionCode": 5,
       "blockedPermissions": ["android.permission.SYSTEM_ALERT_WINDOW"]
     },
     "web": {

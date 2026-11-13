@@ -112,3 +112,77 @@ test("custom dates commit through existing callbacks and respect min/max constra
   vm.runInContext("studioSetDay('2026-11-21')", ctx);
   assert.equal(input.value, "2026-11-20");
 });
+
+test("header periods and dates follow local device time at their boundaries", () => {
+  const ctx = vm.createContext({ Date });
+  vm.runInContext(read("../app-ui/studio-context.js"), ctx);
+  for (const [hour, period] of [
+    [0, "Noite"],
+    [4, "Noite"],
+    [5, "Manhã"],
+    [11, "Manhã"],
+    [12, "Tarde"],
+    [17, "Tarde"],
+    [18, "Noite"],
+    [23, "Noite"],
+  ]) {
+    const result = vm.runInContext(
+      `studioDayContext(new Date(2026,10,12,${hour},0))`,
+      ctx,
+    );
+    assert.equal(result.period, period);
+    assert.equal(result.iso, "2026-11-12");
+    assert.equal(result.weekday, "quinta-feira");
+  }
+});
+test("hero photography is embedded offline and credit remains accessible from settings", () => {
+  const { html } = JSON.parse(read("../src/generated/packaged-web.json"));
+  assert.ok(html.includes("data-studio-hero"));
+  assert.ok(
+    !html.includes("__HERO_RACK__") && !html.includes("__HERO_BARBELL__"),
+  );
+  const app = read("../app-ui/studio.js");
+  assert.ok(app.includes("Sobre e créditos"));
+  assert.ok(!app.includes("studioFooter.append"));
+  assert.match(html, /Pausar troca automática de fotos/);
+});
+
+test("home greeting uses the saved profile name as escaped text", () => {
+  const target = { innerHTML: "" };
+  const ctx = vm.createContext({
+    Date,
+    state: {
+      db: {
+        profile: { name: "Ana <b>Maria</b>" },
+        routines: [],
+        sessions: [],
+        nutrition: { meals: [] },
+      },
+      activeWorkout: null,
+    },
+    document: { getElementById: () => target },
+    activitySessions: () => [],
+    getMonthSessions: () => [],
+    frequencyPct: () => null,
+    allExercises: () => [],
+    studioHeroFrames: () => "",
+    studioHeroControls: () => "",
+    studioActionIcon: () => "",
+    weeklyActivityCard: () => "",
+    foodDiaryIcon: () => "",
+    activityKey: () => "",
+    esc: (s) =>
+      String(s)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;"),
+  });
+  const source = read("../app-ui/studio.js");
+  vm.runInContext(
+    source.slice(0, source.indexOf("renderHome = studioHome;")),
+    ctx,
+  );
+  vm.runInContext("studioHome()", ctx);
+  assert.ok(target.innerHTML.includes("Olá, Ana &lt;b&gt;Maria&lt;/b&gt;."));
+  assert.ok(!target.innerHTML.includes("<b>Maria</b>"));
+});

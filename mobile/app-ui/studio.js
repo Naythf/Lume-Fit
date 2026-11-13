@@ -12,17 +12,16 @@ function studioHome() {
   const month = getMonthSessions(now).length,
     goal = frequencyPct(),
     exercises = allExercises().length;
-  const date = now.toLocaleDateString("pt-BR", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const meals = (state.db.nutrition?.meals || []).filter(
+    (m) => m.date === activityKey(now),
+  ).length;
+  const name = String(state.db.profile.name || "").trim() || "Atleta";
   document.getElementById("screen-home").innerHTML =
-    `<div class="studio-title"><h1>Seu treino.</h1><p>${esc(date)}</p></div>
- <section class="studio-session studio-reveal" aria-label="Treino em destaque"><div class="studio-session-copy"><span class="studio-session-state">${active ? "Em andamento" : routine ? "Pronto para começar" : "Seu próximo passo"}</span><h2>${esc(active?.name || routine?.name || "Um plano que cabe no seu dia.")}</h2><p>${active ? "Seu rascunho está salvo. Continue de onde parou." : routine ? `${routine.exercises.length} exercícios · ${routine.exercises.reduce((n, e) => n + e.sets, 0)} séries planejadas` : "Crie uma rotina ou monte um plano com os equipamentos que você tem."}</p><button class="primary-btn" data-studio-action="${active ? "resume" : routine?.exercises.length ? "start" : "create"}" data-id="${esc(routine?.id || "")}">${active ? "Continuar treino" : routine?.exercises.length ? "Começar treino" : "Organizar meu treino"}<span aria-hidden="true">${dumbbellSmallIcon()}</span></button>${routine && !active ? '<button class="studio-text-button" onclick="LumeStudio.routines()">Escolher outra rotina</button>' : ""}</div></section>
+    `<div class="studio-title"><h1>Olá, ${esc(name)}.</h1></div>
+ <section class="studio-session studio-reveal" aria-label="Treino em destaque" data-studio-hero>${studioHeroFrames()}<div class="studio-session-copy"><span class="studio-session-state">${active ? "Em andamento" : routine ? "Pronto para começar" : "Seu próximo passo"}</span><h2>${esc(active?.name || routine?.name || "Um plano que cabe no seu dia.")}</h2><p>${active ? "Seu rascunho está salvo. Continue de onde parou." : routine ? `${routine.exercises.length} exercícios · ${routine.exercises.reduce((n, e) => n + e.sets, 0)} séries planejadas` : "Crie uma rotina ou monte um plano com os equipamentos que você tem."}</p><button class="primary-btn" data-studio-action="${active ? "resume" : routine?.exercises.length ? "start" : "create"}" data-id="${esc(routine?.id || "")}">${active ? "Continuar treino" : routine?.exercises.length ? "Começar treino" : "Organizar meu treino"}<span aria-hidden="true">${studioActionIcon()}</span></button>${routine && !active ? '<button class="studio-text-button" onclick="LumeStudio.routines()">Escolher outra rotina</button>' : ""}</div>${studioHeroControls()}</section>
  <section class="studio-week studio-reveal" aria-label="Sua semana">${weeklyActivityCard()}</section>
  <section class="studio-overview studio-reveal"><header><h2>Visão geral</h2><span>Seus registros</span></header><dl><div><dt>Treinos no mês</dt><dd>${month}</dd></div><div><dt>Meta da semana</dt><dd>${goal === null ? "—" : goal + "%"}</dd></div><div><dt>Exercícios no plano</dt><dd>${exercises}</dd></div></dl></section>
- <section class="studio-journal studio-reveal"><div>${foodDiaryIcon()}<div><h2>Diário alimentar</h2><p>${(state.db.nutrition?.meals || []).filter((m) => m.date === activityKey(now)).length} refeições registradas hoje</p></div></div><button class="studio-text-button" onclick="switchTab('nutrition')">Abrir diário</button></section>
+ <section class="studio-journal studio-reveal"><div>${foodDiaryIcon()}<div><h2>Diário alimentar</h2><p>${meals} ${meals === 1 ? "refeição registrada" : "refeições registradas"} hoje</p></div></div><button class="studio-text-button" onclick="switchTab('nutrition')">Abrir diário</button></section>
  <section class="studio-history studio-reveal"><header><h2>Últimos treinos</h2><button class="studio-text-button" onclick="switchTab('history')">Histórico</button></header>${recent.length ? recent.map((s) => `<article class="studio-history-row"><div class="studio-history-art" aria-hidden="true">${recentWorkoutVisual(s)}</div><div><h3>${esc(s.name)}</h3><p>${shortDate(s.date)} · ${(s.entries || []).length} ${(s.entries || []).length === 1 ? "exercício" : "exercícios"}</p></div></article>`).join("") : '<p class="studio-empty">Seus treinos concluídos aparecem aqui. Comece pelo seu primeiro registro.</p>'}</section>`;
 }
 renderHome = studioHome;
@@ -34,7 +33,7 @@ window.LumeStudio = {
   },
   credits() {
     openSheet(
-      '<button class="icon-btn studio-close" aria-label="Fechar créditos" onclick="closeSheet()">×</button><h3>Créditos visuais</h3><p>Exercise data by <a href="https://repdb.co" target="_blank" rel="noopener noreferrer nofollow">RepDB (repdb.co)</a>.</p><p>Ilustrações gratuitas licenciadas para uso no aplicativo, com fundo processado sem IA generativa. Modelos corporais por Quaternius, CC0. Tipografia Manrope, SIL Open Font License.</p>',
+      '<button class="icon-btn studio-close" aria-label="Fechar créditos" onclick="closeSheet()">×</button><h3>Sobre e créditos</h3><p><a href="https://repdb.co" target="_blank" rel="noopener noreferrer nofollow">Exercise data by RepDB (repdb.co)</a></p><p>Ilustrações com fundo processado sem IA generativa. Modelos corporais: Quaternius, CC0. Tipografia: Manrope, SIL Open Font License.</p><h4>Fotografia</h4><p>Fotos de equipamentos por Tima Miroshnichenko e Victor Freitas, via <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a>.</p>',
     );
   },
 };
@@ -71,6 +70,16 @@ const studioObserver =
       )
     : null;
 function studioEnhance() {
+  studioUpdateHeader();
+  window.LumeHeroCarousel?.enhance();
+  document
+    .querySelectorAll('.routine-toolbar button[onclick="closeRoutine()"]')
+    .forEach((button) => {
+      if (button.classList.contains("studio-back")) return;
+      button.classList.add("studio-back");
+      button.innerHTML = studioChevron() + "<span>Minhas rotinas</span>";
+      button.setAttribute("aria-label", "Voltar para minhas rotinas");
+    });
   document
     .querySelectorAll(
       ".screen.active > section,.screen.active .routine-plan,.screen.active .food-meal,.screen.active .studio-reveal",
@@ -97,7 +106,7 @@ function studioEnhance() {
   ) {
     const credit = document.createElement("button");
     credit.className = "studio-text-button studio-credits";
-    credit.textContent = "Créditos e recursos visuais";
+    credit.textContent = "Sobre e créditos";
     credit.onclick = LumeStudio.credits;
     settings.append(credit);
   }
@@ -113,16 +122,6 @@ new MutationObserver(() => {
 }).observe(document.body, { childList: true, subtree: true });
 document.querySelector(".header .eyebrow")?.remove();
 document.querySelector(".brandname")?.setAttribute("aria-label", "Lume Fit");
-document.querySelectorAll(".app-footer").forEach((studioFooter) => {
-  if (studioFooter.querySelector("[data-repdb]")) return;
-  const a = document.createElement("a");
-  a.dataset.repdb = "true";
-  a.href = "https://repdb.co";
-  a.target = "_blank";
-  a.rel = "noopener noreferrer nofollow";
-  a.textContent = "Exercise data by RepDB (repdb.co)";
-  studioFooter.append(a);
-});
 // A shared, purpose-built date/time surface; original form controls remain the source of truth.
 let studioCalendar = null,
   studioDateOwner = null,
@@ -316,3 +315,39 @@ function studioCalendarDayKey(event, button) {
     next.focus();
   }
 }
+
+function studioUpdateHeader() {
+  const account = document.querySelector(".header-account");
+  const badge = account?.querySelector(".offline-pill");
+  if (!account || !badge) return;
+  let context = account.querySelector(".studio-context");
+  if (!context) {
+    context = document.createElement("div");
+    context.className = "studio-context";
+    const time = document.createElement("time");
+    time.className = "studio-context-date";
+    const period = document.createElement("span");
+    period.className = "studio-context-period";
+    account.insertBefore(context, account.firstChild);
+    context.append(badge, time, period);
+  }
+  const day = studioDayContext();
+  const key = day.iso + day.period;
+  if (context.dataset.context === key) return;
+  context.dataset.context = key;
+  const time = context.querySelector("time");
+  time.dateTime = day.iso;
+  time.setAttribute("aria-label", day.label);
+  time.innerHTML = `<span class="studio-weekday-full">${esc(day.weekday)}</span><span class="studio-weekday-short" aria-hidden="true">${esc(day.shortWeekday)}</span><strong>${esc(day.date)}</strong>`;
+  const period = context.querySelector(".studio-context-period");
+  period.innerHTML =
+    studioPeriodIcon(day.period) + `<span>${day.period}</span>`;
+}
+setInterval(studioUpdateHeader, 60000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) studioUpdateHeader();
+});
+// Render once after all app scripts: a fast cached login must also receive the new home.
+if (document.getElementById("screen-home")?.classList.contains("active"))
+  studioHome();
+studioEnhance();
