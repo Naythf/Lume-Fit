@@ -62,6 +62,24 @@ html = html.replace(
         throw Error("Script remoto/inesperado: " + source);
       code = read(path);
       sources.push(path);
+      if (path === "controls.js") {
+        const openAnchor =
+          "record.popup.hidden=false;attr(record.button,'aria-expanded',true);";
+        const hideAnchor = "record.popup.hidden=true;";
+        if (!code.includes(openAnchor) || !code.includes(hideAnchor))
+          throw Error("Rever portal dos seletores no app.");
+        code = code
+          .replace(
+            openAnchor,
+            "(record.button.closest('dialog[open],.sheet.active')||document.body).append(record.popup);" +
+              openAnchor,
+          )
+          .replace(
+            hideAnchor,
+            hideAnchor +
+              "if(record.button.isConnected)record.button.closest('.lume-select').append(record.popup);else record.popup.remove();",
+          );
+      }
       if (path === "routines.js") {
         code = code
           .replace(
@@ -85,11 +103,11 @@ html = html.replace(
         code = code
           .replaceAll(
             "O mapa destaca sua escolha.",
-            "Os grupos selecionados aparecem junto do modelo.",
+            "O mapa acompanha sua seleção.",
           )
           .replaceAll(
             "O mapa mostra os grupos principais incluídos no rascunho, sem medir ativação ou evolução.",
-            "Os nomes junto ao modelo mostram os grupos do rascunho, sem medir ativação ou evolução.",
+            "O mapa mostra os grupos do rascunho, sem medir ativação ou evolução.",
           );
       }
       if (path === "app.js") {
@@ -98,6 +116,11 @@ html = html.replace(
         if (!code.includes(before))
           throw Error("Rever adaptação do service worker.");
         code = code
+          .replace("<h2>Saber</h2>", "<h2>Guias e ferramentas</h2>")
+          .replace(
+            "SABER · ENTENDER PARA EVOLUIR",
+            "GUIAS · ENTENDER PARA EVOLUIR",
+          )
           .replace(before, "if (false)")
           .replace(
             "navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})",
@@ -128,7 +151,7 @@ const font =
   "data:font/ttf;base64," +
   readFileSync(resolve(mobile, "assets/fonts/Manrope.ttf")).toString("base64");
 const appCss = inlineImages(
-  ["glass.css", "polish.css", "studio.css"]
+  ["glass.css", "polish.css", "studio.css", "anatomy-panels.css"]
     .map((file) => readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .join("\n"),
 ).replaceAll("__MANROPE_FONT__", font);
@@ -159,13 +182,30 @@ const studioScripts = [
   "hero-carousel.js",
   "exercise-art.js",
   "studio.js",
+  "panels.js",
 ].map((file) =>
   inlineImages(readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .replaceAll("__HERO_RACK__", heroPhoto("dumbbell-rack.webp"))
-    .replaceAll("__HERO_BARBELL__", heroPhoto("barbell-floor.webp")),
+    .replaceAll("__HERO_BARBELL__", heroPhoto("barbell-floor.webp"))
+    .replaceAll("__HERO_FOOD__", heroPhoto("food-bowl.webp"))
+    .replaceAll("__HERO_GYM__", heroPhoto("gym-interior.webp")),
 );
+const anatomy = JSON.parse(
+  readFileSync(resolve(mobile, "assets/anatomy/body-map.json"), "utf8"),
+);
+for (const view of ["front", "back"])
+  for (const region of anatomy[view]) {
+    if (
+      !/^[a-z-]+$/.test(region.muscle) ||
+      !region.paths.length ||
+      region.paths.some((d) => !/^M[MmLlHhVvCcSsQqTtAaZz0-9eE+.,\s-]+$/.test(d))
+    )
+      throw Error("Região anatômica inválida.");
+  }
 const appScripts = [
   appModels,
+  "const LUME_ANATOMY_DATA=" + JSON.stringify(anatomy) + ";",
+  readFileSync(resolve(mobile, "app-ui/anatomy-map.js"), "utf8"),
   appExperience,
   "const LUME_EXERCISE_ART=" + JSON.stringify(art) + ";",
   ...studioScripts,
@@ -195,6 +235,7 @@ const visualLicenses = [
   "assets/exercise-art/ATTRIBUTION.md",
   "assets/fonts/OFL.txt",
   "assets/hero/LICENSE.md",
+  "assets/anatomy/LICENSE-Hicham.txt",
 ]
   .map((file) =>
     readFileSync(resolve(mobile, file), "utf8").replaceAll("--", "- -"),

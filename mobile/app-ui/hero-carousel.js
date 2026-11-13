@@ -1,60 +1,124 @@
-// Decorative photos change independently of the workout and its primary action.
+/* Five destinations; each photograph, copy and action change together. */
 const STUDIO_HERO_PHOTOS = [
   "weights-bg.webp",
-  "__HERO_RACK__",
+  "__HERO_FOOD__",
   "__HERO_BARBELL__",
+  "__HERO_RACK__",
+  "__HERO_GYM__",
 ];
-function studioHeroFrames() {
-  return `<div class="studio-hero-photos" aria-hidden="true">${STUDIO_HERO_PHOTOS.map((src, i) => `<img class="studio-hero-frame ${i === 0 ? "is-active" : ""}" src="${src}" alt="" width="1200" height="800" decoding="async" draggable="false">`).join("")}</div>`;
+function studioHeroPages(db, active) {
+  const count = db.routines.length;
+  return [
+    {
+      key: "workouts",
+      eyebrow: active ? "Em andamento" : "Seu próximo passo",
+      title: active ? active.name : "Seu treino, do seu jeito.",
+      description: active
+        ? "Continue de onde parou. Seu rascunho está salvo."
+        : count
+          ? `${count} ${count === 1 ? "rotina pronta" : "rotinas prontas"} para organizar sua semana.`
+          : "Escolha seus movimentos ou monte uma rotina automática.",
+      action: active ? "Continuar treino" : "Organizar meu treino",
+      destination: active ? "register" : "workouts",
+    },
+    {
+      key: "nutrition",
+      eyebrow: "Alimentação",
+      title: "Um espaço para suas refeições.",
+      description: "Registre o que fez parte do seu dia. Com foto, se quiser.",
+      action: "Abrir diário",
+      destination: "nutrition",
+    },
+    {
+      key: "history",
+      eyebrow: "Seu percurso",
+      title: "Cada treino conta uma história.",
+      description: "Reveja seus registros e acompanhe a sua constância.",
+      action: "Ver histórico",
+      destination: "history",
+    },
+    {
+      key: "knowledge",
+      eyebrow: "Guias e ferramentas",
+      title: "Mais clareza em cada escolha.",
+      description: "Consulte referências e ferramentas para o seu dia.",
+      action: "Explorar guias",
+      destination: "knowledge",
+    },
+    {
+      key: "friends",
+      eyebrow: "Amigos",
+      title: "Compartilhe o seu ritmo.",
+      description:
+        "Encontre suas conexões e escolha o que deseja compartilhar.",
+      action: "Ver amigos",
+      destination: "friends",
+    },
+  ];
 }
-function studioHeroControls() {
-  return `<div class="studio-carousel-controls" aria-label="Fotos do destaque"><div class="studio-carousel-dots">${STUDIO_HERO_PHOTOS.map((_, i) => `<button type="button" data-hero-photo="${i}" aria-label="Ver foto ${i + 1} de ${STUDIO_HERO_PHOTOS.length}" ${i === 0 ? 'aria-current="true"' : ""}><i aria-hidden="true"></i></button>`).join("")}</div><div class="studio-carousel-actions"><button type="button" data-hero-command="previous" aria-label="Foto anterior">${studioChevron()}</button><button type="button" data-hero-command="pause" aria-label="Pausar troca automática de fotos" aria-pressed="false"></button><button type="button" data-hero-command="next" aria-label="Próxima foto">${studioChevron("right")}</button></div></div>`;
+function studioHeroMarkup() {
+  const pages = studioHeroPages(state.db, state.activeWorkout),
+    p = pages[0];
+  return `<section class="studio-session studio-reveal" aria-label="Destaques do Lume Fit" aria-roledescription="carrossel" data-studio-hero><div class="studio-hero-photos" aria-hidden="true">${STUDIO_HERO_PHOTOS.map((src, i) => `<img class="studio-hero-frame ${i === 0 ? "is-active" : ""}" src="${src}" alt="" width="1200" height="800" decoding="async" draggable="false">`).join("")}</div><div class="studio-session-copy"><span class="studio-session-state" data-hero-copy="eyebrow">${esc(p.eyebrow)}</span><h2 data-hero-copy="title">${esc(p.title)}</h2><p data-hero-copy="description">${esc(p.description)}</p><button type="button" class="primary-btn" data-hero-destination="${p.destination}"><span data-hero-copy="action">${esc(p.action)}</span><span aria-hidden="true">${studioChevron("right")}</span></button></div><div class="studio-carousel-controls"><div class="studio-carousel-dots" role="group" aria-label="Escolher destaque e parar troca automática">${pages.map((page, i) => `<button type="button" data-hero-photo="${i}" aria-label="${esc(page.eyebrow)} — ${i + 1} de 5" ${i === 0 ? 'aria-current="true"' : ""}><i aria-hidden="true"></i></button>`).join("")}</div></div></section>`;
 }
 window.LumeHeroCarousel = (() => {
   let hero = null,
     timer = null,
     index = 0,
+    drawn = -1,
     paused = false,
     hovered = false,
-    focusPaused = false,
     inView = false,
     touch = null,
-    viewObserver = null;
+    observer = null,
+    animations = [];
   const clear = () => {
     clearTimeout(timer);
     timer = null;
   };
+  const cancelMotion = () => {
+    animations.forEach((a) => a.cancel());
+    animations = [];
+  };
   function draw() {
-    if (!hero) return;
+    if (!hero || drawn === index) return;
+    const page = studioHeroPages(state.db, state.activeWorkout)[index];
+    const wasDrawn = drawn !== -1;
+    drawn = index;
     hero.dataset.heroIndex = String(index);
     hero
       .querySelectorAll(".studio-hero-frame")
       .forEach((img, i) => img.classList.toggle("is-active", i === index));
-    hero.querySelectorAll("[data-hero-photo]").forEach((button, i) => {
-      if (i === index) button.setAttribute("aria-current", "true");
-      else button.removeAttribute("aria-current");
-    });
-    const button = hero.querySelector('[data-hero-command="pause"]'),
-      reduced = LumeMotionPreference.matches;
-    if (button) {
-      const key = String(paused || reduced);
-      if (button.dataset.paused !== key) {
-        button.dataset.paused = key;
-        button.setAttribute("aria-pressed", key);
-        button.innerHTML =
-          key === "true"
-            ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="m9 5 11 7-11 7V5Z"/></svg>'
-            : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zm7 0h3v14h-3z"/></svg>';
-      }
-      button.disabled = reduced;
-      button.setAttribute(
-        "aria-label",
-        reduced
-          ? "Troca automática desativada: movimento reduzido"
-          : paused
-            ? "Retomar troca automática de fotos"
-            : "Pausar troca automática de fotos",
+    hero
+      .querySelectorAll("[data-hero-photo]")
+      .forEach((b, i) =>
+        i === index
+          ? b.setAttribute("aria-current", "true")
+          : b.removeAttribute("aria-current"),
       );
+    hero
+      .querySelectorAll("[data-hero-copy]")
+      .forEach((el) => (el.textContent = page[el.dataset.heroCopy]));
+    hero.querySelector("[data-hero-destination]").dataset.heroDestination =
+      page.destination;
+    cancelMotion();
+    if (wasDrawn && !LumeMotionPreference.matches) {
+      animations = [...hero.querySelectorAll(".studio-session-copy > *")]
+        .filter((el) => el.animate)
+        .map((el, i) =>
+          el.animate(
+            [
+              { opacity: 0, transform: "translateY(18px)" },
+              { opacity: 1, transform: "translateY(0)" },
+            ],
+            {
+              duration: 560,
+              delay: i * 55,
+              easing: "cubic-bezier(.2,.7,.3,1)",
+              fill: "backwards",
+            },
+          ),
+        );
     }
   }
   function canRun() {
@@ -65,11 +129,12 @@ window.LumeHeroCarousel = (() => {
       inView &&
       !paused &&
       !hovered &&
-      !focusPaused &&
+      !hero.contains(document.activeElement) &&
       !LumeMotionPreference.matches
     );
   }
   function sync() {
+    if (LumeMotionPreference.matches) cancelMotion();
     draw();
     if (!canRun()) {
       clear();
@@ -79,14 +144,17 @@ window.LumeHeroCarousel = (() => {
     timer = setTimeout(() => {
       timer = null;
       if (canRun()) move(index + 1);
-    }, 6500);
+    }, 8000);
   }
   function move(next) {
-    if (!hero) return;
-    index = (next + STUDIO_HERO_PHOTOS.length) % STUDIO_HERO_PHOTOS.length;
+    index = (next + 5) % 5;
     clear();
     draw();
     sync();
+  }
+  function stop() {
+    paused = true;
+    clear();
   }
   function enhance() {
     const next = document.querySelector("#screen-home [data-studio-hero]");
@@ -95,28 +163,41 @@ window.LumeHeroCarousel = (() => {
       return;
     }
     clear();
-    viewObserver?.disconnect();
+    cancelMotion();
+    observer?.disconnect();
     hero = next;
+    index = 0;
+    drawn = -1;
     hovered = false;
-    focusPaused = false;
+    paused = false;
     inView = false;
+    touch = null;
     if (!hero) return;
     hero.addEventListener("click", (e) => {
       const dot = e.target.closest("[data-hero-photo]"),
-        button = e.target.closest("[data-hero-command]");
-      if (dot) move(Number(dot.dataset.heroPhoto));
-      else if (button) {
-        const command = button.dataset.heroCommand;
-        if (command === "pause") {
-          paused = !paused;
-          if (!paused) {
-            hovered = false;
-            focusPaused = false;
-          }
-          sync();
-        } else move(index + (command === "next" ? 1 : -1));
+        action = e.target.closest("[data-hero-destination]");
+      if (dot) {
+        stop();
+        move(Number(dot.dataset.heroPhoto));
+      } else if (action) {
+        stop();
+        const destination = action.dataset.heroDestination;
+        if (
+          ![
+            "workouts",
+            "nutrition",
+            "history",
+            "knowledge",
+            "friends",
+            "register",
+          ].includes(destination)
+        )
+          return;
+        if (destination === "workouts") state.selectedRoutineId = null;
+        switchTab(destination);
       }
     });
+    hero.addEventListener("focusin", stop);
     hero.addEventListener("mouseenter", () => {
       hovered = true;
       sync();
@@ -125,19 +206,10 @@ window.LumeHeroCarousel = (() => {
       hovered = false;
       sync();
     });
-    hero.addEventListener("focusin", () => {
-      focusPaused = true;
-      sync();
-    });
-    hero.addEventListener("focusout", () =>
-      queueMicrotask(() => {
-        focusPaused = !!hero?.contains(document.activeElement);
-        sync();
-      }),
-    );
     hero.addEventListener("pointerdown", (e) => {
-      if (e.pointerType === "mouse" || e.target.closest("button")) return;
-      touch = { x: e.clientX, y: e.clientY };
+      stop();
+      if (e.pointerType !== "mouse" && !e.target.closest("button"))
+        touch = { x: e.clientX, y: e.clientY };
     });
     hero.addEventListener("pointercancel", () => (touch = null));
     hero.addEventListener("pointerup", (e) => {
@@ -149,14 +221,14 @@ window.LumeHeroCarousel = (() => {
         move(index + (dx < 0 ? 1 : -1));
     });
     if (typeof IntersectionObserver === "function") {
-      viewObserver = new IntersectionObserver(
+      observer = new IntersectionObserver(
         (entries) => {
           inView = entries.some((e) => e.isIntersecting);
           sync();
         },
         { threshold: 0.2 },
       );
-      viewObserver.observe(hero);
+      observer.observe(hero);
     } else inView = true;
     sync();
   }
