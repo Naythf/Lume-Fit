@@ -29,7 +29,7 @@ window.LumeStudio = {
   },
   credits() {
     openSheet(
-      '<button class="icon-btn studio-close" aria-label="Fechar créditos" onclick="closeSheet()">×</button><h3>Sobre e créditos</h3><p><a href="https://repdb.co" target="_blank" rel="noopener noreferrer nofollow">Exercise data by RepDB (repdb.co)</a></p><p>Ilustrações com fundo processado sem IA generativa. Mapa anatômico: <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noopener noreferrer">react-native-body-highlighter</a>, ELABBASSI Hicham, MIT. Tipografia: Manrope, SIL Open Font License.</p><h4>Fotografia</h4><p>Fotos de equipamentos por Tima Miroshnichenko, Victor Freitas, furkanfdemir e hi room, via <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a>.</p>',
+      '<button class="icon-btn studio-close" aria-label="Fechar créditos" onclick="closeSheet()">×</button><h3>Sobre e créditos</h3><p><a href="https://repdb.co" target="_blank" rel="noopener noreferrer nofollow">Exercise data by RepDB (repdb.co)</a></p><p>Ilustrações com fundo processado sem IA generativa. Mapa anatômico: <a href="https://github.com/HichamELBSI/react-native-body-highlighter" target="_blank" rel="noopener noreferrer">react-native-body-highlighter</a>, ELABBASSI Hicham, MIT. Tipografia: Manrope, SIL Open Font License.</p><h4>Alimentação</h4><p>Composição dos alimentos: TACO, NEPA/UNICAMP, 4ª edição, 2011. Ilustração original do prato gerada para Lume Fit; não representa porções medidas.</p><h4>Fotografia</h4><p>Fotos de equipamentos por Tima Miroshnichenko, Victor Freitas, furkanfdemir e hi room, via <a href="https://www.pexels.com/license/" target="_blank" rel="noopener noreferrer">Pexels</a>.</p>',
     );
   },
 };

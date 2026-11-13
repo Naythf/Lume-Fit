@@ -192,6 +192,7 @@ const appCss = inlineImages(
     "anatomy-panels.css",
     "responsive.css",
     "guide.css",
+    "nutrition.css",
   ]
     .map((file) => readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .join("\n"),
@@ -225,12 +226,21 @@ const studioScripts = [
   "studio.js",
   "panels.js",
   "responsive.js",
+  "nutrition.js",
+  "nutrition-views.js",
   "guide.js",
 ].map((file) =>
   inlineImages(readFileSync(resolve(mobile, "app-ui", file), "utf8"))
     .replaceAll("__HERO_RACK__", heroPhoto("dumbbell-rack.webp"))
     .replaceAll("__HERO_BARBELL__", heroPhoto("barbell-floor.webp"))
     .replaceAll("__HERO_FOOD__", heroPhoto("food-bowl.webp"))
+    .replaceAll(
+      "__NUTRITION_PLATE__",
+      "data:image/webp;base64," +
+        readFileSync(
+          resolve(mobile, "assets/nutrition/meal-illustration.webp"),
+        ).toString("base64"),
+    )
     .replaceAll("__HERO_GYM__", heroPhoto("gym-interior.webp")),
 );
 const anatomy = JSON.parse(
@@ -279,6 +289,7 @@ const visualLicenses = [
   "assets/fonts/OFL.txt",
   "assets/hero/LICENSE.md",
   "assets/anatomy/LICENSE-Hicham.txt",
+  "assets/nutrition/ATTRIBUTION.md",
 ]
   .map((file) =>
     readFileSync(resolve(mobile, file), "utf8").replaceAll("--", "- -"),

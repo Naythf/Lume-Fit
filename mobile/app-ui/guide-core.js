@@ -50,9 +50,15 @@ globalThis.LumeGuideCore = (() => {
       active: "Atividade intensa",
     },
     sex: {
-      unspecified: "Não usar equação",
+      unspecified: "Usar uma faixa entre as duas referências",
       female: "Referência feminina",
       male: "Referência masculina",
+    },
+    proteinMode: { daily: "Dia a dia", training: "Treino regular" },
+    energyMode: {
+      maintain: "Manutenção",
+      gain: "Ganho gradual · +10%",
+      lose: "Redução leve · −10%",
     },
     time: {
       15: "Até 15 minutos",
@@ -94,6 +100,12 @@ globalThis.LumeGuideCore = (() => {
       height: number(v.height, 100, 250),
       target: number(v.target, 20, 400),
       sex: choice("sex", v.sex, "unspecified"),
+      proteinMode: choice(
+        "proteinMode",
+        v.proteinMode,
+        v.goal === "train" ? "training" : "daily",
+      ),
+      energyMode: choice("energyMode", v.energyMode, "maintain"),
       activity: choice("activity", v.activity, "moderate"),
       pattern: choice("pattern", v.pattern, "omni"),
       allergy: choice("allergy", v.allergy, "unknown"),
@@ -136,6 +148,19 @@ globalThis.LumeGuideCore = (() => {
     return {
       version: 1,
       setup: setup(v?.setup),
+      water: (Array.isArray(v?.water) ? v.water : [])
+        .filter((x) => x && date(x.date) && number(x.ml, 0, 10000) !== null)
+        .map((x) => ({ date: x.date, ml: number(x.ml, 0, 10000) }))
+        .filter((x, i, a) => a.findIndex((y) => y.date === x.date) === i),
+      menu: (Array.isArray(v?.menu) ? v.menu : [])
+        .filter(
+          (x) =>
+            x &&
+            /^[a-z0-9-]{1,60}$/.test(x.id || "") &&
+            number(x.scale, 0.5, 2) !== null,
+        )
+        .map((x) => ({ id: x.id, scale: number(x.scale, 0.5, 2) }))
+        .slice(0, 8),
       entries: entries.sort(
         (a, b) => a.date.localeCompare(b.date) || a.id.localeCompare(b.id),
       ),

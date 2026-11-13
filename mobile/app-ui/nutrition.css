@@ -1,0 +1,1152 @@
+/* Visual references: quantities first, explanations on demand. */
+.guide-screen .guide-page-head {
+  margin: 14px 0 18px;
+  align-items: center;
+}
+.guide-screen .guide-page-head h1 {
+  font-size: 28px;
+}
+.guide-screen .guide-tabs {
+  margin-bottom: 22px;
+}
+.nv-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 0 0 10px;
+}
+.nv-summary-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #bdc3cb;
+}
+.nv-summary-toolbar .nv-edit {
+  font-size: 12px;
+  min-height: 32px;
+}
+.guide-screen .nv-heading h2 {
+  font-size: 24px;
+  line-height: 1.25;
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+.nv-edit {
+  border: 0;
+  background: transparent;
+  color: #d8dadd;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  min-height: 44px;
+  padding: 8px 0;
+  cursor: pointer;
+}
+.nv-heading .nv-edit {
+  flex: none;
+}
+.guide-screen p.nv-context {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #c2c4c8;
+  margin: 0 0 22px;
+}
+.nv-energy {
+  border: 1px solid #ffffff26;
+  background: linear-gradient(125deg, #ffffff09, #ffffff02);
+  border-radius: 24px;
+  padding: 22px;
+  margin: 0 0 16px;
+  box-shadow: 0 12px 30px #0002;
+}
+.nv-energy header,
+.nv-pair header,
+.nv-macros header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.guide-screen .nv-energy h3,
+.guide-screen .nv-pair h3,
+.guide-screen .nv-macros h3 {
+  font-size: 17px;
+  margin: 0;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+}
+.nv-info {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  background: transparent;
+  padding: 8px 0;
+  min-height: 36px;
+  font: inherit;
+  font-size: 12px;
+  color: #c2c5ca;
+  cursor: pointer;
+  white-space: normal;
+}
+.nv-info svg {
+  width: 17px;
+  height: 17px;
+  flex: none;
+}
+.nv-energy-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin: 14px 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+.nv-energy-value strong {
+  font-size: clamp(29px, 6.5vw, 44px);
+  line-height: 1.2;
+  letter-spacing: -0.035em;
+  font-weight: 750;
+}
+.nv-energy-value > span {
+  font-size: 15px;
+  color: #c2c5ca;
+}
+.guide-screen .nv-energy-caption {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0 0 20px;
+  color: #bfc3c8;
+}
+.nv-consumed {
+  padding-top: 15px;
+  border-top: 1px solid #ffffff12;
+}
+.nv-energy-modes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin: 12px 0 18px;
+}
+.nv-energy-modes button {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  min-height: 36px;
+  padding: 8px 5px;
+  border: 1px solid #ffffff20;
+  border-radius: 10px;
+  background: #ffffff03;
+  color: #c3c8cf;
+  cursor: pointer;
+}
+.nv-energy-modes [aria-pressed="true"] {
+  border-color: #ffffff65;
+  background: #ffffff10;
+  color: #f1f3f6;
+}
+.nv-consumed > span {
+  display: block;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  color: #d9dbde;
+}
+.nv-consumed small,
+.nv-pair > section > small {
+  display: block;
+  color: #aeb3ba;
+  font-size: 12px;
+  line-height: 1.5;
+  margin-top: 9px;
+}
+.nv-track {
+  height: 7px;
+  border-radius: 6px;
+  background: #ffffff10;
+  overflow: hidden;
+  isolation: isolate;
+}
+.nv-track > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: scaleX(var(--fill, 0));
+  transform-origin: left;
+  background: #e1e4e7;
+  border-radius: inherit;
+}
+.nv-pair {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 26px;
+  align-items: stretch;
+}
+.nv-pair > section {
+  padding: 18px;
+  border: 1px solid #ffffff20;
+  border-radius: 22px;
+  background: #ffffff04;
+  display: flex;
+  flex-direction: column;
+}
+.nv-pair header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  min-height: 44px;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+.nv-pair .nv-info {
+  font-size: 0;
+  width: 28px;
+  min-height: 24px;
+  padding: 0;
+  flex: none;
+}
+.nv-pair .nv-info svg {
+  width: 17px;
+  height: 17px;
+}
+.nv-number {
+  font-size: clamp(24px, 4vw, 32px);
+  line-height: 1.25;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  display: block;
+}
+.nv-number small {
+  display: block;
+  font-size: 13px;
+  color: #bfc3c8;
+  font-weight: 450;
+  letter-spacing: 0;
+  margin-top: 4px;
+}
+.guide-screen .nv-pair > section > p {
+  min-height: 40px;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 10px 0 16px;
+  color: #bdc1c7;
+}
+.nv-protein-guide {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  margin: 8px 0 18px;
+  min-height: 90px;
+}
+.nv-protein-guide svg {
+  width: 68px;
+  height: 68px;
+  color: #d9dcdf;
+}
+.nv-protein-mode {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+  margin: 0 0 14px;
+}
+.nv-protein-mode button {
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.3;
+  min-height: 38px;
+  padding: 6px 3px;
+  color: #c3c8cf;
+  border: 1px solid #ffffff24;
+  border-radius: 9px;
+  background: #ffffff03;
+  cursor: pointer;
+}
+.nv-protein-mode [aria-pressed="true"] {
+  color: #f1f3f5;
+  border-color: #dce1e67a;
+  background: #ffffff0c;
+}
+html[data-motion="full"] .guide-screen.nv-quiet .guide-content,
+html[data-motion="full"] .guide-screen.nv-quiet .nv-macro-stack,
+html[data-motion="full"] .guide-screen.nv-quiet .nv-track > span {
+  animation: none;
+}
+html[data-motion="full"] .guide-screen.nv-quiet .studio-visible {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+.nv-protein-guide > div {
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.nv-protein-guide b {
+  font-size: 24px;
+  line-height: 1.4;
+}
+.nv-protein-guide small {
+  font-size: 13px;
+  font-weight: 450;
+}
+.nv-protein-guide span {
+  display: block;
+  font-size: 12px;
+  color: #bdc5cf;
+  line-height: 1.5;
+  margin-top: 8px;
+  text-align: center;
+}
+.nv-logged {
+  font-size: 13px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+  margin-top: auto;
+  color: #d2d5d9;
+}
+.nv-glass {
+  position: relative;
+  width: 84px;
+  height: 102px;
+  border: 1px solid #cdd1d659;
+  border-top: 2px solid #eceff363;
+  border-radius: 4px 4px 20px 20px;
+  margin: 8px auto 16px;
+  overflow: hidden;
+  background: linear-gradient(100deg, #fff1, #fff0 45%, #fff1);
+  isolation: isolate;
+}
+.nv-liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: scaleY(var(--water, 0));
+  transform-origin: bottom;
+  background: linear-gradient(135deg, #e1e8ef66, #edf2f833);
+  border-top: 1px solid #dce4efaa;
+}
+.nv-glass > span {
+  position: absolute;
+  left: 3px;
+  right: 3px;
+  bottom: 14px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #eff2f5;
+  text-align: center;
+  text-shadow: 0 1px 3px #000;
+}
+.nv-water-actions {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 6px;
+  margin-top: auto;
+}
+.nv-water-actions button {
+  min-height: 42px;
+  padding: 8px 4px;
+  border: 1px solid #ffffff2c;
+  border-radius: 11px;
+  background: #ffffff09;
+  color: #e2e5e9;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.nv-water-actions button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+.nv-macros {
+  padding: 26px 0;
+  border-block: 1px solid #ffffff16;
+  margin-bottom: 24px;
+}
+.nv-macros header {
+  align-items: flex-start;
+}
+.nv-macro-stack {
+  display: flex;
+  gap: 0;
+  width: 100%;
+  height: 18px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 22px 0 18px;
+}
+.nv-macro-stack > span {
+  height: 100%;
+  flex: none;
+  border-right: 2px solid #151617;
+}
+.nv-macro-stack > span:last-child {
+  border-right: 0;
+}
+.nv-segment-0 {
+  background: #e8e9eb;
+}
+.nv-segment-1 {
+  background: #a7adb5;
+}
+.nv-segment-2 {
+  background: repeating-linear-gradient(
+    135deg,
+    #626973,
+    #626973 3px,
+    #a1a8b1 3px,
+    #a1a8b1 4px
+  );
+}
+.nv-macros dl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 14px;
+}
+.nv-macros dt {
+  font-size: 13px;
+  color: #c2c6cc;
+  line-height: 1.5;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.nv-macros dt i {
+  display: block;
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.nv-macros dd {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  margin: 7px 0 0;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+}
+.nv-macros dd small {
+  font-size: 14px;
+  color: #bdc3ca;
+  font-weight: 450;
+}
+.nv-next {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  align-items: center;
+  gap: 24px;
+  padding: 4px 0 26px;
+  margin-bottom: 18px;
+}
+.nv-next img {
+  width: 160px;
+  height: 160px;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 14px #0006);
+}
+.guide-screen .nv-next h3 {
+  font-size: 23px;
+  margin: 0 0 12px;
+  line-height: 1.25;
+}
+.guide-screen .nv-next p {
+  font-size: 15px;
+  line-height: 1.55;
+  margin: 0 0 16px;
+}
+.guide-screen p.nv-footnote,
+.guide-editor p.nv-footnote,
+.nv-explanation p.nv-footnote {
+  font-size: 12px !important;
+  line-height: 1.6 !important;
+  color: #aeb4bc;
+  margin: 12px 0 16px;
+}
+.guide-screen p.nv-privacy {
+  margin: 18px 0;
+  max-width: 48ch;
+}
+.nv-secondary {
+  margin: 0;
+}
+.nv-secondary > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #ffffff12;
+}
+.nv-secondary dt {
+  font-size: 15px;
+  color: #cbd0d7;
+}
+.nv-secondary dd {
+  margin: 0;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+}
+.nv-missing {
+  padding: 18px 0;
+}
+.nv-missing strong {
+  font-size: 20px;
+  line-height: 1.35;
+  display: block;
+  margin-bottom: 12px;
+}
+.guide-screen .nv-missing p {
+  font-size: 15px;
+  line-height: 1.5;
+}
+.nv-explanation .nv-explain-number {
+  font-size: 32px;
+  line-height: 1.3;
+  margin: 24px 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.nv-explain-number small {
+  font-size: 15px;
+  font-weight: 450;
+  color: #c0c6ce;
+}
+.nv-explanation p {
+  font-size: 16px;
+  line-height: 1.6;
+  color: #c2c6ce;
+  margin: 0 0 18px;
+}
+.nv-explanation > .primary-btn,
+.nv-explanation > .guide-button {
+  margin: 10px 0;
+  width: 100%;
+}
+.guide-screen .guide-fold > summary {
+  border: 0;
+  padding: 17px 18px !important;
+  gap: 14px;
+  font-size: 16px !important;
+  min-height: 56px;
+}
+.guide-fold > summary > span {
+  flex: 1;
+}
+.guide-fold > summary::after,
+.guide-fold[open] > summary::after {
+  content: none !important;
+  display: none !important;
+  border: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+.guide-fold > summary .guide-disclosure-chevron {
+  display: block !important;
+  width: 19px;
+  height: 19px;
+  flex: 0 0 19px;
+  transition: transform 0.24s ease;
+  transform: rotate(0deg);
+  color: #b9c0c8;
+}
+.guide-fold[open] > summary .guide-disclosure-chevron {
+  transform: rotate(180deg);
+}
+.guide-fold[data-disclosure-state="closing"]
+  > summary
+  .guide-disclosure-chevron {
+  transform: rotate(0deg);
+}
+.guide-fold {
+  background: #ffffff02;
+  border-color: #ffffff17;
+  margin: 12px 0;
+  border-radius: 16px;
+}
+.nv-meal-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 22px 0 18px;
+}
+.nv-meal-tabs button {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  min-height: 48px;
+  padding: 9px 5px;
+  color: #bdc3ca;
+  background: #ffffff04;
+  border: 1px solid #ffffff1b;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.nv-meal-tabs [aria-pressed="true"] {
+  border-color: #e4e6e988;
+  background: #ffffff12;
+  color: #f0f1f3;
+}
+.nv-recipe-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 22px;
+}
+.nv-recipe-options button {
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  padding: 10px 13px;
+  min-height: 42px;
+  background: #ffffff03;
+  color: #bfc6cf;
+  border: 1px solid #ffffff1c;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.nv-recipe-options [aria-pressed="true"] {
+  color: #f1f2f5;
+  background: #ffffff0d;
+  border-color: #ffffff65;
+}
+.nv-recipe {
+  margin-bottom: 28px;
+  border-top: 1px solid #ffffff20;
+  padding-top: 24px;
+}
+.nv-recipe > header {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.guide-screen .nv-recipe > header h3 {
+  font-size: 25px;
+  line-height: 1.25;
+  margin: 0 0 10px;
+}
+.guide-screen .nv-recipe > header p {
+  font-size: 14px;
+  line-height: 1.5;
+  margin: 0;
+  color: #b9c1cc;
+}
+.nv-recipe > header img {
+  width: 138px;
+  height: 138px;
+  flex: none;
+  object-fit: contain;
+}
+.nv-portions > span {
+  display: block;
+  font-size: 14px;
+  color: #c5ccd5;
+  margin-bottom: 12px;
+}
+.nv-portions > div {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 7px;
+}
+.nv-portions button {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  min-height: 44px;
+  border: 1px solid #ffffff24;
+  border-radius: 11px;
+  background: #ffffff04;
+  color: #c5ccd5;
+  cursor: pointer;
+}
+.nv-portions [aria-pressed="true"] {
+  background: #e4e7eb;
+  color: #111317;
+  border-color: #e4e7eb;
+}
+.nv-recipe-nutrients {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  margin: 26px 0 10px;
+}
+.nv-recipe-nutrients > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nv-recipe-nutrients strong {
+  font-size: 26px;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.nv-recipe-nutrients strong small {
+  font-size: 14px;
+  font-weight: 450;
+  color: #c2c8d0;
+}
+.nv-recipe-nutrients > div > span {
+  font-size: 13px;
+  color: #b9c2ce;
+  line-height: 1.45;
+}
+.guide-screen .nv-recipe-contribution {
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 12px 0 24px;
+  color: #c3cbd4;
+}
+.nv-ingredients {
+  margin: 20px 0 22px;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid #ffffff14;
+}
+.nv-ingredients > li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 17px 0;
+  border-bottom: 1px solid #ffffff14;
+}
+.nv-ingredients strong {
+  font-size: 16px;
+  line-height: 1.45;
+  display: block;
+  font-weight: 650;
+}
+.nv-ingredients span {
+  font-size: 13px;
+  line-height: 1.5;
+  display: block;
+  color: #b8c0cb;
+  margin-top: 6px;
+}
+.nv-ingredients b {
+  flex: none;
+  min-width: 68px;
+  text-align: right;
+  font-size: 19px;
+  font-variant-numeric: tabular-nums;
+}
+.nv-ingredients b small {
+  font-size: 13px;
+  font-weight: 450;
+  color: #b9c2cf;
+}
+.guide-screen .nv-recipe-tip {
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0 0 20px;
+}
+.nv-recipe > .primary-btn {
+  width: 100%;
+}
+.nv-day-menu,
+.nv-menu-empty {
+  border-block: 1px solid #ffffff1b;
+  margin: 30px 0;
+  padding: 26px 0;
+}
+.guide-screen .nv-day-menu > h3,
+.guide-screen .nv-menu-empty > h3,
+.guide-screen .nv-learn > h3 {
+  font-size: 23px;
+  line-height: 1.3;
+}
+.guide-screen .nv-menu-empty p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+.nv-menu-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0;
+  border-bottom: 1px solid #ffffff15;
+}
+.nv-menu-row > div {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.nv-menu-row small {
+  font-size: 12px;
+  color: #b5c0ce;
+  line-height: 1.4;
+}
+.nv-menu-row strong {
+  font-size: 16px;
+  line-height: 1.4;
+}
+.nv-menu-row span {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #bbc6d5;
+}
+.nv-menu-row .nv-edit {
+  flex: none;
+  font-size: 12px;
+}
+.nv-menu-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 24px 0;
+}
+.nv-menu-totals strong {
+  font-size: 30px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.3;
+}
+.nv-menu-totals strong small {
+  font-size: 14px;
+  font-weight: 450;
+  color: #c1cbd8;
+}
+.nv-menu-totals span {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #bcc7d5;
+}
+.nv-menu-reference > span {
+  font-size: 13px;
+  line-height: 1.5;
+  display: block;
+  margin-bottom: 12px;
+  color: #c6cfdc;
+}
+.nv-food-compare > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 0;
+  border-bottom: 1px solid #ffffff16;
+}
+.nv-food-compare span {
+  font-size: 15px;
+  line-height: 1.5;
+  flex: 1;
+}
+.nv-food-compare small {
+  display: block;
+  font-size: 12px;
+  color: #b9c4d3;
+  line-height: 1.5;
+  font-weight: 450;
+}
+.nv-food-compare strong {
+  font-size: 20px;
+  text-align: right;
+  line-height: 1.4;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.nv-density-bars {
+  margin: 24px 0;
+}
+.nv-density-bars > div {
+  margin: 18px 0;
+}
+.nv-density-bars > div > div {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+.nv-density-bars strong {
+  font-size: 16px;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.nv-density-bars i {
+  display: block;
+  height: 12px;
+  width: calc(var(--fill) * 100%);
+  background: #d4dbe4;
+  border-radius: 4px;
+  min-width: 3px;
+}
+.nv-density-bars small {
+  display: block;
+  font-size: 12px;
+  color: #b6c2d3;
+  margin-top: 7px;
+}
+.nv-weight-empty {
+  display: flex;
+  gap: 18px;
+  padding: 30px 0 36px;
+  align-items: flex-start;
+}
+.nv-empty-point {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  background: #d0d7e0;
+  border: 3px solid #353b44;
+  border-radius: 50%;
+  margin-top: 6px;
+  box-shadow: 0 6px 14px #0004;
+}
+.guide-screen .nv-weight-empty h3 {
+  font-size: 20px;
+  line-height: 1.35;
+  margin: 0 0 10px;
+}
+.guide-screen .nv-weight-empty p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 0;
+}
+html[data-motion="full"] .nv-track > span {
+  animation: nv-bar 0.7s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+html[data-motion="full"] .nv-liquid {
+  animation: nv-water 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+html[data-motion="full"] .nv-macro-stack {
+  animation: nv-stack 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: left;
+}
+@keyframes nv-bar {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(var(--fill, 0));
+  }
+}
+@keyframes nv-water {
+  from {
+    transform: scaleY(var(--water-from, 0));
+  }
+  to {
+    transform: scaleY(var(--water, 0));
+  }
+}
+html[data-motion="full"] .guide-screen.nv-quiet .nv-liquid {
+  animation: none;
+}
+html[data-motion="full"] .guide-screen.nv-water-updating .nv-liquid {
+  animation: nv-water 0.65s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes nv-stack {
+  from {
+    transform: scaleX(0.05);
+    opacity: 0.6;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+html[data-motion="reduced"] .guide-disclosure-chevron {
+  transition: none;
+}
+@media (max-width: 600px) {
+  .nv-next {
+    grid-template-columns: 100px 1fr;
+    gap: 18px;
+  }
+  .nv-next img {
+    width: 100px;
+    height: 120px;
+  }
+  .guide-screen .nv-next h3 {
+    font-size: 21px;
+  }
+  .nv-recipe > header img {
+    width: 120px;
+    height: 120px;
+  }
+  .nv-recipe-nutrients {
+    gap: 12px;
+  }
+  .nv-recipe-nutrients strong {
+    font-size: 23px;
+  }
+}
+@media (max-width: 420px) {
+  .nv-heading {
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .guide-screen .nv-heading h2 {
+    font-size: 22px;
+  }
+  .nv-heading .nv-edit {
+    font-size: 12px;
+    min-height: 30px;
+  }
+  .nv-energy {
+    padding: 20px;
+  }
+  .nv-energy .nv-info {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .nv-pair {
+    gap: 10px;
+  }
+  .nv-pair > section {
+    padding: 15px;
+  }
+  .nv-pair header {
+    flex-wrap: wrap;
+    gap: 5px;
+    min-height: 44px;
+  }
+  .guide-screen .nv-pair h3 {
+    font-size: 15px;
+  }
+  .nv-pair .nv-info {
+    margin-left: auto;
+  }
+  .nv-number {
+    font-size: 25px;
+  }
+  .nv-glass {
+    width: 70px;
+    height: 94px;
+  }
+  .nv-water-actions {
+    grid-template-columns: 30px 1fr;
+    gap: 5px;
+  }
+  .nv-water-actions button {
+    font-size: 11px;
+    min-height: 40px;
+  }
+  .nv-macros header {
+    display: block;
+  }
+  .nv-macros header .nv-info {
+    margin-top: 6px;
+  }
+  .nv-macros dt {
+    font-size: 11px;
+    gap: 5px;
+  }
+  .nv-macros dd {
+    font-size: 22px;
+  }
+  .nv-next {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .nv-next img {
+    width: 160px;
+    height: 140px;
+    margin: auto;
+  }
+  .nv-recipe > header {
+    gap: 12px;
+  }
+  .guide-screen .nv-recipe > header h3 {
+    font-size: 22px;
+  }
+  .nv-recipe > header img {
+    width: 100px;
+    height: 110px;
+  }
+  .nv-recipe-nutrients {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px;
+  }
+  .nv-recipe-nutrients strong {
+    font-size: 28px;
+  }
+  .nv-portions > div {
+    gap: 5px;
+  }
+  .nv-portions button {
+    font-size: 13px;
+  }
+  .nv-meal-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .nv-menu-row {
+    gap: 12px;
+  }
+  .nv-ingredients > li {
+    gap: 14px;
+  }
+  .nv-ingredients strong {
+    font-size: 15px;
+  }
+  .nv-ingredients b {
+    font-size: 18px;
+    min-width: 60px;
+  }
+  .nv-food-compare > div {
+    gap: 12px;
+  }
+  .nv-food-compare strong {
+    font-size: 18px;
+  }
+}
+
+/* The app's legacy paragraph enlargement must not flatten this hierarchy. */
+.guide-screen .nv-energy-caption {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+.guide-screen p.nv-context,
+.guide-screen .nv-next p,
+.guide-screen .nv-recipe-tip,
+.guide-screen .nv-menu-empty p {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+.guide-screen .nv-recipe > header p,
+.guide-screen .nv-weight-empty p {
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+}
+.guide-screen .nv-recipe-contribution {
+  font-size: 13px !important;
+  line-height: 1.5 !important;
+}
+.nv-protein-guide {
+  flex: none;
+  min-height: 48px;
+  margin: 14px 0;
+}
+.nv-protein-guide b {
+  font-size: 17px;
+}
+.nv-protein-guide span {
+  margin-top: 3px;
+}
+.nv-glass {
+  margin-top: 14px;
+}
+.nv-pair > section > small {
+  line-height: 1.4;
+}
