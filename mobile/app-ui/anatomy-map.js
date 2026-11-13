@@ -66,7 +66,7 @@ window.muscleFigure = function (primary = [], secondary = []) {
         .join("")}</svg><figcaption>${title}</figcaption></figure>`;
     })
     .join("");
-  return `<div class="muscle-figure anatomy-map"><div class="anatomy-views">${views}</div><div class="anatomy-key"><p><i class="anatomy-primary" aria-hidden="true"></i><span><strong>Em foco</strong>${primary.length ? esc(labels(primary)) : "Corpo inteiro"}</span></p>${secondary.length ? `<p><i class="anatomy-secondary" aria-hidden="true"></i><span><strong>Auxiliares</strong>${esc(labels(secondary))}</span></p>` : ""}</div><small>Mapa de regiões musculares. Não mede ativação.</small></div>`;
+  return `<div class="muscle-figure anatomy-map"><div class="anatomy-views">${views}</div><div class="anatomy-key"><p><i class="anatomy-primary" aria-hidden="true"></i><span><strong>Em foco</strong>${primary.length ? esc(labels(primary)) : "Sem grupo selecionado"}</span></p>${secondary.length ? `<p><i class="anatomy-secondary" aria-hidden="true"></i><span><strong>Auxiliares</strong>${esc(labels(secondary))}</span></p>` : ""}</div><small>Mapa de regiões musculares. Não mede ativação.</small></div>`;
 };
 function anatomyEnhanceEditor() {
   const editor = document.querySelector("#sheet .muscle-editor");

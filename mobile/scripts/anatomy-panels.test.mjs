@@ -104,6 +104,8 @@ test("muscle selection returns a replaceable figure, stable views, unique defini
   );
   const unsafe = render(['\" onload=alert(1)', "__proto__", null], []);
   assert.ok(!unsafe.includes("onload"));
+  assert.ok(unsafe.includes('Sem grupo selecionado'));
+  assert.ok(!unsafe.includes('Corpo inteiro'));
   for (const view of ["front", "back"])
     for (const region of data[view])
       for (const d of region.paths)
