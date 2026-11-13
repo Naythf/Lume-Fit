@@ -99,9 +99,9 @@ globalThis.LumeFoodRestrictions = (() => {
       unknown = [];
     for (let part of String(text || "")
       .slice(0, 500)
-      .split(/[,;\n]+|\s+e\s+/)) {
+      .split(/[,;\n]+|\s+(?:e|ou)\s+/i)) {
       part = clean(part).replace(
-        /^(eu )?(nao posso (comer|ingerir|consumir)|nao (como|consumo)|evitar|evito|sem|alergia (a|ao)|intolerancia (a|ao)) /,
+        /^(eu )?(nao (?:posso|pode|devo) (comer|ingerir|consumir)|nao (como|consumo)|evitar|evito|sem|(?:tenho )?alergia (a|ao)|(?:tenho )?intolerancia (a|ao)|sou (?:alergico|alergica|intolerante) (a|ao)) /,
         "",
       );
       if (!part) continue;

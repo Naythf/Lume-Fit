@@ -1209,3 +1209,49 @@ html[data-motion="reduced"] .guide-disclosure-chevron {
   padding: 10px 5px;
   font-size: 13px;
 }
+
+.fc-meal {
+  border: 1px solid #ffffff25;
+  background: #ffffff04;
+  border-radius: 18px;
+  padding: 16px;
+  margin: 20px 0;
+}
+.fc-meal header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+.fc-ingredient {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px 36px;
+  gap: 8px;
+  align-items: end;
+  margin: 16px 0;
+}
+.fc-ingredient .field {
+  min-width: 0;
+}
+.fc-ingredient .guide-button {
+  padding: 8px;
+  min-width: 0;
+}
+.fc-total {
+  font-size: 16px !important;
+  line-height: 1.5 !important;
+  padding: 18px 0;
+}
+.food-composer .row-actions {
+  position: sticky;
+  bottom: 0;
+  background: #151618;
+  padding: 12px 0;
+  display: flex;
+  gap: 12px;
+}
+.food-composer input,
+.food-composer select {
+  min-width: 0;
+  width: 100%;
+}
