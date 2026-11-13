@@ -131,6 +131,20 @@ test("density and weight comparisons never invent zero values or fat-loss claims
     -2,
   );
 });
+test("imported same-day records use one consistent latest measurement without deleting entries", () => {
+  const imported = C.normalize({
+    setup: base,
+    entries: [
+      { id: "z", date: "2026-11-13", weight: 66 },
+      { id: "a", date: "2026-11-13", weight: 64 },
+    ],
+  });
+  assert.equal(imported.entries.length, 2);
+  assert.equal(
+    C.metrics(imported.setup, imported.entries).weight,
+    C.trend(imported.entries).last.weight,
+  );
+});
 test("packaged normalization preserves private guide through document export/import and leaves social projection unchanged", () => {
   const { html } = JSON.parse(
     readFileSync(

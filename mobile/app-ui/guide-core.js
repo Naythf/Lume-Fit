@@ -143,9 +143,7 @@ globalThis.LumeGuideCore = (() => {
   }
   function metrics(s, entries = []) {
     s = setup(s);
-    const latest = entries
-      .slice()
-      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    const latest = trend(entries).last;
     const weight = latest?.weight ?? s.weight;
     const eligible = s.context === "general" && s.age >= 18 && s.age <= 100;
     const bmi =
