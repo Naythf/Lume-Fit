@@ -1,0 +1,11 @@
+# Nutrition data and original illustration
+
+Food facts: Tabela Brasileira de Composição de Alimentos — TACO, 4ª edição revisada e ampliada. NEPA/UNICAMP, Campinas, 2011. Public reproduction permitted with source credit (publication pp. ii–iii). Only a small, explicitly prepared subset is used in app-ui/nutrition.js; original TACO row numbers accompany each food. Source: https://www.nepa.unicamp.br/arquivo/uploads/taco-4-edicao-ampliada-e-revisada/taco_4_edicao_ampliada_e_revisada/ . Values are per 100 g of edible portion. Water is zero-energy by definition, not a TACO analysis row. Do not replace cooked measurements with raw values or infer unlisted ingredients from images.
+
+The meal illustration is original, generated for Lume Fit with the built-in image generation tool on 13 November 2026, at the user's request for didactic visuals/AI and better assets. It is not a photograph of a measured portion. Its size and food arrangement are never inputs to nutritional calculations. No RepDB artwork was provided to or processed by a generative model.
+
+Saved project asset: meal-illustration.webp. The alpha channel is preserved; the generated 1280 px original remains at outputs/lume-070-meal-original.png in the workspace and in the generator's original folder. Runtime copy resized to 640 px and encoded as WebP, without crop. No API key or paid external service was used.
+
+Final prompt (built-in mode):
+
+> Create one premium photorealistic food asset for a monochrome Brazilian fitness mobile app. A single matte charcoal ceramic dinner plate, slight overhead three-quarter view, isolated on genuinely transparent background. On the plate: small mound of white cooked rice, cooked brown carioca beans with little broth, sliced grilled chicken breast, steamed broccoli and orange carrots, a few fresh lettuce leaves and tomato slices. Realistic appetizing food textures, soft studio side lighting, clean refined editorial photography, subtle natural contact shadow immediately under plate, centered with generous transparent padding, complete plate rim visible, no crop. The asset is an illustrative meal only, not a quantified serving diagram. No text, labels, arrows, hands, cutlery, table, logos, gradients behind the object or UI. 1:1 square image.
