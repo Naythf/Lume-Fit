@@ -4,7 +4,7 @@ window.LumeFoodPlan = (() => {
     N = LumeNutrition;
   const data = () => C.normalize(state.db.profile.meuGuia);
   const nav = () =>
-    `<nav class="guide-tabs food-unified" aria-label="Alimentação integrada"><button onclick="switchTab('nutrition')">Diário</button><button onclick="LumeFoodPlan.open()">Rotinas</button><button onclick="switchTab('knowledge');LumeGuide.go('summary')">Guia</button><button onclick="switchTab('knowledge');LumeGuide.go('weight')">Evolução</button></nav>`;
+    `<nav class="guide-tabs food-unified" aria-label="Alimentação integrada"><button aria-current="page" onclick="switchTab('nutrition')">Diário</button><button onclick="LumeFoodPlan.open()">Rotinas</button><button onclick="switchTab('knowledge');LumeGuide.go('summary')">Guia</button><button onclick="switchTab('knowledge');LumeGuide.go('weight')">Evolução</button></nav>`;
   function commit(change) {
     const db = state.db,
       previous = db.profile.meuGuia,

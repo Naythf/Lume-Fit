@@ -283,12 +283,11 @@ function studioSetDay(value) {
 }
 studioEnhance();
 
-// Four destinations, one calm sheet; secondary tools stay within their own screens.
+// Secondary destinations; nutrition tools live under Alimentação.
 lumeMore = function () {
   const items = [
     ["frequency", "Frequência", "Calendário e histórico", calendarIcon()],
     ["friends", "Amigos", "Conexões e perfil", friendsIcon()],
-    ["knowledge", "Meu guia", "Alimentação e evolução", boltIcon()],
     ["settings", "Ajustes", "Dados e preferências", preferencesIcon()],
   ];
   openSheet(

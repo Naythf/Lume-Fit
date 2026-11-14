@@ -674,6 +674,7 @@ window.LumeGuide = (() => {
       tab = value;
       render();
       focusHeading();
+      window.scrollTo({ top: 0, behavior: "instant" });
     },
     more() {
       shown += 12;

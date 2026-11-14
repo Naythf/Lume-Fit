@@ -1320,3 +1320,64 @@ html[data-motion="reduced"] .guide-disclosure-chevron {
   line-height: 1.25 !important;
   margin: 12px 0 !important;
 }
+
+/* The diary and guide share the same navigation surface and current state. */
+.guide-screen .guide-tabs,
+#screen-nutrition .food-unified {
+  border: 1px solid #ffffff24;
+  border-radius: 17px;
+  background: #10111288;
+  margin: 8px 0 22px;
+  align-items: stretch;
+}
+#screen-nutrition .food-unified button,
+.guide-screen .guide-tabs button {
+  min-height: 48px;
+  line-height: 1.4;
+  font-weight: 650;
+  border-radius: 12px;
+}
+#screen-nutrition .food-unified [aria-current="page"] {
+  color: #f5f5f6;
+  background: #ffffff0e;
+  border-color: #ffffff30;
+  box-shadow: 0 4px 14px #0003;
+}
+.food-composer .fc-meal > .guide-form-grid {
+  display: grid;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+.food-composer .fc-meal > .guide-button {
+  margin-top: 0;
+}
+
+#screen-nutrition > .page-head {
+  margin: 14px 0 18px;
+  align-items: center;
+}
+#screen-nutrition > .page-head p {
+  display: none;
+}
+#screen-nutrition > .page-head h2,
+.guide-screen .guide-page-head h1 {
+  font-size: 28px !important;
+  line-height: 1.25 !important;
+  margin: 0;
+}
+#screen-nutrition > .page-head .privacy-badge,
+.guide-screen .guide-private {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 8px 10px;
+  border: 1px solid #ffffff24;
+  border-radius: 999px;
+}
+
+#screen-nutrition > .page-head,
+.guide-screen .guide-page-head {
+  margin: 14px 0 18px !important;
+  min-height: 40px;
+  padding: 0;
+  gap: 12px;
+}
