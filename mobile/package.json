@@ -1,6 +1,6 @@
 {
   "name": "lume-fit-mobile",
-  "version": "0.8.0",
+  "version": "0.8.1",
   "main": "expo-router/entry",
   "type": "module",
   "dependencies": {
